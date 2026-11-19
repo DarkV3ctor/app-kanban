@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Токены (в духе Atlassian Design System)
+   Design tokens (inspired by the Atlassian Design System)
    ========================================================================== */
 :root {
   --bg: #ffffff;
@@ -134,7 +134,7 @@
 }
 
 /* ==========================================================================
-   База
+   Base
    ========================================================================== */
 *,
 *::before,
@@ -216,7 +216,7 @@ kbd {
 }
 
 /* ==========================================================================
-   Кнопки и поля
+   Buttons and inputs
    ========================================================================== */
 .btn {
   display: inline-flex;
@@ -414,7 +414,7 @@ textarea.input {
 }
 
 /* ==========================================================================
-   Лозенжи, чипы, аватары
+   Lozenges, chips, avatars
    ========================================================================== */
 .lozenge {
   display: inline-flex;
@@ -561,7 +561,7 @@ textarea.input {
 }
 
 /* ==========================================================================
-   Каркас приложения
+   App shell
    ========================================================================== */
 .app {
   display: flex;
@@ -609,6 +609,42 @@ textarea.input {
 .topbar-spacer {
   flex: 1;
 }
+.lang-switch {
+  display: inline-flex;
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+  padding: 2px;
+  flex: none;
+}
+.lang-switch button {
+  height: 26px;
+  min-width: 34px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lang-switch button:hover {
+  color: var(--text);
+}
+.lang-switch button.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+  cursor: default;
+}
+.login-lang {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
 .user-btn {
   border: 0;
   background: none;
@@ -646,7 +682,7 @@ textarea.input {
   overflow: auto;
 }
 
-/* Страница списка досок */
+/* Boards page */
 .page {
   max-width: 1200px;
   margin: 0 auto;
@@ -783,8 +819,9 @@ textarea.input {
   margin: 8px 0 8px;
 }
 
-/* Логин */
+/* Login */
 .login {
+  position: relative;
   min-height: 100%;
   display: flex;
   align-items: center;
@@ -819,7 +856,7 @@ textarea.input {
 }
 
 /* ==========================================================================
-   Доска: сайдбар и основная область
+   Board: sidebar and main area
    ========================================================================== */
 .board-layout {
   display: flex;
@@ -930,7 +967,7 @@ textarea.input {
   flex-wrap: wrap;
 }
 
-/* Фильтры */
+/* Filters */
 .filter-bar {
   display: flex;
   align-items: center;
@@ -1031,7 +1068,7 @@ textarea.input {
 }
 
 /* ==========================================================================
-   Канбан
+   Kanban
    ========================================================================== */
 .kanban-view {
   display: flex;
@@ -1352,7 +1389,7 @@ td.due-soon {
 }
 
 /* ==========================================================================
-   Список задач
+   Issue list
    ========================================================================== */
 .list-summary {
   margin: -8px 0 8px;
@@ -1430,7 +1467,7 @@ td.due-soon {
 }
 
 /* ==========================================================================
-   Релизы
+   Releases
    ========================================================================== */
 .release-list {
   border: 1px solid var(--border);
@@ -1482,7 +1519,7 @@ td.due-soon {
 }
 
 /* ==========================================================================
-   Панели настроек и участников
+   Settings and members panels
    ========================================================================== */
 .settings-view,
 .members-view,
@@ -1672,7 +1709,7 @@ td.due-soon {
 }
 
 /* ==========================================================================
-   Алерты, пустые состояния, тосты, спиннер
+   Alerts, empty states, toasts, spinner
    ========================================================================== */
 .alert {
   display: flex;
@@ -1773,7 +1810,7 @@ td.due-soon {
 }
 
 /* ==========================================================================
-   Модальные окна и поповеры
+   Modals and popovers
    ========================================================================== */
 .modal-backdrop {
   position: fixed;
@@ -2056,7 +2093,7 @@ td.due-soon {
 }
 
 /* ==========================================================================
-   Карточка задачи (модалка)
+   Issue dialog
    ========================================================================== */
 .issue-modal .modal-head {
   padding-bottom: 0;
@@ -2589,7 +2626,7 @@ textarea.inline-input.issue-title {
 }
 
 /* ==========================================================================
-   Адаптив
+   Responsive
    ========================================================================== */
 @media (max-width: 960px) {
   .issue-grid {

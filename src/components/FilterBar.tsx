@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useApp } from '../app-context';
 import { EMPTY_FILTERS, filtersActive, isEpic, type Filters } from '../lib/issues';
 import { PRIORITIES, cls } from '../lib/utils';
+import { t } from '../i18n';
 import type { Priority } from '../types';
 import { useBoard } from './board-context';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
@@ -46,9 +47,9 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
     <div className="filter-bar">
       <label className="filter-search">
         <Icon name="search" size={16} />
-        <input value={filters.text} onChange={(e) => set('text', e.target.value)} placeholder="Поиск задач" aria-label="Поиск задач" />
+        <input value={filters.text} onChange={(e) => set('text', e.target.value)} placeholder={t('Search issues')} aria-label={t('Search issues')} />
         {filters.text && (
-          <button className="icon-btn" onClick={() => set('text', '')} aria-label="Очистить поиск">
+          <button className="icon-btn" onClick={() => set('text', '')} aria-label={t('Clear search')}>
             <Icon name="close" size={12} />
           </button>
         )}
@@ -59,51 +60,51 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
             <Avatar info={board.memberInfo[id]} size={30} />
           </button>
         ))}
-        <button className={cls('filter-avatar', filters.assignees.includes('none') && 'is-active')} onClick={() => toggleAssignee('none')} title="Не назначены">
-          <Avatar info={null} size={30} title="Не назначены" />
+        <button className={cls('filter-avatar', filters.assignees.includes('none') && 'is-active')} onClick={() => toggleAssignee('none')} title={t('Unassigned')}>
+          <Avatar info={null} size={30} title={t('Unassigned')} />
         </button>
       </div>
-      <FilterSelect label="Тип" value={filters.types} onChange={(v) => set('types', v)} options={board.issueTypes.map((t) => ({ value: t.id, label: t.name, icon: <TypeIcon type={t} /> }))} />
+      <FilterSelect label={t('Type')} value={filters.types} onChange={(v) => set('types', v)} options={board.issueTypes.map((t) => ({ value: t.id, label: t.name, icon: <TypeIcon type={t} /> }))} />
       <FilterSelect
-        label="Приоритет"
+        label={t('Priority')}
         value={filters.priorities}
         onChange={(v) => set('priorities', v as Priority[])}
         options={PRIORITIES.map((p) => ({ value: p.id, label: p.name, icon: <PriorityIcon priority={p.id} /> }))}
       />
-      {board.labels.length > 0 && <FilterSelect label="Метки" value={filters.labels} onChange={(v) => set('labels', v)} options={board.labels.map((l) => ({ value: l, label: l }))} />}
+      {board.labels.length > 0 && <FilterSelect label={t('Labels')} value={filters.labels} onChange={(v) => set('labels', v)} options={board.labels.map((l) => ({ value: l, label: l }))} />}
       {board.components.length > 0 && (
-        <FilterSelect label="Компоненты" value={filters.components} onChange={(v) => set('components', v)} options={board.components.map((l) => ({ value: l, label: l }))} />
+        <FilterSelect label={t('Components')} value={filters.components} onChange={(v) => set('components', v)} options={board.components.map((l) => ({ value: l, label: l }))} />
       )}
       {board.versions.length > 0 && (
         <FilterSelect
-          label="Версия"
+          label={t('Version')}
           value={filters.versions}
           onChange={(v) => set('versions', v)}
-          options={[...board.versions.filter((v) => v.status !== 'archived').map((v) => ({ value: v.id, label: v.name, icon: <Icon name="release" size={14} /> })), { value: 'none', label: 'Без версии' }]}
+          options={[...board.versions.filter((v) => v.status !== 'archived').map((v) => ({ value: v.id, label: v.name, icon: <Icon name="release" size={14} /> })), { value: 'none', label: t('No version') }]}
         />
       )}
       {epics.length > 0 && (
         <FilterSelect
-          label="Эпик"
+          label={t('Epic')}
           value={filters.epics}
           onChange={(v) => set('epics', v)}
-          options={[...epics.map((e) => ({ value: e.id, label: `${board.key}-${e.number} ${e.title}`, icon: <TypeIcon type={board.issueTypes.find((t) => t.id === e.type)} /> })), { value: 'none', label: 'Без эпика' }]}
+          options={[...epics.map((e) => ({ value: e.id, label: `${board.key}-${e.number} ${e.title}`, icon: <TypeIcon type={board.issueTypes.find((t) => t.id === e.type)} /> })), { value: 'none', label: t('No epic') }]}
         />
       )}
-      <button className={cls('filter-btn', filters.onlyMine && 'is-active')} onClick={() => set('onlyMine', !filters.onlyMine)} title={`Назначенные на @${user.login}`}>
-        Мои задачи
+      <button className={cls('filter-btn', filters.onlyMine && 'is-active')} onClick={() => set('onlyMine', !filters.onlyMine)} title={t('Assigned to @{login}', { login: user.login })}>
+        {t('My issues')}
       </button>
       <button className={cls('filter-btn', filters.recent && 'is-active')} onClick={() => set('recent', !filters.recent)}>
-        Обновлены за неделю
+        {t('Updated this week')}
       </button>
       {showHideDone && (
         <button className={cls('filter-btn', filters.hideDone && 'is-active')} onClick={() => set('hideDone', !filters.hideDone)}>
-          Скрыть готовые
+          {t('Hide done')}
         </button>
       )}
       {filtersActive(filters) && (
         <button className="btn btn-link" onClick={() => setFilters(EMPTY_FILTERS)}>
-          Сбросить фильтры
+          {t('Clear filters')}
         </button>
       )}
       {extra && <div className="filter-extra">{extra}</div>}

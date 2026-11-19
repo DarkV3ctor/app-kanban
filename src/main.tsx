@@ -1,4 +1,5 @@
 import { StrictMode } from 'react';
+import { t } from './i18n';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import { initStore } from './store';
@@ -18,9 +19,9 @@ initStore()
     console.error(e);
     root.render(
       <div style={{ padding: 32, fontFamily: 'system-ui' }}>
-        <h2>Не удалось запустить приложение</h2>
+        <h2>{t('Failed to start the app')}</h2>
         <pre style={{ whiteSpace: 'pre-wrap' }}>{String(e?.message ?? e)}</pre>
-        <p>Проверьте настройки Firebase в файле config.js.</p>
+        <p>{t('Check the Firebase settings in config.js.')}</p>
       </div>,
     );
   });

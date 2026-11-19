@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AppUser } from './types';
 import type { Store } from './store';
+import { t } from './i18n';
 
 export interface ToastItem {
   id: number;
@@ -20,7 +21,7 @@ interface AppCtx {
   user: AppUser;
   toast: (text: string, kind?: ToastItem['kind']) => void;
   confirm: (o: ConfirmOptions) => Promise<boolean>;
-  /** Обёртка над async-действием: показывает ошибку тостом. */
+  /** Wraps an async action and shows errors as a toast. */
   run: <T>(p: Promise<T> | (() => Promise<T>), okText?: string) => Promise<T | undefined>;
 }
 
@@ -86,10 +87,10 @@ export function AppProvider({ store, user, children }: { store: Store; user: App
             {confirmState.text && <div className="modal-body">{confirmState.text}</div>}
             <div className="modal-foot">
               <button className="btn btn-subtle" onClick={() => close(false)}>
-                Отмена
+                {t('Cancel')}
               </button>
               <button className={confirmState.danger ? 'btn btn-danger' : 'btn btn-primary'} onClick={() => close(true)} autoFocus>
-                {confirmState.confirmText ?? 'OK'}
+                {confirmState.confirmText ?? t('OK')}
               </button>
             </div>
           </div>

@@ -1,9 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { IssueType, Priority } from '../types';
-import { PRIORITIES } from '../lib/utils';
+import { PRIORITIES, priorityName } from '../lib/utils';
 
 // ---------------------------------------------------------------------------
-// Иконки интерфейса (stroke, 24x24)
+// UI icons (stroke, 24x24)
 // ---------------------------------------------------------------------------
 
 const UI: Record<string, ReactNode> = {
@@ -147,7 +147,7 @@ export function GitHubMark({ size = 18 }: { size?: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Иконки типов задач (белый глиф на цветном квадрате, 16x16)
+// Issue type icons (white glyph on a colored square, 16x16)
 // ---------------------------------------------------------------------------
 
 const S = { stroke: '#fff', strokeWidth: 1.5, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
@@ -240,7 +240,7 @@ export function TypeIcon({ type, size = 16, title }: { type: IssueType | undefin
 }
 
 // ---------------------------------------------------------------------------
-// Приоритеты
+// Priorities
 // ---------------------------------------------------------------------------
 
 export function PriorityIcon({ priority, size = 16 }: { priority: Priority; size?: number }) {
@@ -265,8 +265,8 @@ export function PriorityIcon({ priority, size = 16 }: { priority: Priority; size
       break;
   }
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" aria-label={p.name} role="img">
-      <title>{p.name}</title>
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-label={priorityName(p.id)} role="img">
+      <title>{priorityName(p.id)}</title>
       {d}
     </svg>
   );

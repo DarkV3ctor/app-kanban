@@ -3,7 +3,8 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-p
 import type { Issue, Priority } from '../types';
 import { useApp } from '../app-context';
 import { applyFilters, isEpic, newIssueDraft } from '../lib/issues';
-import { PRIORITIES, cls, rankBetween } from '../lib/utils';
+import { PRIORITIES, cls, priorityName, rankBetween } from '../lib/utils';
+import { t } from '../i18n';
 import { newColumnId } from '../templates';
 import { useBoard } from './board-context';
 import { FilterBar } from './FilterBar';
@@ -62,14 +63,14 @@ export function KanbanView() {
     }
     const res: Lane[] = [];
     if (groupBy === 'priority') {
-      for (const p of PRIORITIES) res.push({ key: p.id, title: p.name, icon: <PriorityIcon priority={p.id} />, issues: map.get(p.id) ?? [] });
+      for (const p of PRIORITIES) res.push({ key: p.id, title: priorityName(p.id), icon: <PriorityIcon priority={p.id} />, issues: map.get(p.id) ?? [] });
       return res.filter((l) => l.issues.length > 0);
     }
     if (groupBy === 'assignee') {
       const ids = [...map.keys()].filter((k) => k !== 'none');
       ids.sort((a, b) => (a === user.ghId ? -1 : b === user.ghId ? 1 : (board.memberInfo[a]?.login ?? a).localeCompare(board.memberInfo[b]?.login ?? b)));
       for (const id of ids) res.push({ key: id, title: board.memberInfo[id]?.name ?? id, icon: <Avatar info={board.memberInfo[id]} size={20} />, issues: map.get(id)! });
-      res.push({ key: 'none', title: 'Не назначены', icon: <Avatar info={null} size={20} />, issues: map.get('none') ?? [] });
+      res.push({ key: 'none', title: t('Unassigned'), icon: <Avatar info={null} size={20} />, issues: map.get('none') ?? [] });
       return res;
     }
     const epics = issues.filter((i) => isEpic(board, i)).sort((a, b) => a.rank - b.rank);
@@ -77,7 +78,7 @@ export function KanbanView() {
       if (!map.has(e.id)) continue;
       res.push({ key: e.id, title: `${board.key}-${e.number} · ${e.title}`, icon: <TypeIcon type={board.issueTypes.find((t) => t.id === e.type)} />, issues: map.get(e.id)! });
     }
-    res.push({ key: 'none', title: 'Без эпика', issues: map.get('none') ?? [] });
+    res.push({ key: 'none', title: t('No epic'), issues: map.get('none') ?? [] });
     return res;
   }, [groupBy, visible, byId, board, issues, user.ghId]);
 
@@ -103,7 +104,7 @@ export function KanbanView() {
   };
 
   const addColumn = async () => {
-    const name = prompt('Название новой колонки');
+    const name = prompt(t('New column name'));
     if (!name?.trim()) return;
     await updateBoard({ columns: [...board.columns, { id: newColumnId(), name: name.trim(), category: 'progress', wip: 0 }] });
   };
@@ -139,7 +140,7 @@ export function KanbanView() {
         <div className="view-actions">
           {perms.edit && (
             <button className="btn btn-primary" onClick={() => newIssue()}>
-              <Icon name="plus" size={16} /> Создать задачу
+              <Icon name="plus" size={16} /> {t('Create issue')}
             </button>
           )}
         </div>
@@ -147,7 +148,7 @@ export function KanbanView() {
       <FilterBar
         extra={
           <>
-            <label className="inline-label">Группировка</label>
+            <label className="inline-label">{t('Group by')}</label>
             <Select
               value={groupBy}
               onChange={(v) => {
@@ -156,10 +157,10 @@ export function KanbanView() {
                 writePref('kb-group-' + board.id, g);
               }}
               options={[
-                { value: 'none', label: 'Нет' },
-                { value: 'assignee', label: 'Исполнитель' },
-                { value: 'epic', label: 'Эпик' },
-                { value: 'priority', label: 'Приоритет' },
+                { value: 'none', label: t('None') },
+                { value: 'assignee', label: t('Assignee') },
+                { value: 'epic', label: t('Epic') },
+                { value: 'priority', label: t('Priority') },
               ]}
               triggerClass="filter-btn"
               width={180}
@@ -170,9 +171,9 @@ export function KanbanView() {
                 setShowEpics(!showEpics);
                 writePref('kb-epics-' + board.id, showEpics ? 'hide' : 'show');
               }}
-              title="Эпики можно скрыть с доски — они останутся в фильтрах и группировке"
+              title={t('Hide epics from the board — they stay available in filters and grouping')}
             >
-              {showEpics ? 'Скрыть эпики' : 'Эпики скрыты'}
+              {showEpics ? t('Hide epics') : t('Epics hidden')}
             </button>
           </>
         }
@@ -196,7 +197,7 @@ export function KanbanView() {
                 );
               })}
               {perms.admin && (
-                <button className="column-add" onClick={addColumn} title="Добавить колонку">
+                <button className="column-add" onClick={addColumn} title={t('Add column')}>
                   <Icon name="plus" size={16} />
                 </button>
               )}
@@ -269,7 +270,7 @@ function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolea
   if (!open) {
     return (
       <button className="quick-create-btn" onClick={() => setOpen(true)}>
-        <Icon name="plus" size={14} /> Создать задачу
+        <Icon name="plus" size={14} /> {t('Create issue')}
       </button>
     );
   }
@@ -288,7 +289,7 @@ function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolea
         rows={2}
         value={v}
         disabled={busy}
-        placeholder="Что нужно сделать? (Enter — создать, Esc — отмена)"
+        placeholder={t('What needs to be done? (Enter — create, Esc — cancel)')}
         onChange={(e) => setV(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
@@ -304,10 +305,10 @@ function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolea
       />
       <div className="quick-create-actions">
         <button className="btn btn-primary btn-sm" onMouseDown={(e) => e.preventDefault()} onClick={submit} disabled={busy}>
-          Создать
+          {t('Create')}
         </button>
         <button className="btn btn-subtle btn-sm" onClick={() => (setOpen(false), setV(''))}>
-          Отмена
+          {t('Cancel')}
         </button>
       </div>
     </div>

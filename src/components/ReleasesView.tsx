@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Version } from '../types';
 import { useApp } from '../app-context';
 import { navigate } from '../router';
+import { t, tk } from '../i18n';
 import { EMPTY_FILTERS } from '../lib/issues';
 import { columnCategory, formatDate, todayISO, uid, cls } from '../lib/utils';
 import { useBoard } from './board-context';
@@ -9,7 +10,7 @@ import { Icon, TypeIcon } from './Icons';
 import { ActionMenu, Avatar, EmptyState, Field, Modal, ProgressBar, memberOf } from './ui';
 import { StatusBadge } from './IssueFields';
 
-const STATUS_NAME: Record<Version['status'], string> = { unreleased: 'Не выпущена', released: 'Выпущена', archived: 'В архиве' };
+const STATUS_NAME: Record<Version['status'], string> = { unreleased: tk('Unreleased'), released: tk('Released'), archived: tk('Archived') };
 
 export function ReleasesView() {
   const { confirm } = useApp();
@@ -31,7 +32,12 @@ export function ReleasesView() {
   };
   const remove = async (v: Version) => {
     const n = issues.filter((i) => i.fixVersionId === v.id).length;
-    const ok = await confirm({ title: `Удалить версию «${v.name}»?`, text: n ? `У ${n} задач поле «Версия» станет пустым.` : undefined, confirmText: 'Удалить', danger: true });
+    const ok = await confirm({
+      title: t('Delete version "{name}"?', { name: v.name }),
+      text: n ? t('Issues in this version ({n}) will lose their fix version.', { n }) : undefined,
+      confirmText: t('Delete'),
+      danger: true,
+    });
     if (ok) updateBoard({ versions: board.versions.filter((x) => x.id !== v.id) });
   };
   const move = (v: Version, dir: -1 | 1) => {
@@ -46,24 +52,22 @@ export function ReleasesView() {
   return (
     <div className="releases-view">
       <div className="view-head">
-        <h1>Релизы</h1>
+        <h1>{t('Releases')}</h1>
         <div className="view-actions">
           <label className="check-row">
-            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Показать архив
+            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> {t('Show archived')}
           </label>
           {perms.admin && (
             <button className="btn btn-primary" onClick={() => setEditing({ id: 'v-' + uid(6), name: '', description: '', status: 'unreleased', startDate: null, releaseDate: null })}>
-              <Icon name="plus" size={16} /> Версия
+              <Icon name="plus" size={16} /> {t('Version')}
             </button>
           )}
         </div>
       </div>
-      <p className="muted">
-        Версии (вехи, спринты, месяцы) группируют задачи: «Прототип → Alpha → Beta → 1.0» в геймдеве или «Декабрь», «Новый год» для дома.
-      </p>
+      <p className="muted">{t('Versions (milestones, sprints, months) group issues: "Prototype → Alpha → Beta → 1.0" in game dev, or "December", "New Year" at home.')}</p>
       {versions.length === 0 ? (
-        <EmptyState icon="release" title="Версий пока нет">
-          {perms.admin && <p className="muted">Создайте первую версию, чтобы планировать релизы.</p>}
+        <EmptyState icon="release" title={t('No versions yet')}>
+          {perms.admin && <p className="muted">{t('Create the first version to plan releases.')}</p>}
         </EmptyState>
       ) : (
         <div className="release-list">
@@ -82,7 +86,7 @@ export function ReleasesView() {
                     {v.description && <div className="muted small">{v.description}</div>}
                   </div>
                   <span className={cls('lozenge', v.status === 'released' ? 'lozenge-done' : v.status === 'archived' ? 'lozenge-todo' : overdue ? 'lozenge-danger' : 'lozenge-progress')}>
-                    {overdue ? 'Просрочена' : STATUS_NAME[v.status]}
+                    {overdue ? t('Overdue') : t(STATUS_NAME[v.status])}
                   </span>
                   <div className="release-progress">
                     <ProgressBar done={done} progress={prog} total={list.length} />
@@ -97,33 +101,33 @@ export function ReleasesView() {
                     <ActionMenu
                       actions={[
                         {
-                          label: 'Показать на доске',
+                          label: t('Show on board'),
                           icon: 'board',
                           onClick: () => {
                             setFilters({ ...EMPTY_FILTERS, versions: [v.id] });
                             navigate(`/b/${board.id}`);
                           },
                         },
-                        { label: 'Изменить', icon: 'edit', onClick: () => setEditing(v), hidden: !perms.admin },
-                        { label: 'Выпустить', icon: 'check', onClick: () => setStatus(v, 'released'), hidden: !perms.admin || v.status === 'released' },
-                        { label: 'Отменить выпуск', icon: 'history', onClick: () => setStatus(v, 'unreleased'), hidden: !perms.admin || v.status !== 'released' },
-                        { label: 'В архив', icon: 'download', onClick: () => setStatus(v, 'archived'), hidden: !perms.admin || v.status === 'archived' },
-                        { label: 'Из архива', icon: 'upload', onClick: () => setStatus(v, 'unreleased'), hidden: !perms.admin || v.status !== 'archived' },
-                        { label: 'Выше', icon: 'arrowUp', onClick: () => move(v, -1), hidden: !perms.admin },
-                        { label: 'Ниже', icon: 'arrowDown', onClick: () => move(v, 1), hidden: !perms.admin },
-                        { label: 'Удалить', icon: 'trash', onClick: () => remove(v), danger: true, hidden: !perms.admin },
+                        { label: t('Edit'), icon: 'edit', onClick: () => setEditing(v), hidden: !perms.admin },
+                        { label: t('Release'), icon: 'check', onClick: () => setStatus(v, 'released'), hidden: !perms.admin || v.status === 'released' },
+                        { label: t('Unrelease'), icon: 'history', onClick: () => setStatus(v, 'unreleased'), hidden: !perms.admin || v.status !== 'released' },
+                        { label: t('Archive'), icon: 'download', onClick: () => setStatus(v, 'archived'), hidden: !perms.admin || v.status === 'archived' },
+                        { label: t('Restore from archive'), icon: 'upload', onClick: () => setStatus(v, 'unreleased'), hidden: !perms.admin || v.status !== 'archived' },
+                        { label: t('Move up'), icon: 'arrowUp', onClick: () => move(v, -1), hidden: !perms.admin },
+                        { label: t('Move down'), icon: 'arrowDown', onClick: () => move(v, 1), hidden: !perms.admin },
+                        { label: t('Delete'), icon: 'trash', onClick: () => remove(v), danger: true, hidden: !perms.admin },
                       ]}
                     />
                   </div>
                 </div>
                 {open && (
                   <div className="release-issues">
-                    {list.length === 0 && <div className="muted small">Нет задач в этой версии</div>}
+                    {list.length === 0 && <div className="muted small">{t('No issues in this version')}</div>}
                     {list
                       .sort((a, b) => board.columns.findIndex((c) => c.id === a.status) - board.columns.findIndex((c) => c.id === b.status))
                       .map((i) => (
                         <div key={i.id} className="issue-row" onClick={() => openIssue(i)} role="button" tabIndex={0}>
-                          <TypeIcon type={board.issueTypes.find((t) => t.id === i.type)} />
+                          <TypeIcon type={board.issueTypes.find((x) => x.id === i.type)} />
                           <span className="issue-row-key">
                             {board.key}-{i.number}
                           </span>
@@ -148,32 +152,32 @@ function VersionDialog({ version, onSave, onClose }: { version: Version; onSave:
   const [v, setV] = useState(version);
   return (
     <Modal
-      title={version.name ? `Версия «${version.name}»` : 'Новая версия'}
+      title={version.name ? t('Version "{name}"', { name: version.name }) : t('New version')}
       onClose={onClose}
       size="sm"
       footer={
         <>
           <button className="btn btn-subtle" onClick={onClose}>
-            Отмена
+            {t('Cancel')}
           </button>
           <button className="btn btn-primary" disabled={!v.name.trim()} onClick={() => onSave({ ...v, name: v.name.trim() })}>
-            Сохранить
+            {t('Save')}
           </button>
         </>
       }
     >
-      <Field label="Название *">
-        <input className="input" autoFocus value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="напр. Alpha 0.3 или Январь" />
+      <Field label={t('Name *')}>
+        <input className="input" autoFocus value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder={t('e.g. Alpha 0.3 or January')} />
       </Field>
       <div className="form-grid">
-        <Field label="Начало">
+        <Field label={t('Start date')}>
           <input className="input" type="date" value={v.startDate ?? ''} onChange={(e) => setV({ ...v, startDate: e.target.value || null })} />
         </Field>
-        <Field label="Дата выпуска">
+        <Field label={t('Release date')}>
           <input className="input" type="date" value={v.releaseDate ?? ''} onChange={(e) => setV({ ...v, releaseDate: e.target.value || null })} />
         </Field>
       </div>
-      <Field label="Описание">
+      <Field label={t('Description')}>
         <textarea className="input" rows={3} value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
       </Field>
     </Modal>

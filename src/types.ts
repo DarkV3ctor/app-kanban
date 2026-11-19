@@ -6,7 +6,7 @@ export type Priority = 'highest' | 'high' | 'medium' | 'low' | 'lowest';
 
 export interface AppUser {
   uid: string;
-  /** Числовой GitHub ID (строкой) — по нему выдаются права. */
+  /** Numeric GitHub ID (as a string) — permissions are granted by it. */
   ghId: string;
   login: string;
   name: string;
@@ -23,20 +23,20 @@ export interface Column {
   id: string;
   name: string;
   category: ColumnCategory;
-  /** Лимит WIP (0 — без лимита). */
+  /** WIP limit (0 = unlimited). */
   wip: number;
 }
 
 export interface IssueType {
   id: string;
   name: string;
-  /** Ключ иконки из набора Icons (или эмодзи). */
+  /** Icon key from TYPE_GLYPHS (or an emoji). */
   icon: string;
   color: string;
   isEpic?: boolean;
-  /** Шаблон описания, подставляется при создании задачи этого типа. */
+  /** Description template, pre-filled when creating an issue of this type. */
   template?: string;
-  /** Пункты чек-листа по умолчанию. */
+  /** Default checklist items. */
   checklist?: string[];
 }
 
@@ -139,5 +139,5 @@ export interface HistoryEntry {
 
 export type BoardDraft = Omit<Board, 'id' | 'ownerId' | 'members' | 'memberIds' | 'memberInfo' | 'issueCounter' | 'createdAt' | 'updatedAt'>;
 
-/** Структура доски без названия, ключа и описания (то, что даёт шаблон). */
+/** Board structure without name, key and description (what a template provides). */
 export type BoardSetup = Omit<BoardDraft, 'name' | 'key' | 'description'>;

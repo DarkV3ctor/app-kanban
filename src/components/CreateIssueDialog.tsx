@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { IssueDraft } from '../types';
 import { useApp } from '../app-context';
+import { t } from '../i18n';
 import { isEpic, newIssueDraft } from '../lib/issues';
 import { columnCategory, uid } from '../lib/utils';
 import { useBoard } from './board-context';
@@ -15,9 +16,10 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<IssueDraft>) => setD((x) => ({ ...x, ...patch }));
 
+  /** Switching the type swaps the description/checklist template unless the user has edited them. */
   const changeType = (type: string) => {
-    const prev = board.issueTypes.find((t) => t.id === d.type);
-    const next = board.issueTypes.find((t) => t.id === type);
+    const prev = board.issueTypes.find((x) => x.id === d.type);
+    const next = board.issueTypes.find((x) => x.id === type);
     const patch: Partial<IssueDraft> = { type };
     if (!d.description.trim() || d.description === (prev?.template ?? '')) patch.description = next?.template ?? '';
     const prevDefault = (prev?.checklist ?? []).join('\n');
@@ -41,7 +43,7 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
     const created = await run(store.createIssue(board.id, user, draft));
     setBusy(false);
     if (!created) return;
-    toast(`Создана задача ${board.key}-${created.number}`, 'success');
+    toast(t('Created {key}', { key: `${board.key}-${created.number}` }), 'success');
     if (more) {
       setD(newIssueDraft(board, user, { ...defaults, type: d.type, status: d.status, fixVersionId: d.fixVersionId, epicId: d.epicId, assigneeId: d.assigneeId }));
     } else {
@@ -54,48 +56,48 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
 
   return (
     <Modal
-      title="Создать задачу"
+      title={t('Create issue')}
       onClose={onClose}
       size="lg"
       footer={
         <>
           <label className="check-row footer-check">
-            <input type="checkbox" checked={more} onChange={(e) => setMore(e.target.checked)} /> Создать ещё
+            <input type="checkbox" checked={more} onChange={(e) => setMore(e.target.checked)} /> {t('Create another')}
           </label>
           <button className="btn btn-subtle" onClick={onClose}>
-            Отмена
+            {t('Cancel')}
           </button>
           <button className="btn btn-primary" onClick={submit} disabled={busy || !d.title.trim()}>
-            Создать
+            {t('Create')}
           </button>
         </>
       }
     >
       <div className="form-grid">
-        <Field label="Тип задачи">
+        <Field label={t('Issue type')}>
           <TypePicker board={board} value={d.type} onChange={changeType} />
         </Field>
-        <Field label="Статус">
+        <Field label={t('Status')}>
           <StatusPicker board={board} value={d.status} onChange={(s) => set({ status: s })} />
         </Field>
       </div>
-      <Field label="Название *">
+      <Field label={t('Summary *')}>
         <input
           className="input input-lg"
           autoFocus
           value={d.title}
           onChange={(e) => set({ title: e.target.value })}
-          placeholder="Кратко: что нужно сделать"
+          placeholder={t('Briefly: what needs to be done')}
           maxLength={255}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), submit())}
         />
       </Field>
-      <Field label="Описание">
+      <Field label={t('Description')}>
         <MarkdownEditor value={d.description} onChange={(v) => set({ description: v })} minRows={5} />
       </Field>
       {d.checklist.length > 0 && (
         <div className="field">
-          <span className="field-label">Чек-лист из шаблона типа</span>
+          <span className="field-label">{t('Checklist from the issue type template')}</span>
           <div className="chips">
             {d.checklist.map((c) => (
               <span key={c.id} className="chip chip-neutral">
@@ -103,40 +105,46 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
               </span>
             ))}
             <button className="btn btn-link btn-sm" onClick={() => set({ checklist: [] })}>
-              убрать
+              {t('remove')}
             </button>
           </div>
         </div>
       )}
       <div className="form-grid">
-        <Field label="Исполнитель">
+        <Field label={t('Assignee')}>
           <AssigneePicker board={board} value={d.assigneeId} onChange={(v) => set({ assigneeId: v })} meId={user.ghId} />
         </Field>
-        <Field label="Приоритет">
+        <Field label={t('Priority')}>
           <PriorityPicker value={d.priority} onChange={(p) => set({ priority: p })} />
         </Field>
-        <Field label="Метки">
+        <Field label={t('Labels')}>
           <LabelsPicker board={board} issues={issues} value={d.labels} onChange={(l) => set({ labels: l })} />
         </Field>
-        <Field label="Компоненты">
+        <Field label={t('Components')}>
           <ComponentsPicker board={board} value={d.components} onChange={(c) => set({ components: c })} />
         </Field>
-        <Field label="Версия">
+        <Field label={t('Fix version')}>
           <VersionPicker board={board} value={d.fixVersionId} onChange={(v) => set({ fixVersionId: v })} />
         </Field>
         {!typeIsEpic && (
-          <Field label="Эпик">
+          <Field label={t('Epic')}>
             <EpicPicker board={board} issues={issues} value={d.epicId} onChange={(v) => set({ epicId: v })} />
           </Field>
         )}
-        <Field label="Story points">
-          <input className="input" inputMode="decimal" value={d.storyPoints ?? ''} onChange={(e) => set({ storyPoints: e.target.value === '' ? null : Number(e.target.value.replace(',', '.')) || 0 })} placeholder="—" />
+        <Field label={t('Story points')}>
+          <input
+            className="input"
+            inputMode="decimal"
+            value={d.storyPoints ?? ''}
+            onChange={(e) => set({ storyPoints: e.target.value === '' ? null : Number(e.target.value.replace(',', '.')) || 0 })}
+            placeholder="—"
+          />
         </Field>
-        <Field label="Срок">
+        <Field label={t('Due date')}>
           <input className="input" type="date" value={d.dueDate ?? ''} onChange={(e) => set({ dueDate: e.target.value || null })} />
         </Field>
-        <Field label="Оценка">
-          <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder="напр. 2d 4h" />
+        <Field label={t('Estimate')}>
+          <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder={t('e.g. 2d 4h')} />
         </Field>
       </div>
     </Modal>

@@ -17,7 +17,7 @@ export interface NewBoardInput {
   name: string;
   key: string;
   description: string;
-  /** Задачи, которые нужно создать вместе с доской (уже с id и номерами). */
+  /** Issues to create together with the board (already numbered, with ids). */
   issues: Issue[];
 }
 

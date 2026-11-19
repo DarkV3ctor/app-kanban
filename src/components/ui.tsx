@@ -4,6 +4,7 @@ import type { Board, ColumnCategory, MemberInfo } from '../types';
 import { cls, hashColor } from '../lib/utils';
 import { renderMarkdown } from '../lib/markdown';
 import { Icon } from './Icons';
+import { t } from '../i18n';
 
 // ---------------------------------------------------------------------------
 // Avatar
@@ -11,7 +12,7 @@ import { Icon } from './Icons';
 
 export function Avatar({ info, size = 24, title }: { info?: Partial<MemberInfo> | null; size?: number; title?: string }) {
   const [broken, setBroken] = useState(false);
-  const label = title ?? (info ? `${info.name || info.login}${info.login && info.name !== info.login ? ` (@${info.login})` : ''}` : 'Не назначен');
+  const label = title ?? (info ? `${info.name || info.login}${info.login && info.name !== info.login ? ` (@${info.login})` : ''}` : t('Unassigned'));
   if (!info) {
     return (
       <span className="avatar avatar-empty" style={{ width: size, height: size }} title={label}>
@@ -48,7 +49,7 @@ export function LabelChip({ text, onRemove }: { text: string; onRemove?: () => v
     <span className="chip" style={{ ['--chip' as string]: hashColor(text) }}>
       {text}
       {onRemove && (
-        <button className="chip-x" onClick={onRemove} aria-label={`Убрать ${text}`}>
+        <button className="chip-x" onClick={onRemove} aria-label={t('Remove {name}', { name: text })}>
           <Icon name="close" size={10} />
         </button>
       )}
@@ -100,7 +101,7 @@ export function Modal({
             {typeof title === 'string' ? <h2>{title}</h2> : title}
             <div className="modal-head-actions">
               {headerExtra}
-              <button className="icon-btn" onClick={onClose} aria-label="Закрыть">
+              <button className="icon-btn" onClick={onClose} aria-label={t('Close')}>
                 <Icon name="close" size={18} />
               </button>
             </div>
@@ -115,7 +116,7 @@ export function Modal({
 }
 
 // ---------------------------------------------------------------------------
-// Popover (позиционируется относительно якоря, рендерится в body)
+// Popover (positioned relative to an anchor, rendered into body)
 // ---------------------------------------------------------------------------
 
 export function Popover({
@@ -198,7 +199,7 @@ export function Popover({
 }
 
 // ---------------------------------------------------------------------------
-// Select menu (одиночный и множественный выбор, поиск, создание)
+// Select menu (single and multi select, search, create)
 // ---------------------------------------------------------------------------
 
 export interface Option {
@@ -232,12 +233,12 @@ export function Select({
   value,
   onChange,
   multi,
-  placeholder = 'Выберите…',
+  placeholder = t('Select…'),
   searchable,
   allowCreate,
-  createLabel = (q) => `Создать «${q}»`,
+  createLabel = (q) => t('Create "{name}"', { name: q }),
   clearable,
-  clearLabel = 'Нет',
+  clearLabel = t('None'),
   disabled,
   renderValue,
   className,
@@ -323,7 +324,7 @@ export function Select({
               <input
                 autoFocus
                 value={q}
-                placeholder={allowCreate ? 'Найти или создать…' : 'Поиск…'}
+                placeholder={allowCreate ? t('Find or create…') : t('Search…')}
                 onChange={(e) => {
                   setQ(e.target.value);
                   setActive(0);
@@ -344,7 +345,7 @@ export function Select({
             </div>
           )}
           <div className="menu" role="listbox" aria-multiselectable={multi}>
-            {items.length === 0 && <div className="menu-empty">Ничего не найдено</div>}
+            {items.length === 0 && <div className="menu-empty">{t('Nothing found')}</div>}
             {items.map((o, i) => {
               const isSel = !o.create && !o.clear && selectedValues.includes(o.value);
               return (
@@ -374,7 +375,7 @@ export function Select({
 }
 
 // ---------------------------------------------------------------------------
-// Меню действий
+// Action menu
 // ---------------------------------------------------------------------------
 
 export interface MenuAction {
@@ -386,7 +387,7 @@ export interface MenuAction {
   hidden?: boolean;
 }
 
-export function ActionMenu({ actions, label = 'Действия', icon = 'more', align = 'end', buttonClass = 'icon-btn' }: { actions: MenuAction[]; label?: string; icon?: string; align?: 'start' | 'end'; buttonClass?: string }) {
+export function ActionMenu({ actions, label = t('Actions'), icon = 'more', align = 'end', buttonClass = 'icon-btn' }: { actions: MenuAction[]; label?: string; icon?: string; align?: 'start' | 'end'; buttonClass?: string }) {
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const visible = actions.filter((a) => !a.hidden);
@@ -445,7 +446,7 @@ export function MarkdownView({ source, className, onToggleTask }: { source: stri
   return <div ref={ref} className={cls('markdown', className)} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-/** Переключает N-й чекбокс `- [ ]` в markdown-тексте. */
+/** Toggles the N-th `- [ ]` checkbox in markdown text. */
 export function toggleMarkdownTask(src: string, index: number): string {
   let n = -1;
   return src.replace(/^(\s*(?:[-*+]|\d+\.)\s+)\[( |x|X)\]/gm, (m, pre: string, mark: string) => {
@@ -502,36 +503,36 @@ export function MarkdownEditor({
       <div className="md-toolbar">
         <div className="md-tabs">
           <button type="button" className={cls(tab === 'write' && 'is-active')} onClick={() => setTab('write')}>
-            Текст
+            {t('Write')}
           </button>
           <button type="button" className={cls(tab === 'preview' && 'is-active')} onClick={() => setTab('preview')}>
-            Просмотр
+            {t('Preview')}
           </button>
         </div>
         {tab === 'write' && (
           <div className="md-tools">
-            <button type="button" title="Жирный (Ctrl+B)" onClick={() => wrap('**', '**', 'текст')}>
+            <button type="button" title={t('Bold (Ctrl+B)')} onClick={() => wrap('**', '**', t('text'))}>
               <b>B</b>
             </button>
-            <button type="button" title="Курсив (Ctrl+I)" onClick={() => wrap('_', '_', 'текст')}>
+            <button type="button" title={t('Italic (Ctrl+I)')} onClick={() => wrap('_', '_', t('text'))}>
               <i>I</i>
             </button>
-            <button type="button" title="Зачёркнутый" onClick={() => wrap('~~', '~~', 'текст')}>
+            <button type="button" title={t('Strikethrough')} onClick={() => wrap('~~', '~~', t('text'))}>
               <s>S</s>
             </button>
-            <button type="button" title="Заголовок" onClick={() => linePrefix('### ')}>
+            <button type="button" title={t('Heading')} onClick={() => linePrefix('### ')}>
               H
             </button>
-            <button type="button" title="Список" onClick={() => linePrefix('- ')}>
+            <button type="button" title={t('Bulleted list')} onClick={() => linePrefix('- ')}>
               •
             </button>
-            <button type="button" title="Чек-лист" onClick={() => linePrefix('- [ ] ')}>
+            <button type="button" title={t('Checklist')} onClick={() => linePrefix('- [ ] ')}>
               ☑
             </button>
-            <button type="button" title="Код" onClick={() => wrap('`', '`', 'код')}>
+            <button type="button" title={t('Code')} onClick={() => wrap('`', '`', t('code'))}>
               {'</>'}
             </button>
-            <button type="button" title="Ссылка" onClick={() => wrap('[', '](https://)', 'текст')}>
+            <button type="button" title={t('Insert link')} onClick={() => wrap('[', '](https://)', t('text'))}>
               <Icon name="link" size={14} />
             </button>
           </div>
@@ -543,29 +544,29 @@ export function MarkdownEditor({
           className="md-textarea"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? 'Поддерживается Markdown: **жирный**, _курсив_, списки, - [ ] чек-листы, таблицы, `код`'}
+          placeholder={placeholder ?? t('Markdown supported: **bold**, _italic_, lists, - [ ] checklists, tables, `code`')}
           rows={Math.max(minRows, Math.min(24, value.split('\n').length + 1))}
           autoFocus={autoFocus}
           onKeyDown={(e) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
               e.preventDefault();
-              wrap('**', '**', 'текст');
+              wrap('**', '**', t('text'));
             } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
               e.preventDefault();
-              wrap('_', '_', 'текст');
+              wrap('_', '_', t('text'));
             }
             onKeyDown?.(e);
           }}
         />
       ) : (
-        <div className="md-preview">{value.trim() ? <MarkdownView source={value} /> : <span className="muted">Нечего показать</span>}</div>
+        <div className="md-preview">{value.trim() ? <MarkdownView source={value} /> : <span className="muted">{t('Nothing to preview')}</span>}</div>
       )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Inline-редактирование текста
+// Inline text editing
 // ---------------------------------------------------------------------------
 
 export function InlineText({
@@ -628,7 +629,7 @@ export function InlineText({
 }
 
 // ---------------------------------------------------------------------------
-// Прочее
+// Misc
 // ---------------------------------------------------------------------------
 
 export function Spinner({ label }: { label?: string }) {
@@ -667,7 +668,7 @@ export function ProgressBar({ done, progress, total }: { done: number; progress:
   const pd = (done / total) * 100;
   const pp = (progress / total) * 100;
   return (
-    <div className="progress" title={`Готово: ${done}, в работе: ${progress}, к выполнению: ${total - done - progress}`}>
+    <div className="progress" title={t('Done: {done}, in progress: {progress}, to do: {todo}', { done, progress, todo: total - done - progress })}>
       <div className="progress-done" style={{ width: `${pd}%` }} />
       <div className="progress-progress" style={{ width: `${pp}%` }} />
     </div>

@@ -1,10 +1,11 @@
 import type { AppUser, Board, Comment, HistoryEntry, Issue } from '../types';
 import { uid } from '../lib/utils';
+import { t } from '../i18n';
 import type { CreatorEntry, Store } from './types';
 
 /**
- * Демо-хранилище: всё лежит в localStorage этого браузера.
- * Используется, пока в public/config.js не указан конфиг Firebase.
+ * Demo storage: everything lives in this browser's localStorage.
+ * Used until a Firebase config is set in public/config.js.
  */
 
 interface LocalDB {
@@ -21,7 +22,7 @@ export const LOCAL_USER: AppUser = {
   uid: 'local',
   ghId: 'local',
   login: 'demo',
-  name: 'Вы (демо)',
+  name: t('You (demo)'),
   avatarUrl: '',
 };
 
@@ -42,13 +43,13 @@ function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify(db));
   } catch (e) {
-    console.warn('localStorage недоступен', e);
+    console.warn('localStorage is unavailable', e);
   }
   emit();
 }
 
 function emit() {
-  // асинхронно — как настоящий бэкенд
+  // async, like a real backend
   queueMicrotask(() => listeners.forEach((l) => l()));
 }
 
@@ -113,7 +114,7 @@ export const localStore: Store = {
     return () => {};
   },
   async addCreator() {
-    throw new Error('В демо-режиме доступ к созданию досок не ограничивается');
+    throw new Error(t('Board creation is not restricted in demo mode'));
   },
   async removeCreator() {},
 
@@ -151,7 +152,7 @@ export const localStore: Store = {
   },
   async updateBoard(boardId, patch) {
     const b = db.boards[boardId];
-    if (!b) throw new Error('Доска не найдена');
+    if (!b) throw new Error(t('Board not found'));
     db.boards[boardId] = { ...b, ...clone(patch), updatedAt: Date.now() };
     save();
   },
@@ -171,7 +172,7 @@ export const localStore: Store = {
   },
   async createIssue(boardId, user, draft) {
     const b = db.boards[boardId];
-    if (!b) throw new Error('Доска не найдена');
+    if (!b) throw new Error(t('Board not found'));
     const number = b.issueCounter + 1;
     b.issueCounter = number;
     const now = Date.now();
@@ -190,7 +191,7 @@ export const localStore: Store = {
   },
   async updateIssue(boardId, issueId, patch, user, changes) {
     const issue = db.issues[boardId]?.[issueId];
-    if (!issue) throw new Error('Задача не найдена');
+    if (!issue) throw new Error(t('Issue not found'));
     db.issues[boardId][issueId] = { ...issue, ...clone(patch), updatedAt: Date.now() };
     if (changes.length) {
       (db.history[ck(boardId, issueId)] ??= []).push({ id: uid(), actorId: user.ghId, at: Date.now(), changes });

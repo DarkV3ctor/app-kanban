@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Role } from '../types';
 import { useApp } from '../app-context';
 import { navigate } from '../router';
+import { t, tk } from '../i18n';
 import { lookupGitHubUser, type GitHubUser } from '../lib/github';
 import { ROLES, roleName } from '../lib/utils';
 import { useBoard } from './board-context';
@@ -9,6 +10,18 @@ import { GitHubMark, Icon } from './Icons';
 import { Avatar, Select } from './ui';
 
 const ASSIGNABLE: Role[] = ['admin', 'editor', 'commenter', 'viewer'];
+
+/** Permission matrix: action → minimal role rank. */
+const PERMISSIONS: [string, number][] = [
+  [tk('View the board and issues'), 1],
+  [tk('Comment'), 2],
+  [tk('Create, edit and move issues'), 3],
+  [tk('Delete own issues'), 3],
+  [tk('Delete any issue or comment'), 4],
+  [tk('Columns, types, labels, versions, settings'), 4],
+  [tk('Add members and assign roles'), 4],
+  [tk('Delete the board and transfer ownership'), 5],
+];
 
 export function MembersView() {
   const { user, store, confirm, toast } = useApp();
@@ -20,11 +33,12 @@ export function MembersView() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const demo = store.mode === 'local';
 
+  const roleOf = (id: string): Role => (id === board.ownerId ? 'owner' : board.members[id]);
   const members = board.memberIds
     .filter((id) => board.members[id])
     .sort((a, b) => {
-      const ra = ROLES.findIndex((r) => r.id === (a === board.ownerId ? 'owner' : board.members[a]));
-      const rb = ROLES.findIndex((r) => r.id === (b === board.ownerId ? 'owner' : board.members[b]));
+      const ra = ROLES.findIndex((r) => r.id === roleOf(a));
+      const rb = ROLES.findIndex((r) => r.id === roleOf(b));
       return ra - rb || (board.memberInfo[a]?.login ?? '').localeCompare(board.memberInfo[b]?.login ?? '');
     });
 
@@ -45,7 +59,7 @@ export function MembersView() {
   const add = async () => {
     if (!found) return;
     if (board.members[found.id]) {
-      toast(`@${found.login} уже участник`, 'info');
+      toast(t('@{login} is already a member', { login: found.login }), 'info');
       return;
     }
     await updateBoard({
@@ -53,7 +67,7 @@ export function MembersView() {
       memberIds: [...board.memberIds.filter((x) => x !== found.id), found.id],
       memberInfo: { ...board.memberInfo, [found.id]: { login: found.login, name: found.name, avatarUrl: found.avatarUrl } },
     });
-    toast(`@${found.login} добавлен(а) как «${roleName(role)}»`, 'success');
+    toast(t('@{login} added as {role}', { login: found.login, role: roleName(role) }), 'success');
     setFound(null);
     setLogin('');
   };
@@ -64,24 +78,24 @@ export function MembersView() {
     const info = board.memberInfo[id];
     const assigned = issues.filter((i) => i.assigneeId === id).length;
     const ok = await confirm({
-      title: `Удалить @${info?.login ?? id} из доски?`,
-      text: `Пользователь потеряет доступ к доске.${assigned ? ` На него назначено задач: ${assigned} — они останутся назначенными.` : ''}`,
-      confirmText: 'Удалить',
+      title: t('Remove @{login} from the board?', { login: info?.login ?? id }),
+      text: t('They will lose access to the board.') + (assigned ? ' ' + t('Issues assigned to them ({n}) will stay assigned.', { n: assigned }) : ''),
+      confirmText: t('Remove'),
       danger: true,
     });
     if (!ok) return;
-    const members = { ...board.members };
-    delete members[id];
-    await updateBoard({ members, memberIds: board.memberIds.filter((x) => x !== id) });
+    const next = { ...board.members };
+    delete next[id];
+    await updateBoard({ members: next, memberIds: board.memberIds.filter((x) => x !== id) });
   };
 
   const leave = async () => {
-    const ok = await confirm({ title: 'Покинуть доску?', text: 'Вы потеряете доступ, пока вас снова не пригласят.', confirmText: 'Покинуть', danger: true });
+    const ok = await confirm({ title: t('Leave the board?'), text: t('You will lose access until someone invites you again.'), confirmText: t('Leave'), danger: true });
     if (!ok) return;
-    const members = { ...board.members };
-    delete members[user.ghId];
+    const next = { ...board.members };
+    delete next[user.ghId];
     try {
-      await store.updateBoard(board.id, { members, memberIds: board.memberIds.filter((x) => x !== user.ghId) });
+      await store.updateBoard(board.id, { members: next, memberIds: board.memberIds.filter((x) => x !== user.ghId) });
       navigate('/');
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), 'error');
@@ -91,9 +105,9 @@ export function MembersView() {
   const transfer = async (id: string) => {
     const info = board.memberInfo[id];
     const ok = await confirm({
-      title: `Передать владение @${info?.login}?`,
-      text: 'Новый владелец получит полный доступ, включая удаление доски. Вы станете администратором.',
-      confirmText: 'Передать',
+      title: t('Transfer ownership to @{login}?', { login: info?.login ?? id }),
+      text: t('The new owner gets full access, including deleting the board. You will become an admin.'),
+      confirmText: t('Transfer'),
       danger: true,
     });
     if (!ok) return;
@@ -103,18 +117,19 @@ export function MembersView() {
   return (
     <div className="members-view">
       <div className="view-head">
-        <h1>Участники и доступ</h1>
+        <h1>{t('Members and access')}</h1>
       </div>
 
       {demo && (
         <div className="alert alert-info">
-          <Icon name="info" size={16} /> В демо-режиме участники сохраняются, но войти они не смогут — для совместной работы подключите Firebase (см. README).
+          <Icon name="info" size={16} />
+          <span>{t('In demo mode members are saved, but they cannot sign in — connect Firebase to collaborate (see the README).')}</span>
         </div>
       )}
 
       {perms.admin && (
         <div className="panel">
-          <div className="panel-title">Добавить участника по GitHub-логину</div>
+          <div className="panel-title">{t('Add a member by GitHub username')}</div>
           <form
             className="inline-form"
             onSubmit={(e) => {
@@ -128,7 +143,7 @@ export function MembersView() {
               <input
                 className="input"
                 value={login}
-                placeholder="логин, @логин или ссылка на профиль"
+                placeholder={t('username, @username or profile link')}
                 onChange={(e) => {
                   setLogin(e.target.value);
                   setFound(null);
@@ -139,11 +154,11 @@ export function MembersView() {
             <Select options={ASSIGNABLE.map((r) => ({ value: r, label: roleName(r) }))} value={role} onChange={(v) => v && setRole(v as Role)} width={200} />
             {found ? (
               <button className="btn btn-primary" type="submit">
-                <Icon name="plus" size={16} /> Добавить
+                <Icon name="plus" size={16} /> {t('Add')}
               </button>
             ) : (
               <button className="btn btn-primary" type="submit" disabled={busy || !login.trim()}>
-                <Icon name="search" size={16} /> {busy ? 'Поиск…' : 'Найти'}
+                <Icon name="search" size={16} /> {busy ? t('Searching…') : t('Find')}
               </button>
             )}
           </form>
@@ -155,32 +170,30 @@ export function MembersView() {
                 <div>
                   <b>{found.name}</b> <span className="muted">@{found.login}</span>
                 </div>
-                <div className="muted small">GitHub ID {found.id} · будет добавлен(а) как «{roleName(role)}»</div>
+                <div className="muted small">{t('GitHub ID {id} · will be added as {role}', { id: found.id, role: roleName(role) })}</div>
               </div>
             </div>
           )}
-          <p className="muted small">
-            Пользователь увидит доску после входа через GitHub. Права привязаны к числовому GitHub ID, поэтому сохраняются даже при смене логина.
-          </p>
+          <p className="muted small">{t('The user will see the board after signing in with GitHub. Access is tied to the numeric GitHub ID, so it survives a username change.')}</p>
         </div>
       )}
 
       <div className="panel">
         <div className="panel-title">
-          Участники <span className="muted">{members.length}</span>
+          {t('Members')} <span className="muted">{members.length}</span>
         </div>
         <div className="member-list">
           {members.map((id) => {
             const info = board.memberInfo[id];
             const isOwner = id === board.ownerId;
-            const r: Role = isOwner ? 'owner' : board.members[id];
+            const r = roleOf(id);
             const isMe = id === user.ghId;
             return (
               <div key={id} className="member-row">
                 <Avatar info={info} size={36} />
                 <div className="member-main">
                   <div>
-                    {info?.name ?? id} {isMe && <span className="lozenge lozenge-todo">вы</span>}
+                    {info?.name ?? id} {isMe && <span className="lozenge lozenge-todo">{t('you')}</span>}
                   </div>
                   <div className="muted small">
                     {info?.login && id !== 'local' ? (
@@ -199,18 +212,18 @@ export function MembersView() {
                 )}
                 <div className="member-actions">
                   {perms.owner && !isOwner && (
-                    <button className="btn btn-subtle btn-sm" onClick={() => transfer(id)} title="Передать владение доской">
-                      Сделать владельцем
+                    <button className="btn btn-subtle btn-sm" onClick={() => transfer(id)} title={t('Transfer board ownership')}>
+                      {t('Make owner')}
                     </button>
                   )}
                   {perms.admin && !isOwner && !isMe && (
-                    <button className="icon-btn" onClick={() => remove(id)} title="Удалить из доски" aria-label="Удалить из доски">
+                    <button className="icon-btn" onClick={() => remove(id)} title={t('Remove from board')} aria-label={t('Remove from board')}>
                       <Icon name="trash" size={16} />
                     </button>
                   )}
                   {isMe && !isOwner && (
                     <button className="btn btn-subtle btn-sm" onClick={leave}>
-                      Покинуть
+                      {t('Leave')}
                     </button>
                   )}
                 </div>
@@ -221,38 +234,33 @@ export function MembersView() {
       </div>
 
       <div className="panel">
-        <div className="panel-title">Уровни доступа</div>
-        <table className="perm-table">
-          <thead>
-            <tr>
-              <th>Действие</th>
-              {ROLES.map((r) => (
-                <th key={r.id}>{r.name}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ['Просмотр доски и задач', 1],
-              ['Комментарии', 2],
-              ['Создание, редактирование и перемещение задач', 3],
-              ['Удаление своих задач', 3],
-              ['Удаление любых задач и комментариев', 4],
-              ['Колонки, типы, метки, версии, настройки', 4],
-              ['Добавление участников и назначение прав', 4],
-              ['Удаление доски и передача владения', 5],
-            ].map(([label, min]) => (
-              <tr key={label as string}>
-                <td>{label}</td>
+        <div className="panel-title">{t('Access levels')}</div>
+        <div className="table-scroll">
+          <table className="perm-table">
+            <thead>
+              <tr>
+                <th>{t('Action')}</th>
                 {ROLES.map((r) => (
-                  <td key={r.id} className="perm-cell">
-                    {r.rank >= (min as number) ? <Icon name="check" size={16} className="perm-yes" /> : <span className="perm-no">—</span>}
-                  </td>
+                  <th key={r.id} title={t(r.description)}>
+                    {roleName(r.id)}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {PERMISSIONS.map(([label, min]) => (
+                <tr key={label}>
+                  <td>{t(label)}</td>
+                  {ROLES.map((r) => (
+                    <td key={r.id} className="perm-cell">
+                      {r.rank >= min ? <Icon name="check" size={16} className="perm-yes" /> : <span className="perm-no">—</span>}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

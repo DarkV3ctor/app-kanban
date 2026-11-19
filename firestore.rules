@@ -1,29 +1,29 @@
 rules_version = '2';
 
-// Правила доступа для Kanban-доски.
-// Права выдаются по числовому GitHub ID (не по логину — логин можно сменить).
-// Роли: owner (5) > admin (4) > editor (3) > commenter (2) > viewer (1).
+// Security rules for the Kanban board.
+// Permissions are granted by numeric GitHub ID (not by username — usernames can change).
+// Roles: owner (5) > admin (4) > editor (3) > commenter (2) > viewer (1).
 //
-// Деплой: Firebase Console → Firestore Database → Rules → вставить этот файл → Publish
-// или:    npx firebase-tools deploy --only firestore:rules
+// Deploy: Firebase Console → Firestore Database → Rules → paste this file → Publish
+// or:     npx firebase-tools deploy --only firestore:rules --project <project-id>
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---- Пользователь ------------------------------------------------------
+    // ---- Current user ------------------------------------------------------
 
     function signedIn() {
       return request.auth != null
         && request.auth.token.firebase.sign_in_provider == 'github.com';
     }
 
-    // Числовой GitHub ID вошедшего пользователя (строкой).
+    // Numeric GitHub ID of the signed-in user (as a string).
     function ghId() {
       return request.auth.token.firebase.identities['github.com'][0];
     }
 
-    // Администраторы приложения: могут создавать доски и выдавать это право другим.
-    // Должен совпадать с appAdmins в public/config.js.
+    // App admins: can create boards and grant that right to others.
+    // Must match appAdmins in public/config.js.
     function isAppAdmin() {
       return signedIn() && ghId() in ['78609208'];
     }
@@ -32,7 +32,7 @@ service cloud.firestore {
       return isAppAdmin() || exists(/databases/$(database)/documents/creators/$(ghId()));
     }
 
-    // ---- Роли на доске -----------------------------------------------------
+    // ---- Board roles -------------------------------------------------------
 
     function roleRank(role) {
       return {'admin': 4, 'editor': 3, 'commenter': 2, 'viewer': 1}.get(role, 0);
@@ -52,7 +52,7 @@ service cloud.firestore {
       return rankIn(get(boardPath(boardId)).data);
     }
 
-    // Структура доски корректна: memberIds совпадает с ключами members, владелец на месте.
+    // Board shape is valid: memberIds matches the keys of members, and the owner is present.
     function validBoard(d) {
       return d.name is string && d.name.size() > 0 && d.name.size() <= 200
         && d.key is string && d.key.size() > 0 && d.key.size() <= 10
@@ -65,18 +65,18 @@ service cloud.firestore {
         && d.columns is list && d.columns.size() > 0;
     }
 
-    // ---- Кто может создавать доски ----------------------------------------
+    // ---- Who can create boards --------------------------------------------
 
     match /creators/{id} {
       allow read: if signedIn();
       allow write: if isAppAdmin();
     }
 
-    // ---- Доски -------------------------------------------------------------
+    // ---- Boards ------------------------------------------------------------
 
     match /boards/{boardId} {
       allow get: if rankIn(resource.data) >= 1;
-      // Список досок: запрос where('memberIds', 'array-contains', ghId)
+      // Board list: query where('memberIds', 'array-contains', ghId)
       allow list: if signedIn() && ghId() in resource.data.memberIds;
 
       allow create: if canCreateBoards()
@@ -84,20 +84,20 @@ service cloud.firestore {
         && validBoard(request.resource.data);
 
       allow update: if validBoard(request.resource.data) && (
-        // Владелец: всё, включая передачу владения существующему участнику.
+        // Owner: anything, including transferring ownership to an existing member.
         (rankIn(resource.data) == 5
           && request.resource.data.ownerId in resource.data.memberIds)
         ||
-        // Администратор: всё, кроме смены владельца и его роли.
+        // Admin: anything except changing the owner or the owner's role.
         (rankIn(resource.data) == 4
           && request.resource.data.ownerId == resource.data.ownerId)
         ||
-        // Редактор: только счётчик задач (при создании задачи).
+        // Editor: only the issue counter (when creating an issue).
         (rankIn(resource.data) >= 3
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['issueCounter', 'updatedAt'])
           && request.resource.data.issueCounter == resource.data.issueCounter + 1)
         ||
-        // Любой участник (кроме владельца) может покинуть доску.
+        // Any member except the owner can leave the board.
         (rankIn(resource.data) >= 1 && resource.data.ownerId != ghId()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds', 'updatedAt'])
           && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([ghId()])
@@ -106,7 +106,7 @@ service cloud.firestore {
 
       allow delete: if rankIn(resource.data) == 5;
 
-      // ---- Задачи ----------------------------------------------------------
+      // ---- Issues ----------------------------------------------------------
 
       match /issues/{issueId} {
         allow read: if rankOn(boardId) >= 1;
@@ -120,11 +120,11 @@ service cloud.firestore {
           && request.resource.data.createdBy == resource.data.createdBy
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0;
-        // Удалять: администраторы — любые, редакторы — только свои.
+        // Delete: admins — any issue, editors — only their own.
         allow delete: if rankOn(boardId) >= 4
           || (rankOn(boardId) >= 3 && resource.data.createdBy == ghId());
 
-        // ---- Комментарии ---------------------------------------------------
+        // ---- Comments ------------------------------------------------------
 
         match /comments/{commentId} {
           allow read: if rankOn(boardId) >= 1;
@@ -135,13 +135,13 @@ service cloud.firestore {
           allow update: if rankOn(boardId) >= 2
             && resource.data.authorId == ghId()
             && request.resource.data.authorId == ghId();
-          // Свой комментарий, любой — админ, или все комментарии удаляемой задачи.
+          // Own comment, any comment for admins, or all comments of an issue being deleted.
           allow delete: if rankOn(boardId) >= 4
             || (rankOn(boardId) >= 2 && resource.data.authorId == ghId())
             || (rankOn(boardId) >= 3 && !existsAfter(/databases/$(database)/documents/boards/$(boardId)/issues/$(issueId)));
         }
 
-        // ---- История изменений ---------------------------------------------
+        // ---- Change history ------------------------------------------------
 
         match /history/{entryId} {
           allow read: if rankOn(boardId) >= 1;

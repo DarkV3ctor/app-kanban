@@ -4,18 +4,20 @@ import type { Store } from './store';
 import { AppProvider, useApp } from './app-context';
 import { navigate, useRoute } from './router';
 import { config, isDemo } from './config';
+import { t } from './i18n';
 import { Icon, GitHubMark } from './components/Icons';
 import { Avatar, Popover, Spinner } from './components/ui';
 import { LoginPage } from './components/LoginPage';
 import { BoardsPage } from './components/BoardsPage';
 import { BoardPage } from './components/BoardPage';
 import { AdminDialog } from './components/AdminDialog';
+import { LangSwitch } from './components/LangSwitch';
 
 export function Root({ store }: { store: Store }) {
   const [user, setUser] = useState<AppUser | null | undefined>(undefined);
   useEffect(() => store.onAuth(setUser), [store]);
 
-  if (user === undefined) return <Spinner label="Загрузка…" />;
+  if (user === undefined) return <Spinner label={t('Loading…')} />;
   if (!user) return <LoginPage store={store} />;
   return (
     <AppProvider store={store} user={user}>
@@ -55,7 +57,7 @@ function Shell() {
         <div className="demo-banner">
           <Icon name="info" size={16} />
           <span>
-            <b>Демо-режим.</b> Данные хранятся только в этом браузере. Чтобы включить вход через GitHub и совместную работу, подключите Firebase — инструкция в README.
+            <b>{t('Demo mode.')}</b> {t('Data is stored only in this browser. Connect Firebase to enable GitHub sign-in and collaboration — see the README.')}
           </span>
         </div>
       )}
@@ -85,14 +87,15 @@ function TopBar() {
       </a>
       <nav className="topnav">
         <a href="#/" onClick={(e) => (e.preventDefault(), navigate('/'))}>
-          Доски
+          {t('Boards')}
         </a>
       </nav>
       <div className="topbar-spacer" />
-      <button className="icon-btn topbar-btn" onClick={toggleTheme} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'} aria-label="Сменить тему">
+      <LangSwitch />
+      <button className="icon-btn topbar-btn" onClick={toggleTheme} title={theme === 'dark' ? t('Light theme') : t('Dark theme')} aria-label={t('Toggle theme')}>
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
       </button>
-      <button ref={btn} className="user-btn" onClick={() => setMenu((m) => !m)} aria-label="Меню пользователя">
+      <button ref={btn} className="user-btn" onClick={() => setMenu((m) => !m)} aria-label={t('User menu')}>
         <Avatar info={user} size={28} />
       </button>
       {menu && (
@@ -101,7 +104,7 @@ function TopBar() {
             <Avatar info={user} size={40} />
             <div>
               <div className="user-card-name">{user.name}</div>
-              <div className="muted small">{store.mode === 'local' ? 'Локальный демо-профиль' : `@${user.login} · GitHub ID ${user.ghId}`}</div>
+              <div className="muted small">{store.mode === 'local' ? t('Local demo profile') : `@${user.login} · GitHub ID ${user.ghId}`}</div>
             </div>
           </div>
           <div className="menu">
@@ -114,18 +117,18 @@ function TopBar() {
                 }}
               >
                 <Icon name="shield" size={16} />
-                <span className="menu-label">Кто может создавать доски</span>
+                <span className="menu-label">{t('Who can create boards')}</span>
               </button>
             )}
             {store.mode === 'firebase' && (
               <a className="menu-item" href={`https://github.com/${user.login}`} target="_blank" rel="noreferrer">
                 <GitHubMark size={16} />
-                <span className="menu-label">Профиль GitHub</span>
+                <span className="menu-label">{t('GitHub profile')}</span>
               </a>
             )}
             <button className="menu-item" onClick={() => store.signOut()}>
               <Icon name="logout" size={16} />
-              <span className="menu-label">Выйти</span>
+              <span className="menu-label">{t('Sign out')}</span>
             </button>
           </div>
         </Popover>

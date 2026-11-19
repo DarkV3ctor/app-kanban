@@ -32,7 +32,7 @@ export function navigate(path: string, replace = false) {
   }
 }
 
-/** Меняет параметр query в текущем hash, не трогая путь. */
+/** Sets a query parameter in the current hash without touching the path. */
 export function setQueryParam(key: string, value: string | null, replace = false) {
   const r = parse();
   if (value === null) r.query.delete(key);

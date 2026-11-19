@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { Board, Issue } from '../types';
 import { dueState, formatDate, hashColor, isDone, cls } from '../lib/utils';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
+import { t } from '../i18n';
 import { Avatar, LabelChip, memberOf } from './ui';
 
 interface Props {
@@ -35,7 +36,7 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
       {(epic || issue.labels.length > 0 || version) && (
         <div className="card-tags">
           {epic && (
-            <span className="epic-tag" style={{ ['--epic' as string]: hashColor(epic.id) }} title={`Эпик: ${epic.title}`}>
+            <span className="epic-tag" style={{ ['--epic' as string]: hashColor(epic.id) }} title={t('Epic: {name}', { name: epic.title })}>
               {epic.title}
             </span>
           )}
@@ -44,7 +45,7 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
           ))}
           {issue.labels.length > 3 && <span className="chip chip-more">+{issue.labels.length - 3}</span>}
           {version && (
-            <span className="version-tag" title={`Версия: ${version.name}`}>
+            <span className="version-tag" title={t('Version: {name}', { name: version.name })}>
               <Icon name="release" size={11} />
               {version.name}
             </span>
@@ -55,25 +56,25 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
         <TypeIcon type={type} />
         <span className={cls('card-key', done && 'is-done')}>{key}</span>
         {blocked && (
-          <span className="card-blocked" title="Заблокирована другой задачей">
+          <span className="card-blocked" title={t('Blocked by another issue')}>
             ⛔
           </span>
         )}
         <span className="card-meta-spacer" />
         {issue.checklist.length > 0 && (
-          <span className={cls('card-badge', checkDone === issue.checklist.length && 'is-complete')} title="Чек-лист">
+          <span className={cls('card-badge', checkDone === issue.checklist.length && 'is-complete')} title={t('Checklist')}>
             <Icon name="checklist" size={13} />
             {checkDone}/{issue.checklist.length}
           </span>
         )}
         {issue.dueDate && (
-          <span className={cls('card-badge', due && `due-${due}`)} title={`Срок: ${formatDate(issue.dueDate)}`}>
+          <span className={cls('card-badge', due && `due-${due}`)} title={t('Due: {date}', { date: formatDate(issue.dueDate) })}>
             <Icon name="calendar" size={12} />
             {formatDate(issue.dueDate)}
           </span>
         )}
         {issue.storyPoints !== null && issue.storyPoints !== undefined && (
-          <span className="points" title="Story points">
+          <span className="points" title={t('Story points')}>
             {issue.storyPoints}
           </span>
         )}

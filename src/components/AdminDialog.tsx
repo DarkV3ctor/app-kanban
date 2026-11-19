@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../app-context';
 import type { CreatorEntry } from '../store';
 import { config } from '../config';
+import { t } from '../i18n';
 import { lookupGitHubUser } from '../lib/github';
 import { Avatar, Modal } from './ui';
 import { Icon } from './Icons';
 
-/** Управление списком пользователей, которым разрешено создавать доски. */
+/** Manages the list of users who are allowed to create boards. */
 export function AdminDialog({ onClose }: { onClose: () => void }) {
   const { store, run, toast } = useApp();
   const [list, setList] = useState<CreatorEntry[]>([]);
@@ -22,21 +23,22 @@ export function AdminDialog({ onClose }: { onClose: () => void }) {
       const u = await lookupGitHubUser(login);
       await store.addCreator(u);
       setLogin('');
-    }, 'Доступ выдан');
+    }, t('Access granted'));
     setBusy(false);
   };
 
   return (
-    <Modal title="Кто может создавать доски" onClose={onClose} size="md">
+    <Modal title={t('Who can create boards')} onClose={onClose} size="md">
       <p className="muted">
-        Войти через GitHub может любой, но создавать новые доски — только администраторы приложения и пользователи из этого списка. Доступ к конкретной доске
-        настраивается на её странице «Участники».
+        {t(
+          'Anyone can sign in with GitHub, but only app admins and the users in this list can create new boards. Access to a specific board is managed on its Members page.',
+        )}
       </p>
-      <div className="section-title">Администраторы приложения</div>
+      <div className="section-title">{t('App admins')}</div>
       <p className="small muted">
-        Задаются в <code>config.js</code> и <code>firestore.rules</code>: {config.appAdmins.join(', ') || '—'}
+        {t('Set in config.js and firestore.rules:')} {config.appAdmins.join(', ') || '—'}
       </p>
-      <div className="section-title">Разрешено создавать доски</div>
+      <div className="section-title">{t('Allowed to create boards')}</div>
       <form
         className="inline-form"
         onSubmit={(e) => {
@@ -44,13 +46,13 @@ export function AdminDialog({ onClose }: { onClose: () => void }) {
           add();
         }}
       >
-        <input className="input" placeholder="GitHub логин" value={login} onChange={(e) => setLogin(e.target.value)} />
+        <input className="input" placeholder={t('GitHub username')} value={login} onChange={(e) => setLogin(e.target.value)} />
         <button className="btn btn-primary" disabled={busy || !login.trim()}>
-          <Icon name="plus" size={16} /> Добавить
+          <Icon name="plus" size={16} /> {t('Add')}
         </button>
       </form>
       <div className="member-list">
-        {list.length === 0 && <div className="muted small">Пока никого</div>}
+        {list.length === 0 && <div className="muted small">{t('Nobody yet')}</div>}
         {list.map((c) => (
           <div key={c.ghId} className="member-row">
             <Avatar info={c} size={32} />
@@ -58,8 +60,8 @@ export function AdminDialog({ onClose }: { onClose: () => void }) {
               <div>{c.name}</div>
               <div className="muted small">@{c.login}</div>
             </div>
-            <button className="btn btn-subtle" onClick={() => run(store.removeCreator(c.ghId), 'Доступ отозван')}>
-              Убрать
+            <button className="btn btn-subtle" onClick={() => run(store.removeCreator(c.ghId), t('Access revoked'))}>
+              {t('Remove')}
             </button>
           </div>
         ))}

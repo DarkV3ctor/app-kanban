@@ -36,6 +36,7 @@ import type { FirebaseWebConfig } from '../config';
 import { config } from '../config';
 import { lookupGitHubUserById } from '../lib/github';
 import { uid } from '../lib/utils';
+import { t } from '../i18n';
 import type { CreatorEntry, Store } from './types';
 
 const PROFILE_KEY = (id: string) => `kb-gh-profile-${id}`;
@@ -75,18 +76,18 @@ async function toAppUser(user: User): Promise<AppUser> {
     uid: user.uid,
     ghId,
     login: prof?.login ?? user.displayName ?? 'user',
-    name: prof?.name || user.displayName || prof?.login || 'Пользователь',
+    name: prof?.name || user.displayName || prof?.login || 'User',
     avatarUrl: prof?.avatarUrl || user.photoURL || '',
   };
 }
 
 function err(e: unknown): Error {
   const code = (e as { code?: string })?.code;
-  if (code === 'permission-denied') return new Error('Нет доступа (permission-denied)');
+  if (code === 'permission-denied') return new Error(t('Access denied (permission-denied)'));
   return e instanceof Error ? e : new Error(String(e));
 }
 
-/** Firestore не принимает undefined — чистим объект. */
+/** Firestore rejects undefined values — strip them. */
 function clean<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
 }
@@ -147,10 +148,10 @@ export function createFirebaseStore(cfg: FirebaseWebConfig): Store {
         }
         if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
         if (code === 'auth/unauthorized-domain') {
-          throw new Error(`Домен ${location.hostname} не добавлен в Firebase → Authentication → Settings → Authorized domains`);
+          throw new Error(t('Domain {host} is not listed in Firebase → Authentication → Settings → Authorized domains', { host: location.hostname }));
         }
         if (code === 'auth/operation-not-allowed') {
-          throw new Error('Вход через GitHub не включён в Firebase → Authentication → Sign-in method');
+          throw new Error(t('GitHub sign-in is not enabled in Firebase → Authentication → Sign-in method'));
         }
         throw err(e);
       }
@@ -251,7 +252,7 @@ export function createFirebaseStore(cfg: FirebaseWebConfig): Store {
       const now = Date.now();
       const created = await runTransaction(fs, async (tx) => {
         const bs = await tx.get(boardRef(boardId));
-        if (!bs.exists()) throw new Error('Доска не найдена');
+        if (!bs.exists()) throw new Error(t('Board not found'));
         const number = ((bs.data() as Board).issueCounter ?? 0) + 1;
         const issue: Omit<Issue, 'id'> = {
           ...draft,
@@ -280,8 +281,8 @@ export function createFirebaseStore(cfg: FirebaseWebConfig): Store {
     async deleteIssue(boardId, issueId) {
       const [c, h] = await Promise.all([getDocs(commentsCol(boardId, issueId)), getDocs(historyCol(boardId, issueId))]);
       const refs = [...c.docs.map((x) => x.ref), ...h.docs.map((x) => x.ref)];
-      // Сначала удаляем задачу вместе с первыми комментариями одним батчем:
-      // правила разрешают удалять комментарии уже удалённой задачи.
+      // Delete the issue together with the first comments in one batch:
+      // the rules allow deleting comments of an issue that no longer exists.
       const batch = writeBatch(fs);
       refs.slice(0, 400).forEach((r) => batch.delete(r));
       batch.delete(issueRef(boardId, issueId));

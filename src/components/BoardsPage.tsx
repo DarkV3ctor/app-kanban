@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Board } from '../types';
 import { useApp } from '../app-context';
 import { navigate } from '../router';
+import { count, t } from '../i18n';
 import { TEMPLATES } from '../templates';
 import { buildSampleIssues, prepareImport, type BoardExport } from '../lib/issues';
 import { roleName, sanitizeKey, suggestKey, cls } from '../lib/utils';
@@ -24,9 +25,9 @@ export function BoardsPage() {
     await run(async () => {
       const data = JSON.parse(await f.text()) as BoardExport;
       const p = prepareImport(data, user);
-      const id = await store.createBoard(user, { draft: p.draft, name: p.name + ' (импорт)', key: p.key, description: p.description, issues: p.issues });
+      const id = await store.createBoard(user, { draft: p.draft, name: `${p.name} (${t('import')})`, key: p.key, description: p.description, issues: p.issues });
       navigate(`/b/${id}`);
-    }, 'Доска импортирована');
+    }, t('Board imported'));
   };
 
   const sorted = boards ? [...boards].sort((a, b) => b.updatedAt - a.updatedAt) : null;
@@ -35,17 +36,17 @@ export function BoardsPage() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>Доски</h1>
-          <p className="muted">Ваши проекты и доски, к которым вам выдали доступ.</p>
+          <h1>{t('Boards')}</h1>
+          <p className="muted">{t('Your projects and the boards you have been given access to.')}</p>
         </div>
         <div className="page-actions">
           {canCreate && (
             <>
-              <button className="btn btn-subtle" onClick={() => fileRef.current?.click()} title="Создать доску из JSON-файла экспорта">
-                <Icon name="upload" size={16} /> Импорт
+              <button className="btn btn-subtle" onClick={() => fileRef.current?.click()} title={t('Create a board from a JSON export file')}>
+                <Icon name="upload" size={16} /> {t('Import')}
               </button>
               <button className="btn btn-primary" onClick={() => setCreating(true)}>
-                <Icon name="plus" size={16} /> Создать доску
+                <Icon name="plus" size={16} /> {t('Create board')}
               </button>
             </>
           )}
@@ -65,23 +66,26 @@ export function BoardsPage() {
 
       {canCreate === false && (
         <div className="alert alert-info">
-          <Icon name="info" size={16} /> Создавать новые доски могут только пользователи, которым это разрешил администратор. Вы видите доски, куда вас добавили как участника. Ваш GitHub-логин: <b>@{user.login}</b>
+          <Icon name="info" size={16} />
+          <span>
+            {t('Only users allowed by an admin can create new boards. You can see the boards you were added to as a member. Your GitHub username:')} <b>@{user.login}</b>
+          </span>
         </div>
       )}
 
       {!sorted ? (
         <Spinner />
       ) : sorted.length === 0 ? (
-        <EmptyState title="Пока нет досок">
+        <EmptyState title={t('No boards yet')}>
           {canCreate ? (
             <>
-              <p className="muted">Создайте первую доску из шаблона — для разработки игры, для дома или пустую.</p>
+              <p className="muted">{t('Create your first board from a template — for game development, for home, or a blank one.')}</p>
               <button className="btn btn-primary" onClick={() => setCreating(true)}>
-                <Icon name="plus" size={16} /> Создать доску
+                <Icon name="plus" size={16} /> {t('Create board')}
               </button>
             </>
           ) : (
-            <p className="muted">Попросите владельца доски добавить вас по GitHub-логину @{user.login}.</p>
+            <p className="muted">{t('Ask a board owner to add you by your GitHub username @{login}.', { login: user.login })}</p>
           )}
         </EmptyState>
       ) : (
@@ -105,7 +109,7 @@ export function BoardsPage() {
                   ))}
                   {b.memberIds.length > 5 && <span className="avatar avatar-more">+{b.memberIds.length - 5}</span>}
                 </div>
-                <span className="muted small">{b.issueCounter} задач</span>
+                <span className="muted small">{count(b.issueCounter, 'issue')}</span>
               </div>
             </a>
           ))}
@@ -120,7 +124,7 @@ export function BoardsPage() {
 function CreateBoardDialog({ onClose }: { onClose: () => void }) {
   const { store, user, run } = useApp();
   const [tpl, setTpl] = useState(TEMPLATES[0].id);
-  const t = TEMPLATES.find((x) => x.id === tpl)!;
+  const template = TEMPLATES.find((x) => x.id === tpl)!;
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
   const [keyTouched, setKeyTouched] = useState(false);
@@ -128,16 +132,16 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
   const [samples, setSamples] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  const effectiveKey = keyTouched ? key : name ? sanitizeKey(suggestKey(name)) : t.defaultKey;
+  const effectiveKey = keyTouched ? key : name ? sanitizeKey(suggestKey(name)) : template.defaultKey;
+  const shownKey = effectiveKey || template.defaultKey;
 
   const create = async () => {
     setBusy(true);
-    const built = t.build();
-    const draft = { ...built.draft };
-    const issues = samples ? buildSampleIssues(draft, built.samples, user) : [];
+    const built = template.build();
+    const issues = samples ? buildSampleIssues(built.draft, built.samples, user) : [];
     const id = await run(
-      store.createBoard(user, { draft, name: name.trim() || t.name, key: effectiveKey || t.defaultKey, description: description.trim(), issues }),
-      'Доска создана',
+      store.createBoard(user, { draft: built.draft, name: name.trim() || template.name, key: shownKey, description: description.trim(), issues }),
+      t('Board created'),
     );
     setBusy(false);
     if (id) navigate(`/b/${id}`);
@@ -145,21 +149,21 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal
-      title="Создать доску"
+      title={t('Create board')}
       onClose={onClose}
       size="lg"
       footer={
         <>
           <button className="btn btn-subtle" onClick={onClose}>
-            Отмена
+            {t('Cancel')}
           </button>
           <button className="btn btn-primary" onClick={create} disabled={busy}>
-            {busy ? 'Создание…' : 'Создать'}
+            {busy ? t('Creating…') : t('Create')}
           </button>
         </>
       }
     >
-      <div className="section-title">Шаблон</div>
+      <div className="section-title">{t('Template')}</div>
       <div className="template-grid">
         {TEMPLATES.map((x) => (
           <button key={x.id} type="button" className={cls('template-card', tpl === x.id && 'is-selected')} onClick={() => setTpl(x.id)} style={{ ['--board-color' as string]: x.color }}>
@@ -171,10 +175,10 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
       </div>
       <TemplatePreview templateId={tpl} />
       <div className="form-grid">
-        <Field label="Название">
-          <input className="input" autoFocus value={name} placeholder={t.name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+        <Field label={t('Name')}>
+          <input className="input" autoFocus value={name} placeholder={template.name} onChange={(e) => setName(e.target.value)} maxLength={80} />
         </Field>
-        <Field label="Ключ" hint={`Задачи будут называться ${effectiveKey || t.defaultKey}-1, ${effectiveKey || t.defaultKey}-2…`}>
+        <Field label={t('Key')} hint={t('Issues will be numbered {key}-1, {key}-2…', { key: shownKey })}>
           <input
             className="input mono"
             value={effectiveKey}
@@ -186,13 +190,13 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
           />
         </Field>
       </div>
-      <Field label="Описание">
-        <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="О чём эта доска (необязательно)" />
+      <Field label={t('Description')}>
+        <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('What this board is about (optional)')} />
       </Field>
-      {t.build().samples.length > 0 && (
+      {template.build().samples.length > 0 && (
         <label className="check-row">
           <input type="checkbox" checked={samples} onChange={(e) => setSamples(e.target.checked)} />
-          Добавить примеры задач, чтобы увидеть, как всё устроено
+          {t('Add sample issues to see how everything works')}
         </label>
       )}
     </Modal>
@@ -200,24 +204,24 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
 }
 
 function TemplatePreview({ templateId }: { templateId: string }) {
-  const t = TEMPLATES.find((x) => x.id === templateId)!;
-  const { draft } = t.build();
+  const template = TEMPLATES.find((x) => x.id === templateId)!;
+  const { draft } = template.build();
   return (
     <div className="template-preview">
       <div>
-        <span className="muted small">Колонки:</span> {draft.columns.map((c) => c.name).join(' → ')}
+        <span className="muted small">{t('Columns:')}</span> {draft.columns.map((c) => c.name).join(' → ')}
       </div>
       <div>
-        <span className="muted small">Типы задач:</span> {draft.issueTypes.map((x) => x.name).join(', ')}
+        <span className="muted small">{t('Issue types:')}</span> {draft.issueTypes.map((x) => x.name).join(', ')}
       </div>
       {draft.components.length > 0 && (
         <div>
-          <span className="muted small">Компоненты:</span> {draft.components.join(', ')}
+          <span className="muted small">{t('Components:')}</span> {draft.components.join(', ')}
         </div>
       )}
       {draft.versions.length > 0 && (
         <div>
-          <span className="muted small">Версии:</span> {draft.versions.map((v) => v.name).join(', ')}
+          <span className="muted small">{t('Versions:')}</span> {draft.versions.map((v) => v.name).join(', ')}
         </div>
       )}
     </div>

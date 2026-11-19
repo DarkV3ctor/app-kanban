@@ -6,7 +6,7 @@ export type { Store, Unsub, CreatorEntry, NewBoardInput } from './types';
 
 let store: Store = localStore;
 
-/** Загружает Firebase только если он настроен — в демо-режиме бандл остаётся лёгким. */
+/** Loads Firebase only when it is configured, so demo mode stays lightweight. */
 export async function initStore(): Promise<Store> {
   if (config.firebase) {
     const { createFirebaseStore } = await import('./firebaseStore');

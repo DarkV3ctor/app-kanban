@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Board, Issue, Priority } from '../types';
-import { PRIORITIES, roleRank } from '../lib/utils';
+import { PRIORITIES, priorityName, roleRank } from '../lib/utils';
+import { t } from '../i18n';
 import { isEpic } from '../lib/issues';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
 import { Avatar, LabelChip, Select, StatusLozenge } from './ui';
@@ -10,7 +11,7 @@ interface Common {
   disabled?: boolean;
 }
 
-export function AssigneePicker({ board, value, onChange, disabled, meId, placeholder = 'Не назначен' }: Common & { value: string | null; onChange: (v: string | null) => void; meId?: string; placeholder?: string }) {
+export function AssigneePicker({ board, value, onChange, disabled, meId, placeholder = t('Unassigned') }: Common & { value: string | null; onChange: (v: string | null) => void; meId?: string; placeholder?: string }) {
   const options = useMemo(() => {
     const ids = board.memberIds.filter((id) => roleRank(board, id) >= 1);
     if (value && !ids.includes(value)) ids.push(value);
@@ -26,7 +27,7 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
         value={value}
         onChange={(v) => onChange((v as string) ?? null)}
         clearable
-        clearLabel="Не назначен"
+        clearLabel={t('Unassigned')}
         disabled={disabled}
         searchable
         renderValue={(sel) =>
@@ -45,7 +46,7 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
       />
       {meId && !disabled && value !== meId && board.memberIds.includes(meId) && (
         <button type="button" className="btn btn-link btn-sm" onClick={() => onChange(meId)}>
-          Назначить меня
+          {t('Assign to me')}
         </button>
       )}
     </div>
@@ -66,7 +67,7 @@ export function TypePicker({ board, value, onChange, disabled, excludeEpic }: Co
 export function PriorityPicker({ value, onChange, disabled }: { value: Priority; onChange: (v: Priority) => void; disabled?: boolean }) {
   return (
     <Select
-      options={PRIORITIES.map((p) => ({ value: p.id, label: p.name, icon: <PriorityIcon priority={p.id} /> }))}
+      options={PRIORITIES.map((p) => ({ value: p.id, label: priorityName(p.id), icon: <PriorityIcon priority={p.id} /> }))}
       value={value}
       onChange={(v) => v && onChange(v as Priority)}
       disabled={disabled}
@@ -83,7 +84,7 @@ export function StatusPicker({ board, value, onChange, disabled }: Common & { va
       onChange={(v) => v && onChange(v as string)}
       disabled={disabled}
       triggerClass={`status-trigger status-${col?.category ?? 'todo'}`}
-      renderValue={() => <span>{col?.name ?? 'Статус'}</span>}
+      renderValue={() => <span>{col?.name ?? t('Status')}</span>}
       width={220}
     />
   );
@@ -97,8 +98,8 @@ export function StatusBadge({ board, status }: { board: Board; status: string })
 export function VersionPicker({ board, value, onChange, disabled }: Common & { value: string | null; onChange: (v: string | null) => void }) {
   const opts = board.versions
     .filter((v) => v.status !== 'archived' || v.id === value)
-    .map((v) => ({ value: v.id, label: v.name, hint: v.status === 'released' ? 'выпущена' : v.status === 'archived' ? 'в архиве' : undefined, icon: <Icon name="release" size={14} /> }));
-  return <Select options={opts} value={value} onChange={(v) => onChange((v as string) ?? null)} clearable clearLabel="Нет" placeholder="Нет" disabled={disabled} />;
+    .map((v) => ({ value: v.id, label: v.name, hint: v.status === 'released' ? t('released') : v.status === 'archived' ? t('archived') : undefined, icon: <Icon name="release" size={14} /> }));
+  return <Select options={opts} value={value} onChange={(v) => onChange((v as string) ?? null)} clearable clearLabel={t('None')} placeholder={t('None')} disabled={disabled} />;
 }
 
 export function EpicPicker({ board, issues, value, onChange, disabled, selfId }: Common & { issues: Issue[]; value: string | null; onChange: (v: string | null) => void; selfId?: string }) {
@@ -109,8 +110,8 @@ export function EpicPicker({ board, issues, value, onChange, disabled, selfId }:
       value={value && epics.some((e) => e.id === value) ? value : null}
       onChange={(v) => onChange((v as string) ?? null)}
       clearable
-      clearLabel="Нет"
-      placeholder="Нет"
+      clearLabel={t('None')}
+      placeholder={t('None')}
       disabled={disabled}
       searchable
     />
@@ -127,12 +128,12 @@ export function LabelsPicker({ board, issues, value, onChange, disabled }: Commo
     <Select
       multi
       allowCreate
-      createLabel={(q) => `Новая метка «${q}»`}
+      createLabel={(q) => t('New label "{name}"', { name: q })}
       options={all.map((l) => ({ value: l, label: l }))}
       value={value}
       onChange={(v) => onChange(((v as string[]) ?? []).map((x) => x.trim().replace(/\s+/g, '-')).filter(Boolean))}
       disabled={disabled}
-      placeholder="Нет"
+      placeholder={t('None')}
       renderValue={(sel) =>
         sel.length ? (
           <span className="chips">
@@ -141,7 +142,7 @@ export function LabelsPicker({ board, issues, value, onChange, disabled }: Commo
             ))}
           </span>
         ) : (
-          <span className="select-placeholder">Нет</span>
+          <span className="select-placeholder">{t('None')}</span>
         )
       }
     />
@@ -149,7 +150,7 @@ export function LabelsPicker({ board, issues, value, onChange, disabled }: Commo
 }
 
 export function ComponentsPicker({ board, value, onChange, disabled }: Common & { value: string[]; onChange: (v: string[]) => void }) {
-  if (!board.components.length) return <span className="muted small">Компоненты не настроены</span>;
+  if (!board.components.length) return <span className="muted small">{t('No components configured')}</span>;
   return (
     <Select
       multi
@@ -157,8 +158,8 @@ export function ComponentsPicker({ board, value, onChange, disabled }: Common & 
       value={value}
       onChange={(v) => onChange((v as string[]) ?? [])}
       disabled={disabled}
-      placeholder="Нет"
-      renderValue={(sel) => (sel.length ? <span>{sel.map((s) => s.label).join(', ')}</span> : <span className="select-placeholder">Нет</span>)}
+      placeholder={t('None')}
+      renderValue={(sel) => (sel.length ? <span>{sel.map((s) => s.label).join(', ')}</span> : <span className="select-placeholder">{t('None')}</span>)}
     />
   );
 }

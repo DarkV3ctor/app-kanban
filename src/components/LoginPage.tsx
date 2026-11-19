@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Store } from '../store';
+import { t } from '../i18n';
 import { GitHubMark, Icon } from './Icons';
+import { LangSwitch } from './LangSwitch';
 
 export function LoginPage({ store }: { store: Store }) {
   const [busy, setBusy] = useState(false);
@@ -21,6 +23,7 @@ export function LoginPage({ store }: { store: Store }) {
 
   return (
     <div className="login">
+      <LangSwitch className="login-lang" />
       <div className="login-card">
         <div className="login-logo">
           <svg width="48" height="48" viewBox="0 0 32 32" aria-hidden="true">
@@ -31,16 +34,16 @@ export function LoginPage({ store }: { store: Store }) {
           </svg>
         </div>
         <h1>Kanban</h1>
-        <p className="muted">Доски задач в стиле Jira: эпики, версии, приоритеты, описание в Markdown, чек-листы, комментарии и права доступа для команды.</p>
+        <p className="muted">{t('Jira-style boards: epics, versions, priorities, Markdown descriptions, checklists, comments and team permissions.')}</p>
         <button className="btn btn-github btn-lg" onClick={signIn} disabled={busy}>
           {demo ? <Icon name="user" size={18} /> : <GitHubMark size={18} />}
-          {busy ? 'Вход…' : demo ? 'Войти в демо-режим' : 'Войти через GitHub'}
+          {busy ? t('Signing in…') : demo ? t('Enter demo mode') : t('Sign in with GitHub')}
         </button>
         {error && <div className="alert alert-error">{error}</div>}
         <ul className="login-features">
-          <li>🎮 Шаблон для разработки игр: фичи, баги, арт, звук, уровни, вехи</li>
-          <li>🏠 Шаблон для дома: дела, покупки, ремонт, финансы, здоровье</li>
-          <li>👥 Участники по GitHub-логину и 5 уровней доступа</li>
+          <li>🎮 {t('Game dev template: features, bugs, art, audio, levels, milestones')}</li>
+          <li>🏠 {t('Home template: chores, shopping, repairs, finances, health')}</li>
+          <li>👥 {t('Members by GitHub username and 5 access levels')}</li>
         </ul>
       </div>
     </div>

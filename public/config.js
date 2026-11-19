@@ -1,15 +1,14 @@
 /*
- * Настройки приложения. Этот файл читается в браузере при загрузке страницы.
+ * App settings. This file is loaded by the browser before the app starts.
  *
- * firebase: null  → ДЕМО-РЕЖИМ: данные хранятся только в этом браузере (localStorage),
- *                    вход через GitHub и совместная работа недоступны.
- * firebase: {...} → вставьте сюда конфиг веб-приложения из консоли Firebase
- *                    (Project settings → General → Your apps → SDK setup → Config).
- *                    Эти ключи НЕ секретные — доступ защищают правила firestore.rules.
+ * firebase: null  → DEMO MODE: data is stored only in this browser (localStorage);
+ *                    GitHub sign-in and collaboration are disabled.
+ * firebase: {...} → paste your web app config from the Firebase console
+ *                    (Project settings → General → Your apps → SDK setup and configuration → Config).
+ *                    These values are NOT secret — access is protected by firestore.rules.
  *
- * appAdmins: числовые GitHub ID администраторов приложения. Только они (и те, кому они
- *            выдадут право) могут создавать новые доски. Должен совпадать со списком
- *            в функции isAppAdmin() в firestore.rules.
+ * appAdmins: numeric GitHub IDs of the app administrators. Only they (and the users they allow)
+ *            can create new boards. Must match the list in isAppAdmin() in firestore.rules.
  */
 window.KANBAN_CONFIG = {
   firebase: null,
@@ -17,7 +16,7 @@ window.KANBAN_CONFIG = {
   //   apiKey: "...",
   //   authDomain: "your-project.firebaseapp.com",
   //   projectId: "your-project",
-  //   storageBucket: "your-project.appspot.com",
+  //   storageBucket: "your-project.firebasestorage.app",
   //   messagingSenderId: "...",
   //   appId: "..."
   // },

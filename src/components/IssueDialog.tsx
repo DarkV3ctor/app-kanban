@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Comment, HistoryEntry, Issue, LinkType } from '../types';
 import { useApp } from '../app-context';
-import { LINK_TYPES, inverseLink, isEpic, linkName } from '../lib/issues';
+import { t } from '../i18n';
+import { LINK_TYPES, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
 import { columnCategory, formatDateTime, timeAgo, uid, cls, isDone } from '../lib/utils';
 import { useBoard } from './board-context';
 import { Icon, TypeIcon } from './Icons';
@@ -12,7 +13,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
   const { store, user, run, confirm, toast } = useApp();
   const { board, issues, byId, perms, updateIssue, openIssue, newIssue } = useBoard();
   const key = `${board.key}-${issue.number}`;
-  const type = board.issueTypes.find((t) => t.id === issue.type);
+  const type = board.issueTypes.find((x) => x.id === issue.type);
   const epic = issue.epicId ? byId.get(issue.epicId) : undefined;
   const canEdit = perms.edit;
   const canDelete = perms.admin || (perms.edit && issue.createdBy === user.ghId);
@@ -21,15 +22,20 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
   const copyLink = () => {
     const url = `${location.origin}${location.pathname}#/b/${board.id}?i=${issue.number}`;
     navigator.clipboard?.writeText(url).then(
-      () => toast('Ссылка скопирована', 'success'),
+      () => toast(t('Link copied'), 'success'),
       () => toast(url),
     );
   };
 
   const remove = async () => {
-    const ok = await confirm({ title: `Удалить ${key}?`, text: 'Задача, её комментарии и история будут удалены без возможности восстановления.', confirmText: 'Удалить', danger: true });
+    const ok = await confirm({
+      title: t('Delete {key}?', { key }),
+      text: t('The issue, its comments and history will be deleted permanently.'),
+      confirmText: t('Delete'),
+      danger: true,
+    });
     if (!ok) return;
-    // чистим ссылки на эту задачу у других
+    // Remove references to this issue from other issues.
     const refs = issues.filter((i) => i.id !== issue.id && (i.epicId === issue.id || i.links?.some((l) => l.issueId === issue.id)));
     onClose();
     await run(async () => {
@@ -37,7 +43,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
         await store.updateIssue(board.id, r.id, { epicId: r.epicId === issue.id ? null : r.epicId, links: (r.links ?? []).filter((l) => l.issueId !== issue.id) }, user, []);
       }
       await store.deleteIssue(board.id, issue.id);
-    }, `${key} удалена`);
+    }, t('{key} deleted', { key }));
   };
 
   const clone = async () => {
@@ -48,10 +54,17 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     void _u;
     void _cb;
     const created = await run(
-      store.createIssue(board.id, user, { ...rest, title: `Копия: ${issue.title}`, links: [], reporterId: user.ghId, rank: issue.rank + 1, checklist: issue.checklist.map((c) => ({ ...c, id: uid(8) })) }),
+      store.createIssue(board.id, user, {
+        ...rest,
+        title: t('Copy: {title}', { title: issue.title }),
+        links: [],
+        reporterId: user.ghId,
+        rank: issue.rank + 1,
+        checklist: issue.checklist.map((c) => ({ ...c, id: uid(8) })),
+      }),
     );
     if (created) {
-      toast(`Создана ${board.key}-${created.number}`, 'success');
+      toast(t('Created {key}', { key: `${board.key}-${created.number}` }), 'success');
       openIssue(created);
     }
   };
@@ -61,7 +74,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
       {epic && (
         <>
           <button className="crumb-link" onClick={() => openIssue(epic)}>
-            <TypeIcon type={board.issueTypes.find((t) => t.id === epic.type)} size={14} />
+            <TypeIcon type={board.issueTypes.find((x) => x.id === epic.type)} size={14} />
             {board.key}-{epic.number}
           </button>
           <span className="muted">/</span>
@@ -69,7 +82,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
       )}
       <span className="crumb-current">
         <TypeIcon type={type} size={14} />
-        <button className="crumb-link" onClick={copyLink} title="Скопировать ссылку">
+        <button className="crumb-link" onClick={copyLink} title={t('Copy link')}>
           {key}
         </button>
       </span>
@@ -84,14 +97,14 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
       className="issue-modal"
       headerExtra={
         <>
-          <button className="icon-btn" onClick={copyLink} title="Скопировать ссылку" aria-label="Скопировать ссылку">
+          <button className="icon-btn" onClick={copyLink} title={t('Copy link')} aria-label={t('Copy link')}>
             <Icon name="link" size={18} />
           </button>
           <ActionMenu
             actions={[
-              { label: 'Клонировать', icon: 'copy', onClick: clone, hidden: !canEdit },
-              { label: 'Создать подзадачу эпика', icon: 'plus', onClick: () => newIssue({ epicId: issue.id }), hidden: !canEdit || !isEpic(board, issue) },
-              { label: 'Удалить', icon: 'trash', onClick: remove, danger: true, hidden: !canDelete },
+              { label: t('Clone'), icon: 'copy', onClick: clone, hidden: !canEdit },
+              { label: t('Add issue to epic'), icon: 'plus', onClick: () => newIssue({ epicId: issue.id }), hidden: !canEdit || !isEpic(board, issue) },
+              { label: t('Delete'), icon: 'trash', onClick: remove, danger: true, hidden: !canDelete },
             ]}
           />
         </>
@@ -99,7 +112,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     >
       <div className="issue-grid">
         <div className="issue-main">
-          <InlineText className="issue-title" value={issue.title} onSave={(t) => set({ title: t })} disabled={!canEdit} multiline />
+          <InlineText className="issue-title" value={issue.title} onSave={(v) => set({ title: v })} disabled={!canEdit} multiline />
           <Description issue={issue} canEdit={canEdit} onSave={(d) => set({ description: d })} />
           <Checklist issue={issue} canEdit={canEdit} onChange={(c) => set({ checklist: c })} />
           {isEpic(board, issue) && <EpicChildren epic={issue} />}
@@ -109,50 +122,54 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
         <aside className="issue-side">
           <div className="issue-status-row">
             <StatusPicker board={board} value={issue.status} onChange={(s) => set({ status: s })} disabled={!canEdit} />
-            {isDone(board, issue) && <span className="resolved-mark"><Icon name="check" size={14} /> Решена</span>}
+            {isDone(board, issue) && (
+              <span className="resolved-mark">
+                <Icon name="check" size={14} /> {t('Resolved')}
+              </span>
+            )}
           </div>
           <div className="details">
-            <div className="details-title">Сведения</div>
-            <Detail label="Исполнитель">
+            <div className="details-title">{t('Details')}</div>
+            <Detail label={t('Assignee')}>
               <AssigneePicker board={board} value={issue.assigneeId} onChange={(v) => set({ assigneeId: v })} disabled={!canEdit} meId={user.ghId} />
             </Detail>
-            <Detail label="Автор">
+            <Detail label={t('Reporter')}>
               <AssigneePicker board={board} value={issue.reporterId} onChange={(v) => v && set({ reporterId: v })} disabled={!canEdit} placeholder="—" />
             </Detail>
-            <Detail label="Приоритет">
+            <Detail label={t('Priority')}>
               <PriorityPicker value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
             </Detail>
-            <Detail label="Тип">
-              <TypePicker board={board} value={issue.type} onChange={(t) => set({ type: t })} disabled={!canEdit} />
+            <Detail label={t('Type')}>
+              <TypePicker board={board} value={issue.type} onChange={(v) => set({ type: v })} disabled={!canEdit} />
             </Detail>
-            <Detail label="Метки">
+            <Detail label={t('Labels')}>
               <LabelsPicker board={board} issues={issues} value={issue.labels} onChange={(l) => set({ labels: l })} disabled={!canEdit} />
             </Detail>
-            <Detail label="Компоненты">
+            <Detail label={t('Components')}>
               <ComponentsPicker board={board} value={issue.components} onChange={(c) => set({ components: c })} disabled={!canEdit} />
             </Detail>
-            <Detail label="Версия">
+            <Detail label={t('Fix version')}>
               <VersionPicker board={board} value={issue.fixVersionId} onChange={(v) => set({ fixVersionId: v })} disabled={!canEdit} />
             </Detail>
             {!isEpic(board, issue) && (
-              <Detail label="Эпик">
+              <Detail label={t('Epic')}>
                 <EpicPicker board={board} issues={issues} value={issue.epicId} onChange={(v) => set({ epicId: v })} disabled={!canEdit} selfId={issue.id} />
               </Detail>
             )}
-            <Detail label="Story points">
+            <Detail label={t('Story points')}>
               <NumberInput value={issue.storyPoints} onSave={(v) => set({ storyPoints: v })} disabled={!canEdit} />
             </Detail>
-            <Detail label="Оценка">
-              <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder="напр. 3d 4h" />
+            <Detail label={t('Estimate')}>
+              <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder={t('e.g. 3d 4h')} />
             </Detail>
-            <Detail label="Срок">
+            <Detail label={t('Due date')}>
               <input className="input input-compact" type="date" value={issue.dueDate ?? ''} onChange={(e) => set({ dueDate: e.target.value || null })} disabled={!canEdit} />
             </Detail>
           </div>
           <div className="issue-dates muted small">
-            <div>Создано {formatDateTime(issue.createdAt)}</div>
-            <div>Обновлено {timeAgo(issue.updatedAt)}</div>
-            {issue.resolvedAt && <div>Решено {formatDateTime(issue.resolvedAt)}</div>}
+            <div>{t('Created {date}', { date: formatDateTime(issue.createdAt) })}</div>
+            <div>{t('Updated {date}', { date: timeAgo(issue.updatedAt) })}</div>
+            {issue.resolvedAt && <div>{t('Resolved {date}', { date: formatDateTime(issue.resolvedAt) })}</div>}
           </div>
         </aside>
       </div>
@@ -177,7 +194,18 @@ function NumberInput({ value, onSave, disabled }: { value: number | null; onSave
     if (n !== null && isNaN(n)) return setV(value === null ? '' : String(value));
     if (n !== value) onSave(n);
   };
-  return <input className="input input-compact" inputMode="decimal" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} disabled={disabled} placeholder="—" />;
+  return (
+    <input
+      className="input input-compact"
+      inputMode="decimal"
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+      disabled={disabled}
+      placeholder="—"
+    />
+  );
 }
 
 function TextInput({ value, onSave, disabled, placeholder }: { value: string; onSave: (v: string) => void; disabled?: boolean; placeholder?: string }) {
@@ -205,13 +233,18 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
     if (!edit) setDraft(issue.description);
   }, [issue.description, edit]);
 
+  const save = () => {
+    onSave(draft);
+    setEdit(false);
+  };
+
   return (
     <section className="issue-section">
       <div className="section-head">
-        <h3>Описание</h3>
+        <h3>{t('Description')}</h3>
         {canEdit && !edit && (
           <button className="btn btn-subtle btn-sm" onClick={() => setEdit(true)}>
-            <Icon name="edit" size={14} /> Изменить
+            <Icon name="edit" size={14} /> {t('Edit')}
           </button>
         )}
       </div>
@@ -223,21 +256,12 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
             autoFocus
             minRows={8}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                onSave(draft);
-                setEdit(false);
-              }
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
             }}
           />
           <div className="form-actions">
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                onSave(draft);
-                setEdit(false);
-              }}
-            >
-              Сохранить
+            <button className="btn btn-primary" onClick={save}>
+              {t('Save')}
             </button>
             <button
               className="btn btn-subtle"
@@ -246,9 +270,9 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
                 setEdit(false);
               }}
             >
-              Отмена
+              {t('Cancel')}
             </button>
-            <span className="muted small">Ctrl+Enter — сохранить</span>
+            <span className="muted small">{t('Ctrl+Enter to save')}</span>
           </div>
         </>
       ) : issue.description.trim() ? (
@@ -257,7 +281,7 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
         </div>
       ) : (
         <div className={cls('description-empty', canEdit && 'is-editable')} onClick={() => canEdit && setEdit(true)}>
-          {canEdit ? 'Добавьте описание…' : 'Нет описания'}
+          {canEdit ? t('Add a description…') : t('No description')}
         </div>
       )}
     </section>
@@ -274,9 +298,12 @@ function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolea
   if (!items.length && !canEdit) return null;
 
   const add = () => {
-    const lines = text.split('\n').map((s) => s.trim()).filter(Boolean);
+    const lines = text
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (!lines.length) return;
-    onChange([...items, ...lines.map((t) => ({ id: uid(8), text: t, done: false }))]);
+    onChange([...items, ...lines.map((v) => ({ id: uid(8), text: v, done: false }))]);
     setText('');
   };
   const move = (idx: number, dir: -1 | 1) => {
@@ -291,11 +318,16 @@ function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolea
     <section className="issue-section">
       <div className="section-head">
         <h3>
-          Чек-лист {items.length > 0 && <span className="muted small">{done}/{items.length}</span>}
+          {t('Checklist')}{' '}
+          {items.length > 0 && (
+            <span className="muted small">
+              {done}/{items.length}
+            </span>
+          )}
         </h3>
         {canEdit && !adding && (
           <button className="btn btn-subtle btn-sm" onClick={() => setAdding(true)}>
-            <Icon name="plus" size={14} /> Пункт
+            <Icon name="plus" size={14} /> {t('Item')}
           </button>
         )}
       </div>
@@ -304,16 +336,16 @@ function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolea
         {items.map((c, idx) => (
           <li key={c.id} className={cls('checklist-item', c.done && 'is-done')}>
             <input type="checkbox" checked={c.done} disabled={!canEdit} onChange={() => onChange(items.map((x) => (x.id === c.id ? { ...x, done: !x.done } : x)))} aria-label={c.text} />
-            <InlineText className="checklist-text" value={c.text} disabled={!canEdit} onSave={(t) => onChange(items.map((x) => (x.id === c.id ? { ...x, text: t } : x)))} />
+            <InlineText className="checklist-text" value={c.text} disabled={!canEdit} onSave={(v) => onChange(items.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} />
             {canEdit && (
               <span className="row-actions">
-                <button className="icon-btn" onClick={() => move(idx, -1)} disabled={idx === 0} aria-label="Выше">
+                <button className="icon-btn" onClick={() => move(idx, -1)} disabled={idx === 0} aria-label={t('Move up')}>
                   <Icon name="arrowUp" size={14} />
                 </button>
-                <button className="icon-btn" onClick={() => move(idx, 1)} disabled={idx === items.length - 1} aria-label="Ниже">
+                <button className="icon-btn" onClick={() => move(idx, 1)} disabled={idx === items.length - 1} aria-label={t('Move down')}>
                   <Icon name="arrowDown" size={14} />
                 </button>
-                <button className="icon-btn" onClick={() => onChange(items.filter((x) => x.id !== c.id))} aria-label="Удалить пункт">
+                <button className="icon-btn" onClick={() => onChange(items.filter((x) => x.id !== c.id))} aria-label={t('Delete item')}>
                   <Icon name="trash" size={14} />
                 </button>
               </span>
@@ -328,7 +360,7 @@ function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolea
             rows={1}
             value={text}
             autoFocus={adding}
-            placeholder="Новый пункт (можно вставить несколько строк)"
+            placeholder={t('New item (you can paste several lines)')}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -343,7 +375,7 @@ function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolea
             }}
           />
           <button className="btn btn-primary btn-sm" onClick={add} disabled={!text.trim()}>
-            Добавить
+            {t('Add')}
           </button>
         </div>
       )}
@@ -362,11 +394,11 @@ function EpicChildren({ epic }: { epic: Issue }) {
     <section className="issue-section">
       <div className="section-head">
         <h3>
-          Задачи эпика <span className="muted small">{children.length}</span>
+          {t('Issues in this epic')} <span className="muted small">{children.length}</span>
         </h3>
         {perms.edit && (
           <button className="btn btn-subtle btn-sm" onClick={() => newIssue({ epicId: epic.id })}>
-            <Icon name="plus" size={14} /> Задача
+            <Icon name="plus" size={14} /> {t('Issue')}
           </button>
         )}
       </div>
@@ -375,7 +407,7 @@ function EpicChildren({ epic }: { epic: Issue }) {
         {children.map((c) => (
           <IssueRow key={c.id} issue={c} onOpen={() => openIssue(c)} />
         ))}
-        {children.length === 0 && <div className="muted small">В эпике пока нет задач</div>}
+        {children.length === 0 && <div className="muted small">{t('No issues in this epic yet')}</div>}
       </div>
     </section>
   );
@@ -385,7 +417,7 @@ function IssueRow({ issue, onOpen, extra }: { issue: Issue; onOpen: () => void; 
   const { board } = useBoard();
   return (
     <div className="issue-row" onClick={onOpen} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen()}>
-      <TypeIcon type={board.issueTypes.find((t) => t.id === issue.type)} />
+      <TypeIcon type={board.issueTypes.find((x) => x.id === issue.type)} />
       <span className={cls('issue-row-key', isDone(board, issue) && 'is-done')}>
         {board.key}-{issue.number}
       </span>
@@ -408,15 +440,16 @@ function Links({ issue, canEdit }: { issue: Issue; canEdit: boolean }) {
   const links = (issue.links ?? []).filter((l) => byId.has(l.issueId));
   if (!links.length && !canEdit) return null;
 
-  const write = async (a: Issue, b: Issue, t: LinkType, add: boolean) => {
-    const inv = inverseLink(t);
-    const la = add ? [...(a.links ?? []).filter((l) => l.issueId !== b.id), { type: t, issueId: b.id }] : (a.links ?? []).filter((l) => !(l.issueId === b.id && l.type === t));
+  /** Adds or removes a link on both issues (with the inverse type on the other side). */
+  const write = async (a: Issue, b: Issue, linkType: LinkType, add: boolean) => {
+    const inv = inverseLink(linkType);
+    const la = add ? [...(a.links ?? []).filter((l) => l.issueId !== b.id), { type: linkType, issueId: b.id }] : (a.links ?? []).filter((l) => !(l.issueId === b.id && l.type === linkType));
     const lb = add ? [...(b.links ?? []).filter((l) => l.issueId !== a.id), { type: inv, issueId: a.id }] : (b.links ?? []).filter((l) => !(l.issueId === a.id && l.type === inv));
-    const ka = `${board.key}-${a.number}`;
-    const kb = `${board.key}-${b.number}`;
+    const va = linkValue(linkType, `${board.key}-${b.number}`);
+    const vb = linkValue(inv, `${board.key}-${a.number}`);
     await run(async () => {
-      await store.updateIssue(board.id, a.id, { links: la }, user, [{ field: 'Связи', from: add ? '' : `${linkName(t)} ${kb}`, to: add ? `${linkName(t)} ${kb}` : '' }]);
-      await store.updateIssue(board.id, b.id, { links: lb }, user, [{ field: 'Связи', from: add ? '' : `${linkName(inv)} ${ka}`, to: add ? `${linkName(inv)} ${ka}` : '' }]);
+      await store.updateIssue(board.id, a.id, { links: la }, user, [{ field: 'links', from: add ? '' : va, to: add ? va : '' }]);
+      await store.updateIssue(board.id, b.id, { links: lb }, user, [{ field: 'links', from: add ? '' : vb, to: add ? vb : '' }]);
     });
   };
 
@@ -425,16 +458,16 @@ function Links({ issue, canEdit }: { issue: Issue; canEdit: boolean }) {
   return (
     <section className="issue-section">
       <div className="section-head">
-        <h3>Связанные задачи</h3>
+        <h3>{t('Linked issues')}</h3>
         {canEdit && !adding && (
           <button className="btn btn-subtle btn-sm" onClick={() => setAdding(true)}>
-            <Icon name="link" size={14} /> Связать
+            <Icon name="link" size={14} /> {t('Link')}
           </button>
         )}
       </div>
       {grouped.map((g) => (
         <div key={g.id} className="link-group">
-          <div className="link-group-name muted small">{g.name}</div>
+          <div className="link-group-name muted small">{linkName(g.id)}</div>
           <div className="issue-rows">
             {g.items.map((l) => {
               const other = byId.get(l.issueId)!;
@@ -451,7 +484,7 @@ function Links({ issue, canEdit }: { issue: Issue; canEdit: boolean }) {
                           e.stopPropagation();
                           write(issue, other, l.type, false);
                         }}
-                        aria-label="Удалить связь"
+                        aria-label={t('Remove link')}
                       >
                         <Icon name="close" size={14} />
                       </button>
@@ -463,15 +496,18 @@ function Links({ issue, canEdit }: { issue: Issue; canEdit: boolean }) {
           </div>
         </div>
       ))}
-      {!links.length && !adding && <div className="muted small">Нет связей</div>}
+      {!links.length && !adding && <div className="muted small">{t('No links')}</div>}
       {adding && (
         <div className="link-add">
-          <Select options={LINK_TYPES.map((l) => ({ value: l.id, label: l.name }))} value={type} onChange={(v) => v && setType(v as LinkType)} width={200} />
+          <Select options={LINK_TYPES.map((l) => ({ value: l.id, label: linkName(l.id) }))} value={type} onChange={(v) => v && setType(v as LinkType)} width={200} />
           <Select
             className="grow"
             searchable
-            placeholder="Выберите задачу"
-            options={issues.filter((i) => i.id !== issue.id).sort((a, b) => b.number - a.number).map((i) => ({ value: i.id, label: i.title, hint: `${board.key}-${i.number}`, icon: <TypeIcon type={board.issueTypes.find((t) => t.id === i.type)} /> }))}
+            placeholder={t('Choose an issue')}
+            options={issues
+              .filter((i) => i.id !== issue.id)
+              .sort((a, b) => b.number - a.number)
+              .map((i) => ({ value: i.id, label: i.title, hint: `${board.key}-${i.number}`, icon: <TypeIcon type={board.issueTypes.find((x) => x.id === i.type)} /> }))}
             value={target}
             onChange={(v) => setTarget((v as string) ?? null)}
             width={380}
@@ -486,10 +522,10 @@ function Links({ issue, canEdit }: { issue: Issue; canEdit: boolean }) {
               setTarget(null);
             }}
           >
-            Связать
+            {t('Link')}
           </button>
           <button className="btn btn-subtle btn-sm" onClick={() => (setAdding(false), setTarget(null))}>
-            Отмена
+            {t('Cancel')}
           </button>
         </div>
       )}
@@ -504,13 +540,13 @@ function Activity({ issue }: { issue: Issue }) {
   return (
     <section className="issue-section">
       <div className="section-head">
-        <h3>Активность</h3>
+        <h3>{t('Activity')}</h3>
         <div className="seg">
           <button className={cls(tab === 'comments' && 'is-active')} onClick={() => setTab('comments')}>
-            <Icon name="comment" size={14} /> Комментарии
+            <Icon name="comment" size={14} /> {t('Comments')}
           </button>
           <button className={cls(tab === 'history' && 'is-active')} onClick={() => setTab('history')}>
-            <Icon name="history" size={14} /> История
+            <Icon name="history" size={14} /> {t('History')}
           </button>
         </div>
       </div>
@@ -553,30 +589,30 @@ function Comments({ issue }: { issue: Issue }) {
                   onChange={setDraft}
                   autoFocus
                   minRows={3}
-                  placeholder="Добавьте комментарий… (Ctrl+Enter — отправить)"
+                  placeholder={t('Add a comment… (Ctrl+Enter to send)')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send();
                   }}
                 />
                 <div className="form-actions">
                   <button className="btn btn-primary btn-sm" onClick={send} disabled={!draft.trim()}>
-                    Сохранить
+                    {t('Save')}
                   </button>
                   <button className="btn btn-subtle btn-sm" onClick={() => (setDraft(''), setFocused(false))}>
-                    Отмена
+                    {t('Cancel')}
                   </button>
                 </div>
               </>
             ) : (
               <button className="comment-placeholder" onClick={() => setFocused(true)}>
-                Добавьте комментарий…
+                {t('Add a comment…')}
               </button>
             )}
           </div>
         </div>
       )}
-      {list === null && <div className="muted small">Загрузка…</div>}
-      {list && list.length === 0 && <div className="muted small">Комментариев пока нет</div>}
+      {list === null && <div className="muted small">{t('Loading…')}</div>}
+      {list && list.length === 0 && <div className="muted small">{t('No comments yet')}</div>}
       {sorted.map((c) => {
         const author = memberOf(board, c.authorId);
         const mine = c.authorId === user.ghId;
@@ -588,7 +624,7 @@ function Comments({ issue }: { issue: Issue }) {
                 <b>{author?.name}</b>
                 <span className="muted small" title={formatDateTime(c.createdAt)}>
                   {timeAgo(c.createdAt)}
-                  {c.editedAt && ' · изменён'}
+                  {c.editedAt && ` · ${t('edited')}`}
                 </span>
               </div>
               {editing === c.id ? (
@@ -603,10 +639,10 @@ function Comments({ issue }: { issue: Issue }) {
                       }}
                       disabled={!editText.trim()}
                     >
-                      Сохранить
+                      {t('Save')}
                     </button>
                     <button className="btn btn-subtle btn-sm" onClick={() => setEditing(null)}>
-                      Отмена
+                      {t('Cancel')}
                     </button>
                   </div>
                 </>
@@ -622,17 +658,17 @@ function Comments({ issue }: { issue: Issue }) {
                           setEditText(c.body);
                         }}
                       >
-                        Изменить
+                        {t('Edit')}
                       </button>
                     )}
                     {((mine && perms.comment) || perms.admin) && (
                       <button
                         className="btn btn-link btn-sm"
                         onClick={async () => {
-                          if (await confirm({ title: 'Удалить комментарий?', confirmText: 'Удалить', danger: true })) run(store.deleteComment(board.id, issue.id, c.id));
+                          if (await confirm({ title: t('Delete comment?'), confirmText: t('Delete'), danger: true })) run(store.deleteComment(board.id, issue.id, c.id));
                         }}
                       >
-                        Удалить
+                        {t('Delete')}
                       </button>
                     )}
                   </div>
@@ -666,14 +702,17 @@ function History({ issue }: { issue: Issue }) {
               </div>
               {h.changes.map((c, i) => (
                 <div key={i} className="history-change">
-                  <span className="history-field">{c.field}</span>
-                  {c.field === 'Описание' ? (
-                    <span className="muted">изменено</span>
+                  <span className="history-field">{fieldLabel(c.field)}</span>
+                  {c.field === 'description' ? (
+                    <span className="muted">{t('changed')}</span>
+                  ) : c.field === 'links' ? (
+                    // Link entries have only one side: added (to) or removed (from).
+                    c.to ? <span className="history-to">{renderHistoryValue(c.field, c.to)}</span> : <span className="history-from">{renderHistoryValue(c.field, c.from)}</span>
                   ) : (
                     <>
-                      {c.from && <span className="history-from">{c.from}</span>}
-                      {c.from && c.to && <span className="muted">→</span>}
-                      {c.to && <span className="history-to">{c.to}</span>}
+                      <span className="history-from">{renderHistoryValue(c.field, c.from)}</span>
+                      <span className="muted">→</span>
+                      <span className="history-to">{renderHistoryValue(c.field, c.to)}</span>
                     </>
                   )}
                 </div>
@@ -686,11 +725,10 @@ function History({ issue }: { issue: Issue }) {
         <Avatar info={creator} size={28} />
         <div className="grow">
           <div>
-            <b>{creator?.name}</b> создал(а) задачу <span className="muted small">{formatDateTime(issue.createdAt)}</span>
+            <b>{creator?.name}</b> {t('created the issue')} <span className="muted small">{formatDateTime(issue.createdAt)}</span>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

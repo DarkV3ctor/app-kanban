@@ -1,94 +1,98 @@
-# Kanban — доска задач в стиле Jira
+# Kanban — a Jira-style task board
 
-Статическое веб-приложение для GitHub Pages: канбан-доски с задачами как в Jira, вход через GitHub и права доступа для участников.
+A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub sign-in and per-member access rights. The interface is available in **English** and **Ukrainian** (switch in the top bar).
 
-**Сайт:** https://darkv3ctor.github.io/app-kanban/
+**Live site:** https://darkv3ctor.github.io/app-kanban/
 
-## Возможности
+## Features
 
-- **Задачи как в Jira:** ключ `GAME-12`, тип, статус, приоритет, исполнитель, автор, метки, компоненты, версия (fix version), эпик, story points, оценка времени, срок.
-- **Описание в Markdown:** заголовки, списки, таблицы, код, ссылки, чекбоксы `- [ ]` (кликабельные).
-- **Чек-лист** (подзадачи) с прогрессом на карточке.
-- **Связи между задачами:** блокирует / заблокирована / связана / дублирует.
-- **Комментарии** (Markdown, редактирование, удаление) и **история изменений** каждого поля.
-- **Доска:** перетаскивание карточек (мышь, тач, клавиатура), WIP-лимиты, быстрое создание прямо в колонке, группировка по исполнителю, эпику или приоритету.
-- **Фильтры:** поиск, исполнители, тип, приоритет, метки, компоненты, версия, эпик, «Мои задачи», «Обновлены за неделю».
-- **Список задач** с сортировкой и выгрузкой в CSV (открывается в Excel).
-- **Релизы:** версии и вехи с датами, прогрессом, выпуском и архивом.
-- **Настройки доски:** колонки и их категории, типы задач (иконка, цвет, шаблон описания, чек-лист по умолчанию), метки, компоненты.
-- **Участники и права:** добавление по GitHub-логину и 5 ролей.
-- Экспорт и импорт доски в JSON, светлая и тёмная темы, мобильная вёрстка.
-- Горячие клавиши: `C` — создать задачу, `/` — поиск.
+- **Jira-like issues:** key (`GAME-12`), type, status, priority, assignee, reporter, labels, components, fix version, epic, story points, time estimate, due date.
+- **Markdown descriptions:** headings, lists, tables, code, links and clickable `- [ ]` checkboxes.
+- **Checklist** (sub-tasks) with progress shown on the card.
+- **Issue links:** blocks / is blocked by / relates to / duplicates.
+- **Comments** (Markdown, edit, delete) and a **change history** of every field.
+- **Board:** drag & drop (mouse, touch, keyboard), WIP limits, quick create inside a column, swimlanes by assignee, epic or priority.
+- **Filters:** text search, assignees, type, priority, labels, components, version, epic, "My issues", "Updated this week".
+- **Issue list** with sorting and CSV export (opens in Excel).
+- **Releases:** versions and milestones with dates, progress, release and archive.
+- **Board settings:** columns and their categories, issue types (icon, color, description template, default checklist), labels, components.
+- **Members and permissions:** add people by GitHub username and pick one of 5 roles.
+- Board export/import as JSON, light and dark themes, mobile layout.
+- Keyboard shortcuts: `C` creates an issue, `/` focuses search.
 
-## Шаблоны
+## Templates
 
-| Шаблон | Колонки | Типы задач |
+| Template | Columns | Issue types |
 |---|---|---|
-| 🎮 **Разработка игры** | Бэклог → К работе → В работе → Ревью → Тест / Плейтест → Готово | Эпик, Фича, Баг, Задача, Арт, Звук, Левел-дизайн, Геймдизайн, Тех. долг |
-| 🏠 **Дом и жизнь** | Идеи → Запланировано → На этой неделе → В процессе → Ждём → Сделано | Цель, Дело, Покупка, Ремонт, Финансы, Здоровье, Событие, Учёба / хобби |
-| 💻 **Разработка ПО** | К выполнению → В работе → Ревью → Готово | Эпик, История, Задача, Баг |
-| 📋 **Пустая доска** | К выполнению → В работе → Готово | Эпик, Задача, Баг |
+| 🎮 **Game development** | Backlog → To do → In progress → Review → QA / Playtest → Done | Epic, Feature, Bug, Task, Art, Audio, Level design, Game design, Tech debt |
+| 🏠 **Home & life** | Ideas → Planned → This week → In progress → Waiting → Done | Goal, Chore, Shopping, Repair, Finance, Health, Event, Learning / hobby |
+| 💻 **Software development** | To do → In progress → In review → Done | Epic, Story, Task, Bug |
+| 📋 **Blank board** | To do → In progress → Done | Epic, Task, Bug |
 
-В шаблоне Game Dev есть компоненты (Геймплей, Графика, Звук, UI/UX, AI, Сеть…), вехи (Прототип → Vertical Slice → Alpha → Beta → Релиз 1.0) и шаблоны описаний: для бага — шаги воспроизведения и окружение, для фичи — критерии готовности, для арта и звука — требования к ассету. В шаблоне «Дом» есть комнаты и сферы жизни, версии по месяцам и шаблоны для ремонта, платежей, визитов к врачу и событий. Всё это можно поменять в настройках доски.
+The game dev template comes with components (Gameplay, Graphics, Audio, UI/UX, AI, Networking…), milestones (Prototype → Vertical Slice → Alpha → Beta → Release 1.0) and description templates: steps to reproduce and environment for bugs, a definition of done for features, asset requirements for art and audio. The home template has rooms and areas of life, monthly versions and templates for repairs, payments, doctor visits and events. Everything can be changed in the board settings.
 
-## Роли
+A board's template text (column names, types, sample issues) is created in the interface language that is active when you create the board.
 
-| Действие | Владелец | Админ | Редактор | Комментатор | Наблюдатель |
+## Roles
+
+| Action | Owner | Admin | Editor | Commenter | Viewer |
 |---|:-:|:-:|:-:|:-:|:-:|
-| Просмотр доски и задач | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Комментарии | ✓ | ✓ | ✓ | ✓ | |
-| Создание, редактирование и перемещение задач | ✓ | ✓ | ✓ | | |
-| Удаление своих задач | ✓ | ✓ | ✓ | | |
-| Удаление любых задач и комментариев | ✓ | ✓ | | | |
-| Колонки, типы, метки, версии, настройки | ✓ | ✓ | | | |
-| Участники и их права | ✓ | ✓ | | | |
-| Удаление доски, передача владения | ✓ | | | | |
+| View the board and issues | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Comment | ✓ | ✓ | ✓ | ✓ | |
+| Create, edit and move issues | ✓ | ✓ | ✓ | | |
+| Delete own issues | ✓ | ✓ | ✓ | | |
+| Delete any issue or comment | ✓ | ✓ | | | |
+| Columns, types, labels, versions, settings | ✓ | ✓ | | | |
+| Add members and assign roles | ✓ | ✓ | | | |
+| Delete the board, transfer ownership | ✓ | | | | |
 
-Права проверяет не только интерфейс, но и сервер — правила [`firestore.rules`](firestore.rules). Они привязаны к числовому GitHub ID, а не к логину, поэтому смена логина доступ не ломает.
+Permissions are enforced on the server by [`firestore.rules`](firestore.rules), not only in the UI. They are tied to the numeric GitHub ID rather than the username, so renaming a GitHub account does not break access.
 
-Отдельно настраивается, **кто может создавать новые доски**: администраторы приложения (их GitHub ID указан в `config.js` и `firestore.rules`) и пользователи, которых они добавили через меню аватара → «Кто может создавать доски». Остальные после входа видят только доски, куда их пригласили.
+Separately, you control **who can create new boards**: the app admins (their GitHub IDs are listed in `config.js` and `firestore.rules`) and users they allow via the avatar menu → "Who can create boards". Everyone else sees only the boards they were invited to.
 
 ---
 
-## Демо-режим
+## Demo mode
 
-Пока Firebase не подключён (`firebase: null` в [`public/config.js`](public/config.js)), сайт работает в **демо-режиме**: вход не нужен, а данные хранятся только в localStorage этого браузера. Так удобно посмотреть приложение до настройки. Перенести доски потом можно через экспорт: «Настройки» → «Скачать JSON», затем «Доски» → «Импорт».
+Until Firebase is configured (`firebase: null` in [`public/config.js`](public/config.js)) the site runs in **demo mode**: no sign-in, and data is kept only in this browser's localStorage. It is a quick way to try the app. Boards can be moved later via Settings → "Download JSON", then Boards → "Import".
 
-## Подключение входа через GitHub (Firebase)
+## Enabling GitHub sign-in (Firebase)
 
-GitHub Pages умеет отдавать только статические файлы, поэтому вход и общую базу данных обеспечивает Firebase. Хватит бесплатного тарифа Spark: 50 тыс. чтений и 20 тыс. записей в день.
+GitHub Pages only serves static files, so sign-in and the shared database are provided by Firebase. The free Spark plan is enough (50k reads and 20k writes per day).
 
-### 1. Создайте проект Firebase
+### 1. Create a Firebase project
 
-1. Откройте https://console.firebase.google.com → **Create a project** (Google Analytics можно выключить).
-2. На главной странице проекта нажмите иконку **`</>`** (Web), зарегистрируйте приложение (Hosting не нужен).
-3. Скопируйте объект `firebaseConfig`: он понадобится на шаге 5.
+1. Open https://console.firebase.google.com → **Create a project** (Google Analytics is optional).
+2. On the project overview, click the **`</>`** (Web) icon and register an app (Firebase Hosting is not needed).
+3. Keep the `firebaseConfig` object — you will need it in step 5.
 
-### 2. Включите вход через GitHub
+### 2. Enable GitHub sign-in
 
-1. Firebase: **Build → Authentication → Get started → Sign-in method → GitHub**, включите переключатель.
-2. Скопируйте **callback URL** вида `https://<project-id>.firebaseapp.com/__/auth/handler`.
-3. В новой вкладке откройте GitHub: **Settings → Developer settings → OAuth Apps → New OAuth App** (https://github.com/settings/applications/new):
+1. Firebase: **Build → Authentication → Get started → Sign-in method → Add new provider → GitHub**, turn on **Enable**.
+2. Copy the **authorization callback URL**, e.g. `https://<project-id>.firebaseapp.com/__/auth/handler`. Keep the dialog open.
+3. In another tab open GitHub → **Settings → Developer settings → OAuth Apps → New OAuth App** (https://github.com/settings/applications/new). Make sure it is an *OAuth App*, not a *GitHub App*.
    - **Application name:** `Kanban`
-   - **Homepage URL:** `https://darkv3ctor.github.io/app-kanban/`
-   - **Authorization callback URL:** callback URL из Firebase
-4. Нажмите **Register application**, затем **Generate a new client secret**.
-5. Вставьте **Client ID** и **Client secret** в окно GitHub-провайдера в Firebase → **Save**.
+   - **Homepage URL:** `https://darkv3ctor.github.io/app-kanban/` (informational only, can be changed later)
+   - **Authorization callback URL:** the URL from Firebase
+4. Click **Register application**, then **Generate a new client secret** (it is shown only once).
+5. Paste the **Client ID** and **Client secret** into the Firebase GitHub provider dialog → **Save**.
 
-### 3. Разрешите домен сайта
+The client secret must stay in Firebase only — never commit it.
 
-Firebase: **Authentication → Settings → Authorized domains → Add domain** → `darkv3ctor.github.io`.
+### 3. Authorize the site's domain
 
-### 4. Создайте базу и правила доступа
+Firebase: **Authentication → Settings → Authorized domains → Add domain** → `darkv3ctor.github.io` (domain only, no `https://` and no path).
 
-1. Firebase: **Build → Firestore Database → Create database** → *Start in production mode*, регион поближе (например `eur3`).
-2. Откройте вкладку **Rules**, замените содержимое на файл [`firestore.rules`](firestore.rules) и нажмите **Publish**.
+### 4. Create the database and security rules
 
-   Или через CLI: `npx firebase-tools login`, затем `npx firebase-tools deploy --only firestore:rules --project <project-id>`.
+1. Firebase: **Build → Firestore Database → Create database**. Choose **Standard edition**, keep the database ID `(default)`, pick a location close to you (it cannot be changed later) and **Start in production mode**.
+2. Open the **Rules** tab, replace its content with [`firestore.rules`](firestore.rules) and click **Publish**.
 
-### 5. Пропишите конфиг и опубликуйте
+   Or with the CLI: `npx firebase-tools login`, then `npx firebase-tools deploy --only firestore:rules --project <project-id>`.
 
-Отредактируйте [`public/config.js`](public/config.js):
+### 5. Add the config and deploy
+
+Edit [`public/config.js`](public/config.js):
 
 ```js
 window.KANBAN_CONFIG = {
@@ -104,39 +108,47 @@ window.KANBAN_CONFIG = {
 };
 ```
 
-Сделайте commit и push в `main`: GitHub Actions сам соберёт и опубликует сайт. Ключи из `firebaseConfig` не секретные: это публичные идентификаторы проекта, а доступ к данным защищают правила Firestore.
+Commit and push to `main` — GitHub Actions builds and publishes the site. The `firebaseConfig` values are public identifiers, not secrets; data access is protected by the Firestore rules.
 
-### Как добавить ещё одного администратора приложения
+### Adding another app admin
 
-Узнайте числовой GitHub ID (`https://api.github.com/users/<логин>`, поле `id`) и добавьте его в двух местах:
+Find the numeric GitHub ID (`https://api.github.com/users/<username>`, field `id`) and add it in two places:
 
-- `appAdmins` в `public/config.js`;
-- список в функции `isAppAdmin()` в `firestore.rules` (затем снова опубликуйте правила).
+- `appAdmins` in `public/config.js`;
+- the list in `isAppAdmin()` in `firestore.rules` (then publish the rules again).
 
-Обычным участникам досок этого не нужно: их добавляет владелец или администратор доски на странице «Участники».
+Regular board members don't need this — a board owner or admin adds them on the board's Members page.
 
 ---
 
-## Разработка
+## Development
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm run dev          # http://localhost:5173
 npm run typecheck
-npm run build      # сборка в dist/
+npm run i18n:check   # every UI string has a Ukrainian translation
+npm run build        # outputs dist/
 ```
 
-Для входа через GitHub на `localhost` домен `localhost` должен быть в Authorized domains (Firebase добавляет его по умолчанию).
+`localhost` is in Firebase's Authorized domains by default, so GitHub sign-in also works locally.
 
-**Стек:** React 19, TypeScript, Vite, Firebase Auth и Firestore, `@hello-pangea/dnd`, `marked` и `DOMPurify`.
+### Translations
 
-**Структура:**
+UI strings are written in English and wrapped in `t('…')`; the English text is the key. Ukrainian translations live in [`src/locales/uk.ts`](src/locales/uk.ts), board template text in `src/locales/templates.<lang>.ts`. `npm run i18n:check` (also run in CI) fails if a string has no translation.
+
+**Stack:** React 19, TypeScript, Vite, Firebase Auth and Firestore, `@hello-pangea/dnd`, `marked` and `DOMPurify`.
+
+**Layout:**
 
 ```
-public/config.js            настройки (Firebase, админы приложения)
-firestore.rules             серверные правила доступа
-src/templates.ts            шаблоны досок (Game Dev, Дом, ПО, пустая)
-src/store/                  хранилище: firebaseStore (облако) и localStore (демо)
-src/components/             интерфейс: доска, карточка задачи, список, релизы, настройки, участники
-.github/workflows/deploy.yml  автодеплой на GitHub Pages
+public/config.js              runtime settings (Firebase, app admins)
+firestore.rules               server-side access rules
+src/i18n.ts                   translation helpers and language switch
+src/locales/                  Ukrainian UI strings and template text (EN / UK)
+src/templates.ts              board templates (game dev, home, software, blank)
+src/store/                    storage: firebaseStore (cloud) and localStore (demo)
+src/components/               UI: board, issue dialog, list, releases, settings, members
+scripts/check-i18n.ts         translation coverage check
+.github/workflows/deploy.yml  automatic deploy to GitHub Pages
 ```

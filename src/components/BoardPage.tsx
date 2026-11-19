@@ -3,6 +3,7 @@ import type { Board, Issue, IssueDraft } from '../types';
 import { useApp } from '../app-context';
 import { navigate, setQueryParam, type Route } from '../router';
 import { permsFor, roleName, cls } from '../lib/utils';
+import { t, tk } from '../i18n';
 import { EMPTY_FILTERS, diffIssue, statusSideEffects, type Filters } from '../lib/issues';
 import { BoardContext, type BoardCtx } from './board-context';
 import { EmptyState, Spinner } from './ui';
@@ -16,11 +17,11 @@ import { IssueDialog } from './IssueDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 
 const VIEWS = [
-  { id: 'board', name: 'Доска', icon: 'board' },
-  { id: 'list', name: 'Список задач', icon: 'list' },
-  { id: 'releases', name: 'Релизы', icon: 'release' },
-  { id: 'members', name: 'Участники', icon: 'users' },
-  { id: 'settings', name: 'Настройки', icon: 'settings' },
+  { id: 'board', name: tk('Board'), icon: 'board' },
+  { id: 'list', name: tk('Issue list'), icon: 'list' },
+  { id: 'releases', name: tk('Releases'), icon: 'release' },
+  { id: 'members', name: tk('Members'), icon: 'users' },
+  { id: 'settings', name: tk('Settings'), icon: 'settings' },
 ];
 
 function loadFilters(boardId: string): Filters {
@@ -82,7 +83,7 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
       if (!board) return;
       const full = { ...patch, ...(patch.status && patch.status !== issue.status ? statusSideEffects(board, issue, patch.status) : {}) };
       const changes = diffIssue(board, issue, full, issues ?? []);
-      // оптимистичное обновление
+      // optimistic update
       setIssues((list) => list?.map((i) => (i.id === issue.id ? { ...i, ...full, updatedAt: Date.now() } : i)) ?? list);
       await run(store.updateIssue(board.id, issue.id, full, user, changes));
     },
@@ -104,13 +105,13 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
   const openNumber = route.query.get('i');
   const openedIssue = openNumber ? (issues ?? []).find((i) => String(i.number) === openNumber) : undefined;
 
-  // Горячие клавиши: C — создать задачу, / — поиск
+  // Keyboard shortcuts: C — create issue, / — search
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.closest('input, textarea, select, [contenteditable=true]') || e.ctrlKey || e.metaKey || e.altKey) return;
       if (document.querySelector('.modal-backdrop')) return;
-      if (e.key === 'c' || e.key === 'с') {
+      if (e.key === 'c' || e.key === '\u0441' /* Cyrillic layout */) {
         if (perms.edit) {
           e.preventDefault();
           setCreating({});
@@ -129,21 +130,21 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
 
   if (error && !board) {
     return (
-      <EmptyState icon="shield" title="Нет доступа к доске">
-        <p className="muted">Доска не существует или вас не добавили в участники. Попросите администратора доски добавить @{user.login}.</p>
+      <EmptyState icon="shield" title={t('No access to this board')}>
+        <p className="muted">{t('The board does not exist or you are not a member. Ask a board admin to add @{login}.', { login: user.login })}</p>
         <button className="btn btn-primary" onClick={() => navigate('/')}>
-          К списку досок
+          {t('Back to boards')}
         </button>
       </EmptyState>
     );
   }
-  if (board === undefined) return <Spinner label="Загрузка доски…" />;
+  if (board === undefined) return <Spinner label={t('Loading board…')} />;
   if (board === null || !canView) {
     return (
-      <EmptyState icon="shield" title={board === null ? 'Доска не найдена' : 'Нет доступа к доске'}>
-        <p className="muted">{board === null ? 'Возможно, её удалили.' : `Попросите администратора добавить @${user.login}.`}</p>
+      <EmptyState icon="shield" title={board === null ? t('Board not found') : t('No access to this board')}>
+        <p className="muted">{board === null ? t('It may have been deleted.') : t('Ask a board admin to add @{login}.', { login: user.login })}</p>
         <button className="btn btn-primary" onClick={() => navigate('/')}>
-          К списку досок
+          {t('Back to boards')}
         </button>
       </EmptyState>
     );
@@ -189,28 +190,28 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
                 onClick={() => setSidebarOpen(false)}
               >
                 <Icon name={v.icon} size={18} />
-                <span>{v.name}</span>
+                <span>{t(v.name)}</span>
               </a>
             ))}
           </nav>
           <div className="sidebar-foot muted small">
-            Горячие клавиши: <kbd>C</kbd> — создать задачу, <kbd>/</kbd> — поиск
+            {t('Shortcuts:')} <kbd>C</kbd> — {t('create issue')}, <kbd>/</kbd> — {t('search')}
           </div>
         </aside>
         <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />
         <main className="board-main">
           <div className="breadcrumbs">
-            <button className="icon-btn sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label="Меню доски">
+            <button className="icon-btn sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label={t('Board menu')}>
               <Icon name="menu" size={18} />
             </button>
-            <a href="#/">Доски</a>
+            <a href="#/">{t('Boards')}</a>
             <span>/</span>
             <a href={`#/b/${board.id}`}>{board.name}</a>
             <span>/</span>
-            <span>{current.name}</span>
+            <span>{t(current.name)}</span>
           </div>
           {issues === null ? (
-            <Spinner label="Загрузка задач…" />
+            <Spinner label={t('Loading issues…')} />
           ) : current.id === 'board' ? (
             <KanbanView />
           ) : current.id === 'list' ? (

@@ -1,21 +1,53 @@
-import type { BoardDraft, Column, IssueType, Priority, Version } from './types';
-import { MONTHS_NOM, addDays, todayISO, uid } from './lib/utils';
+import type { BoardSetup, Column, IssueType, Priority, Version } from './types';
+import { lang } from './i18n';
+import { addDays, monthName, todayISO, toISODate, uid } from './lib/utils';
+import { EN_TEMPLATES } from './locales/templates.en';
+import { UK_TEMPLATES } from './locales/templates.uk';
+
+/**
+ * Board templates. The structure (ids, categories, icons, colors, dates) lives here;
+ * all user-visible text comes from src/locales/templates.<lang>.ts.
+ */
 
 export interface SampleIssue {
   title: string;
-  type: string; // id типа
-  status: string; // id колонки
+  type: string; // issue type id
+  status: string; // column id
   priority?: Priority;
   description?: string;
   labels?: string[];
   components?: string[];
-  version?: string; // id версии
-  epic?: string; // title эпика из этого же списка
+  version?: string; // version id ('$m0', '$m1'… = generated months)
+  epic?: string; // title of an epic from the same list
   storyPoints?: number;
   estimate?: string;
   dueInDays?: number;
   checklist?: [string, boolean][];
   assignToMe?: boolean;
+}
+
+export interface TypeText {
+  name: string;
+  template?: string;
+  checklist?: string[];
+}
+
+export interface TemplateContent<C extends string, T extends string, V extends string = never> {
+  name: string;
+  description: string;
+  columns: Record<C, string>;
+  types: Record<T, TypeText>;
+  labels: string[];
+  components: string[];
+  versions: Record<V, { name: string; description: string }>;
+  samples: SampleIssue[];
+}
+
+export interface TemplateTexts {
+  gamedev: TemplateContent<'backlog' | 'todo' | 'progress' | 'review' | 'qa' | 'done', 'epic' | 'feature' | 'bug' | 'task' | 'art' | 'audio' | 'level' | 'design' | 'techdebt', 'proto' | 'slice' | 'alpha' | 'beta' | 'release'>;
+  home: TemplateContent<'ideas' | 'planned' | 'week' | 'doing' | 'waiting' | 'done', 'goal' | 'chore' | 'shopping' | 'repair' | 'finance' | 'health' | 'event' | 'learn'> & { monthDescription: string };
+  software: TemplateContent<'todo' | 'progress' | 'review' | 'done', 'epic' | 'story' | 'task' | 'bug', 'v1' | 'v1_1'>;
+  blank: TemplateContent<'todo' | 'progress' | 'done', 'epic' | 'task' | 'bug'>;
 }
 
 export interface BoardTemplate {
@@ -25,373 +57,206 @@ export interface BoardTemplate {
   icon: string;
   color: string;
   defaultKey: string;
-  build: () => { draft: Omit<BoardDraft, 'name' | 'key' | 'description'>; samples: SampleIssue[] };
+  build: () => { draft: BoardSetup; samples: SampleIssue[] };
 }
+
+const TEXT: TemplateTexts = lang === 'uk' ? UK_TEMPLATES : EN_TEMPLATES;
 
 const col = (id: string, name: string, category: Column['category'], wip = 0): Column => ({ id, name, category, wip });
 
-const ver = (id: string, name: string, status: Version['status'] = 'unreleased', description = '', startDate: string | null = null, releaseDate: string | null = null): Version => ({
-  id,
-  name,
-  description,
-  status,
-  startDate,
-  releaseDate,
-});
+function type(text: TypeText, id: string, icon: string, color: string, isEpic = false): IssueType {
+  const it: IssueType = { id, name: text.name, icon, color };
+  if (isEpic) it.isEpic = true;
+  if (text.template) it.template = text.template;
+  if (text.checklist?.length) it.checklist = text.checklist;
+  return it;
+}
+
+function version(id: string, text: { name: string; description: string }, status: Version['status'], startDate: string | null, releaseDate: string | null): Version {
+  return { id, name: text.name, description: text.description, status, startDate, releaseDate };
+}
 
 // ---------------------------------------------------------------------------
-// Шаблоны описаний
-// ---------------------------------------------------------------------------
-
-const BUG_TEMPLATE = `### Шаги воспроизведения
-1.
-2.
-3.
-
-### Ожидаемый результат
-
-
-### Фактический результат
-
-
-### Окружение
-- **Билд / версия:**
-- **Платформа:** PC / Console / Mobile
-- **Частота:** всегда / иногда / один раз
-
-### Логи, скриншоты, видео
-`;
-
-const FEATURE_TEMPLATE = `### Зачем
-Какую проблему игрока решает / какой опыт создаёт.
-
-### Что нужно сделать
--
-
-### Критерии готовности
-- [ ] Работает в билде
-- [ ] Покрыто плейтестом
-- [ ] Нет новых ошибок в логах
-
-### Ссылки
-- Дизайн-документ:
-`;
-
-const ART_TEMPLATE = `### Ассет
-- **Тип:** персонаж / окружение / UI / VFX / иконка
-- **Стиль / референсы:**
-- **Разрешение / полигонаж:**
-- **Формат экспорта:**
-
-### Где используется
-`;
-
-const AUDIO_TEMPLATE = `### Звук
-- **Тип:** SFX / музыка / озвучка / эмбиент
-- **Настроение / референсы:**
-- **Длительность / луп:**
-- **Где срабатывает:**
-`;
-
-const LEVEL_TEMPLATE = `### Уровень
-- **Цель игрока:**
-- **Новые механики:**
-- **Примерная длительность:**
-- **Ключевые точки / события:**
-
-### Схема
-(ссылка на блок-аут или скетч)
-`;
-
-const GDD_TEMPLATE = `### Механика / система
-Краткое описание.
-
-### Правила
--
-
-### Баланс и параметры
-| Параметр | Значение |
-|---|---|
-|  |  |
-
-### Открытые вопросы
--
-`;
-
-const TECH_DEBT_TEMPLATE = `### Проблема
-Что сейчас плохо и чем это мешает.
-
-### Предлагаемое решение
-
-
-### Риски
-`;
-
-const STORY_TEMPLATE = `**Как** <роль>, **я хочу** <действие>, **чтобы** <ценность>.
-
-### Критерии приёмки
-- [ ]
-`;
-
-const SW_BUG_TEMPLATE = `### Шаги воспроизведения
-1.
-
-### Ожидаемый результат
-
-
-### Фактический результат
-
-
-### Окружение
-- Версия:
-- ОС / браузер:
-`;
-
-const REPAIR_TEMPLATE = `### Что сломалось / что сделать
-
-
-### Что понадобится
--
-
-### Мастер / контакты
--
-
-### Бюджет
--
-`;
-
-const FINANCE_TEMPLATE = `- **Сумма:**
-- **Срок оплаты:**
-- **Как оплатить:**
-- **Квитанция / чек:**
-`;
-
-const EVENT_TEMPLATE = `- **Когда:**
-- **Где:**
-- **Кто участвует:**
-- **Что подготовить:**
-`;
-
-const HEALTH_TEMPLATE = `- **Врач / клиника:**
-- **Дата и время:**
-- **Что взять с собой:**
-- **Результаты / назначения:**
-`;
-
-// ---------------------------------------------------------------------------
-// Game Dev
+// Game development
 // ---------------------------------------------------------------------------
 
 const gameDev: BoardTemplate = {
   id: 'gamedev',
-  name: 'Разработка игры',
-  description: 'Фичи, баги, арт, звук, левел-дизайн, плейтесты и вехи от прототипа до релиза.',
+  name: TEXT.gamedev.name,
+  description: TEXT.gamedev.description,
   icon: '🎮',
   color: '#6E5DC6',
   defaultKey: 'GAME',
   build: () => {
-    const issueTypes: IssueType[] = [
-      { id: 'epic', name: 'Эпик', icon: 'epic', color: '#904EE2', isEpic: true, template: '### Цель\n\n### Состав\n- \n\n### Готово, когда\n- ' },
-      { id: 'feature', name: 'Фича', icon: 'story', color: '#22A06B', template: FEATURE_TEMPLATE, checklist: ['Дизайн согласован', 'Реализация', 'Код-ревью', 'Плейтест'] },
-      { id: 'bug', name: 'Баг', icon: 'bug', color: '#E2483D', template: BUG_TEMPLATE, checklist: ['Воспроизведён', 'Найдена причина', 'Исправлено', 'Проверено в билде'] },
-      { id: 'task', name: 'Задача', icon: 'task', color: '#1D7AFC' },
-      { id: 'art', name: 'Арт', icon: 'art', color: '#CD519D', template: ART_TEMPLATE, checklist: ['Скетч', 'Концепт утверждён', 'Финальный ассет', 'Импорт в движок'] },
-      { id: 'audio', name: 'Звук', icon: 'audio', color: '#1D9AAA', template: AUDIO_TEMPLATE, checklist: ['Черновик', 'Финальный микс', 'Интеграция в движок'] },
-      { id: 'level', name: 'Левел-дизайн', icon: 'map', color: '#E56910', template: LEVEL_TEMPLATE, checklist: ['Блок-аут', 'Геймплейный проход', 'Арт-пасс', 'Свет', 'Оптимизация'] },
-      { id: 'design', name: 'Геймдизайн', icon: 'puzzle', color: '#B38600', template: GDD_TEMPLATE },
-      { id: 'techdebt', name: 'Тех. долг', icon: 'gear', color: '#626F86', template: TECH_DEBT_TEMPLATE },
-    ];
-    const columns = [
-      col('backlog', 'Бэклог', 'todo'),
-      col('todo', 'К работе', 'todo'),
-      col('progress', 'В работе', 'progress', 5),
-      col('review', 'Ревью', 'progress'),
-      col('qa', 'Тест / Плейтест', 'progress'),
-      col('done', 'Готово', 'done'),
-    ];
+    const x = TEXT.gamedev;
     const t = todayISO();
-    const versions = [
-      ver('v-proto', 'Прототип', 'released', 'Проверка основной механики', addDays(t, -45), addDays(t, -10)),
-      ver('v-slice', 'Vertical Slice', 'unreleased', 'Один уровень в финальном качестве', addDays(t, -10), addDays(t, 30)),
-      ver('v-alpha', 'Alpha', 'unreleased', 'Все фичи реализованы', null, addDays(t, 90)),
-      ver('v-beta', 'Beta', 'unreleased', 'Контент готов, полировка и баги', null, addDays(t, 150)),
-      ver('v-1-0', 'Релиз 1.0', 'unreleased', 'Выход в магазине', null, addDays(t, 210)),
-    ];
-    const samples: SampleIssue[] = [
-      { title: 'Основной игровой цикл', type: 'epic', status: 'progress', priority: 'high', version: 'v-slice', description: '### Цель\nИгрок исследует уровень, собирает ресурсы и улучшает персонажа.\n\n### Состав\n- Управление персонажем\n- Сбор ресурсов\n- Магазин улучшений' },
-      { title: 'Контроллер персонажа: бег, прыжок, рывок', type: 'feature', status: 'progress', priority: 'high', version: 'v-slice', epic: 'Основной игровой цикл', components: ['Геймплей'], storyPoints: 5, estimate: '3d', assignToMe: true, checklist: [['Дизайн согласован', true], ['Реализация', true], ['Код-ревью', false], ['Плейтест', false]] },
-      { title: 'Персонаж проваливается сквозь пол на уровне 2', type: 'bug', status: 'todo', priority: 'highest', version: 'v-slice', components: ['Физика'], labels: ['crash', 'blocker'], description: BUG_TEMPLATE.replace('1. \n2. \n3. ', '1. Загрузить уровень 2\n2. Подойти к мосту\n3. Сделать рывок вниз'), storyPoints: 2 },
-      { title: 'Концепт-арт главного героя', type: 'art', status: 'review', priority: 'medium', version: 'v-slice', components: ['Графика'], storyPoints: 3, checklist: [['Скетч', true], ['Концепт утверждён', false], ['Финальный ассет', false], ['Импорт в движок', false]] },
-      { title: 'Звуки шагов по разным поверхностям', type: 'audio', status: 'backlog', priority: 'low', version: 'v-alpha', components: ['Звук'], labels: ['polish'] },
-      { title: 'Блок-аут обучающего уровня', type: 'level', status: 'qa', priority: 'high', version: 'v-slice', epic: 'Основной игровой цикл', components: ['Геймплей'], labels: ['playtest'], storyPoints: 5, dueInDays: 5 },
-      { title: 'Система сохранений: формат и миграции', type: 'techdebt', status: 'backlog', priority: 'medium', version: 'v-alpha', components: ['Инструменты'] },
-      { title: 'Баланс экономики магазина улучшений', type: 'design', status: 'todo', priority: 'medium', version: 'v-alpha', epic: 'Основной игровой цикл', labels: ['balance'] },
-      { title: 'Главное меню и экран паузы', type: 'feature', status: 'done', priority: 'medium', version: 'v-proto', components: ['UI/UX'], storyPoints: 3 },
-    ];
     return {
       draft: {
         template: 'gamedev',
         icon: '🎮',
         color: '#6E5DC6',
-        columns,
-        issueTypes,
-        labels: ['prototype', 'polish', 'crash', 'performance', 'balance', 'localization', 'blocker', 'playtest'],
-        components: ['Геймплей', 'Графика', 'Анимация', 'Звук', 'UI/UX', 'AI', 'Сеть', 'Физика', 'Нарратив', 'Инструменты', 'Билд/CI'],
-        versions,
+        columns: [
+          col('backlog', x.columns.backlog, 'todo'),
+          col('todo', x.columns.todo, 'todo'),
+          col('progress', x.columns.progress, 'progress', 5),
+          col('review', x.columns.review, 'progress'),
+          col('qa', x.columns.qa, 'progress'),
+          col('done', x.columns.done, 'done'),
+        ],
+        issueTypes: [
+          type(x.types.epic, 'epic', 'epic', '#904EE2', true),
+          type(x.types.feature, 'feature', 'story', '#22A06B'),
+          type(x.types.bug, 'bug', 'bug', '#E2483D'),
+          type(x.types.task, 'task', 'task', '#1D7AFC'),
+          type(x.types.art, 'art', 'art', '#CD519D'),
+          type(x.types.audio, 'audio', 'audio', '#1D9AAA'),
+          type(x.types.level, 'level', 'map', '#E56910'),
+          type(x.types.design, 'design', 'puzzle', '#B38600'),
+          type(x.types.techdebt, 'techdebt', 'gear', '#626F86'),
+        ],
+        labels: x.labels,
+        components: x.components,
+        versions: [
+          version('v-proto', x.versions.proto, 'released', addDays(t, -45), addDays(t, -10)),
+          version('v-slice', x.versions.slice, 'unreleased', addDays(t, -10), addDays(t, 30)),
+          version('v-alpha', x.versions.alpha, 'unreleased', null, addDays(t, 90)),
+          version('v-beta', x.versions.beta, 'unreleased', null, addDays(t, 150)),
+          version('v-1-0', x.versions.release, 'unreleased', null, addDays(t, 210)),
+        ],
       },
-      samples,
+      samples: x.samples,
     };
   },
 };
 
 // ---------------------------------------------------------------------------
-// Дом и жизнь
+// Home & life
 // ---------------------------------------------------------------------------
 
-function monthVersions(): Version[] {
+/** Versions for the current and the next two months. */
+function monthVersions(description: string): Version[] {
   const now = new Date();
   const res: Version[] = [];
   for (let i = 0; i < 3; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    res.push(
-      ver(
-        `m-${d.getFullYear()}-${d.getMonth() + 1}`,
-        `${MONTHS_NOM[d.getMonth()]} ${d.getFullYear()}`,
-        'unreleased',
-        'Дела на месяц',
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`,
-        `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`,
-      ),
-    );
+    const start = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    res.push({
+      id: `m-${start.getFullYear()}-${start.getMonth() + 1}`,
+      name: `${monthName(start)} ${start.getFullYear()}`,
+      description,
+      status: 'unreleased',
+      startDate: toISODate(start),
+      releaseDate: toISODate(end),
+    });
   }
   return res;
 }
 
 const home: BoardTemplate = {
   id: 'home',
-  name: 'Дом и жизнь',
-  description: 'Домашние дела, покупки, ремонт, финансы, здоровье и события — для себя или всей семьи.',
+  name: TEXT.home.name,
+  description: TEXT.home.description,
   icon: '🏠',
   color: '#22A06B',
   defaultKey: 'HOME',
   build: () => {
-    const issueTypes: IssueType[] = [
-      { id: 'goal', name: 'Цель', icon: 'flag', color: '#904EE2', isEpic: true, template: '### Чего хочу добиться\n\n### Шаги\n- \n\n### К какому сроку\n' },
-      { id: 'chore', name: 'Дело', icon: 'task', color: '#1D7AFC' },
-      { id: 'shopping', name: 'Покупка', icon: 'cart', color: '#22A06B', template: '- **Где купить:** \n- **Бюджет:** \n', checklist: [] },
-      { id: 'repair', name: 'Ремонт', icon: 'wrench', color: '#E56910', template: REPAIR_TEMPLATE },
-      { id: 'finance', name: 'Финансы', icon: 'coin', color: '#B38600', template: FINANCE_TEMPLATE },
-      { id: 'health', name: 'Здоровье', icon: 'heart', color: '#E2483D', template: HEALTH_TEMPLATE },
-      { id: 'event', name: 'Событие', icon: 'calendar', color: '#1D9AAA', template: EVENT_TEMPLATE },
-      { id: 'learn', name: 'Учёба / хобби', icon: 'book', color: '#6E5DC6' },
-    ];
-    const columns = [
-      col('ideas', 'Идеи', 'todo'),
-      col('planned', 'Запланировано', 'todo'),
-      col('week', 'На этой неделе', 'todo', 7),
-      col('doing', 'В процессе', 'progress', 3),
-      col('waiting', 'Ждём', 'progress'),
-      col('done', 'Сделано', 'done'),
-    ];
-    const versions = monthVersions();
-    const m0 = versions[0].id;
-    const m1 = versions[1].id;
-    const samples: SampleIssue[] = [
-      { title: 'Подготовиться к праздникам', type: 'goal', status: 'planned', priority: 'medium', version: m1 },
-      { title: 'Продукты на неделю', type: 'shopping', status: 'week', priority: 'high', components: ['Кухня'], labels: ['регулярно'], dueInDays: 1, assignToMe: true, checklist: [['Молоко', false], ['Хлеб', true], ['Овощи', false], ['Курица', false], ['Кофе', false]] },
-      { title: 'Починить капающий кран на кухне', type: 'repair', status: 'doing', priority: 'high', components: ['Кухня'], version: m0, estimate: '2h', checklist: [['Купить картридж', true], ['Перекрыть воду', false], ['Заменить картридж', false]] },
-      { title: 'Оплатить коммунальные услуги', type: 'finance', status: 'week', priority: 'highest', labels: ['регулярно', 'срочно'], version: m0, dueInDays: 3 },
-      { title: 'Записаться к стоматологу', type: 'health', status: 'planned', priority: 'medium', version: m0 },
-      { title: 'Подарки родным', type: 'shopping', status: 'ideas', priority: 'medium', epic: 'Подготовиться к праздникам', version: m1, labels: ['вместе'] },
-      { title: 'Генеральная уборка', type: 'chore', status: 'planned', priority: 'low', epic: 'Подготовиться к праздникам', version: m1, labels: ['выходные', 'вместе'], checklist: [['Окна', false], ['Шкафы', false], ['Балкон', false]] },
-      { title: 'Ждём доставку пылесоса', type: 'shopping', status: 'waiting', priority: 'low', components: ['Гостиная'] },
-      { title: 'Поменять резину на зимнюю', type: 'chore', status: 'done', priority: 'high', components: ['Авто'], version: m0 },
-      { title: 'Пройти онлайн-курс по фотографии', type: 'learn', status: 'ideas', priority: 'lowest' },
-    ];
+    const x = TEXT.home;
+    const versions = monthVersions(x.monthDescription);
+    const monthIds: Record<string, string> = { $m0: versions[0].id, $m1: versions[1].id, $m2: versions[2].id };
     return {
       draft: {
         template: 'home',
         icon: '🏠',
         color: '#22A06B',
-        columns,
-        issueTypes,
-        labels: ['срочно', 'регулярно', 'вместе', 'выходные', 'бюджет'],
-        components: ['Кухня', 'Ванная', 'Гостиная', 'Спальня', 'Дача / сад', 'Авто', 'Дети', 'Питомцы', 'Документы'],
+        columns: [
+          col('ideas', x.columns.ideas, 'todo'),
+          col('planned', x.columns.planned, 'todo'),
+          col('week', x.columns.week, 'todo', 7),
+          col('doing', x.columns.doing, 'progress', 3),
+          col('waiting', x.columns.waiting, 'progress'),
+          col('done', x.columns.done, 'done'),
+        ],
+        issueTypes: [
+          type(x.types.goal, 'goal', 'flag', '#904EE2', true),
+          type(x.types.chore, 'chore', 'task', '#1D7AFC'),
+          type(x.types.shopping, 'shopping', 'cart', '#22A06B'),
+          type(x.types.repair, 'repair', 'wrench', '#E56910'),
+          type(x.types.finance, 'finance', 'coin', '#B38600'),
+          type(x.types.health, 'health', 'heart', '#E2483D'),
+          type(x.types.event, 'event', 'calendar', '#1D9AAA'),
+          type(x.types.learn, 'learn', 'book', '#6E5DC6'),
+        ],
+        labels: x.labels,
+        components: x.components,
         versions,
       },
-      samples,
+      samples: x.samples.map((s) => (s.version && monthIds[s.version] ? { ...s, version: monthIds[s.version] } : s)),
     };
   },
 };
 
 // ---------------------------------------------------------------------------
-// Разработка ПО (Scrum-лайт)
+// Software development (Scrum-lite)
 // ---------------------------------------------------------------------------
 
 const software: BoardTemplate = {
   id: 'software',
-  name: 'Разработка ПО',
-  description: 'Классический Jira-процесс: истории, задачи, баги, эпики, ревью и релизы.',
+  name: TEXT.software.name,
+  description: TEXT.software.description,
   icon: '💻',
   color: '#1D7AFC',
   defaultKey: 'DEV',
   build: () => {
+    const x = TEXT.software;
     const t = todayISO();
     return {
       draft: {
         template: 'software',
         icon: '💻',
         color: '#1D7AFC',
-        columns: [col('todo', 'К выполнению', 'todo'), col('progress', 'В работе', 'progress', 4), col('review', 'Ревью', 'progress'), col('done', 'Готово', 'done')],
+        columns: [col('todo', x.columns.todo, 'todo'), col('progress', x.columns.progress, 'progress', 4), col('review', x.columns.review, 'progress'), col('done', x.columns.done, 'done')],
         issueTypes: [
-          { id: 'epic', name: 'Эпик', icon: 'epic', color: '#904EE2', isEpic: true },
-          { id: 'story', name: 'История', icon: 'story', color: '#22A06B', template: STORY_TEMPLATE },
-          { id: 'task', name: 'Задача', icon: 'task', color: '#1D7AFC' },
-          { id: 'bug', name: 'Баг', icon: 'bug', color: '#E2483D', template: SW_BUG_TEMPLATE },
+          type(x.types.epic, 'epic', 'epic', '#904EE2', true),
+          type(x.types.story, 'story', 'story', '#22A06B'),
+          type(x.types.task, 'task', 'task', '#1D7AFC'),
+          type(x.types.bug, 'bug', 'bug', '#E2483D'),
         ],
-        labels: ['frontend', 'backend', 'devops', 'ux', 'security'],
-        components: ['API', 'Web', 'Mobile', 'Инфраструктура'],
-        versions: [ver('v1', '1.0', 'unreleased', '', t, addDays(t, 14)), ver('v1-1', '1.1', 'unreleased', '', addDays(t, 14), addDays(t, 28))],
+        labels: x.labels,
+        components: x.components,
+        versions: [version('v1', x.versions.v1, 'unreleased', t, addDays(t, 14)), version('v1-1', x.versions.v1_1, 'unreleased', addDays(t, 14), addDays(t, 28))],
       },
-      samples: [
-        { title: 'Регистрация и вход', type: 'epic', status: 'progress', version: 'v1' },
-        { title: 'Как пользователь, я хочу войти через GitHub', type: 'story', status: 'progress', epic: 'Регистрация и вход', version: 'v1', storyPoints: 3, assignToMe: true },
-        { title: 'Кнопка «Выйти» не работает в Safari', type: 'bug', status: 'todo', priority: 'high', version: 'v1', storyPoints: 1 },
-        { title: 'Настроить CI для pull request', type: 'task', status: 'done', components: ['Инфраструктура'], version: 'v1' },
-      ],
+      samples: x.samples,
     };
   },
 };
 
 // ---------------------------------------------------------------------------
-// Пустая
+// Blank
 // ---------------------------------------------------------------------------
 
 const blank: BoardTemplate = {
   id: 'blank',
-  name: 'Пустая доска',
-  description: 'Три колонки и базовые типы задач — настройте всё под себя.',
+  name: TEXT.blank.name,
+  description: TEXT.blank.description,
   icon: '📋',
   color: '#626F86',
   defaultKey: 'KB',
-  build: () => ({
-    draft: {
-      template: 'blank',
-      icon: '📋',
-      color: '#626F86',
-      columns: [col('todo', 'К выполнению', 'todo'), col('progress', 'В работе', 'progress'), col('done', 'Готово', 'done')],
-      issueTypes: [
-        { id: 'epic', name: 'Эпик', icon: 'epic', color: '#904EE2', isEpic: true },
-        { id: 'task', name: 'Задача', icon: 'task', color: '#1D7AFC' },
-        { id: 'bug', name: 'Баг', icon: 'bug', color: '#E2483D' },
-      ],
-      labels: [],
-      components: [],
-      versions: [],
-    },
-    samples: [],
-  }),
+  build: () => {
+    const x = TEXT.blank;
+    return {
+      draft: {
+        template: 'blank',
+        icon: '📋',
+        color: '#626F86',
+        columns: [col('todo', x.columns.todo, 'todo'), col('progress', x.columns.progress, 'progress'), col('done', x.columns.done, 'done')],
+        issueTypes: [type(x.types.epic, 'epic', 'epic', '#904EE2', true), type(x.types.task, 'task', 'task', '#1D7AFC'), type(x.types.bug, 'bug', 'bug', '#E2483D')],
+        labels: x.labels,
+        components: x.components,
+        versions: [],
+      },
+      samples: x.samples,
+    };
+  },
 };
 
 export const TEMPLATES: BoardTemplate[] = [gameDev, home, software, blank];
