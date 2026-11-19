@@ -144,7 +144,7 @@ What you should set up in the consoles (one-time):
    - *Application restrictions* → **Websites**: `https://darkv3ctor.github.io/*`, `http://localhost:5173/*`, `http://localhost:4173/*`, and `https://<project-id>.firebaseapp.com/*` (needed by the sign-in popup);
    - *API restrictions* → **Restrict key**: Identity Toolkit API, Token Service API, Cloud Firestore API (and Firebase App Check API if you enable it).
 2. **Use a dedicated origin (recommended).** All GitHub Pages sites of one account share the origin `https://<user>.github.io`, so every other Pages site of `darkv3ctor` could read this app's sign-in token from the browser storage, and the authorized domain `darkv3ctor.github.io` covers all of them. If the account has (or will have) other Pages sites, give this one its own domain: add `public/CNAME` with e.g. `kanban.example.com`, point a DNS `CNAME` record to `darkv3ctor.github.io`, set it in the repo's Settings → Pages → Custom domain (with HTTPS), then in Firebase → Authentication → Settings → Authorized domains add the new domain and remove `darkv3ctor.github.io`. Update the API key restriction too.
-3. **App Check (optional).** Limits use of the project to your site: create a reCAPTCHA Enterprise key for your domain, register the web app in Firebase → App Check, put the site key into `appCheckSiteKey` in `public/config.js`, deploy, watch the App Check metrics, and only then turn on **Enforce** for Firestore and Authentication. Rebuild after changing the key — the CSP is generated from `config.js`.
+3. **App Check (optional).** Limits use of the project to your site: create a reCAPTCHA Enterprise key for your domain, register the web app in Firebase → App Check, put the site key into `appCheckSiteKey` in `public/config.js`, deploy, watch the App Check metrics, and only then turn on **Enforce** for Firestore and Authentication. Rebuild after changing the key — the CSP is generated from `config.js`. Local development then needs a debug token (see [Development](#development)).
 
 ---
 
@@ -164,6 +164,13 @@ npm run preview      # serve dist/ locally to check the production build
 All of these run in CI before every deploy.
 
 `localhost` is in Firebase's Authorized domains by default, so GitHub sign-in also works locally.
+
+**App Check on localhost.** The reCAPTCHA key works only on the site's domain, so once App Check is enforced a local copy needs a debug token (on `localhost` the app switches to the debug provider by itself):
+
+- In Firebase → App Check → Apps → ⋮ → **Manage debug tokens** → **Add debug token** → **Generate token**, and put it into `.env.local` in the project folder: `VITE_APPCHECK_DEBUG_TOKEN=<token>`. It works in every browser with `npm run dev`. `.env.local` is ignored by git, and the token is never built into the site.
+- Or start the app without it: the browser console prints a debug token made for that browser (also with `npm run preview`) — add that one in **Manage debug tokens**.
+
+A debug token lets its holder past App Check: keep it out of the repo and chats, and delete it in the console when it is no longer needed.
 
 ### Translations
 

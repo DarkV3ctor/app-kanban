@@ -4,3 +4,5 @@ dist
 *.log
 .DS_Store
 .claude/
+# Local settings such as .env.local (the App Check debug token): never committed.
+*.local

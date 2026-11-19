@@ -174,8 +174,19 @@ function clean<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
 }
 
+/** Hosts of local development, where App Check uses a debug token instead of reCAPTCHA. */
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+
 async function initAppCheck(app: FirebaseApp, siteKey: string) {
   const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await import('firebase/app-check');
+  // The reCAPTCHA key works only on the site's own domain, so with App Check enforced a local copy
+  // needs a debug token, registered in Firebase → App Check → Apps → Manage debug tokens. In dev mode
+  // it can come from .env.local (VITE_APPCHECK_DEBUG_TOKEN, never committed, never built into the
+  // site); otherwise the SDK creates one for this browser and prints it to the console.
+  if (LOCAL_HOSTS.includes(location.hostname)) {
+    const fromEnv: unknown = import.meta.env.DEV ? import.meta.env.VITE_APPCHECK_DEBUG_TOKEN : undefined;
+    (self as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = typeof fromEnv === 'string' && fromEnv ? fromEnv : true;
+  }
   initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true });
 }
 
