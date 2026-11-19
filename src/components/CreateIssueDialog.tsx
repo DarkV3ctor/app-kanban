@@ -3,6 +3,7 @@ import type { IssueDraft } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { isEpic, newIssueDraft } from '../lib/issues';
+import { fieldName } from '../lib/fields';
 import { columnCategory, uid } from '../lib/utils';
 import { useBoard } from './board-context';
 import { Field, Modal } from './ui';
@@ -83,7 +84,7 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
       }
     >
       <div className="form-grid">
-        <Field label={t('Issue type')}>
+        <Field label={fieldName(board, 'type')}>
           <TypePicker board={board} value={d.type} onChange={changeType} />
         </Field>
         <Field label={t('Status')}>
@@ -120,27 +121,27 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
         </div>
       )}
       <div className="form-grid">
-        <Field label={t('Assignee')}>
+        <Field label={fieldName(board, 'assigneeId')}>
           <AssigneePicker board={board} value={d.assigneeId} onChange={(v) => set({ assigneeId: v })} meId={user.ghId} />
         </Field>
-        <Field label={t('Priority')}>
+        <Field label={fieldName(board, 'priority')}>
           <PriorityPicker value={d.priority} onChange={(p) => set({ priority: p })} />
         </Field>
-        <Field label={t('Labels')}>
+        <Field label={fieldName(board, 'labels')}>
           <LabelsPicker board={board} issues={issues} value={d.labels} onChange={(l) => set({ labels: l })} />
         </Field>
-        <Field label={t('Components')}>
+        <Field label={fieldName(board, 'components')}>
           <ComponentsPicker board={board} value={d.components} onChange={(c) => set({ components: c })} />
         </Field>
-        <Field label={t('Fix version')}>
+        <Field label={fieldName(board, 'fixVersionId')}>
           <VersionPicker board={board} value={d.fixVersionId} onChange={(v) => set({ fixVersionId: v })} />
         </Field>
         {!typeIsEpic && (
-          <Field label={t('Epic')}>
+          <Field label={fieldName(board, 'epicId')}>
             <EpicPicker board={board} issues={issues} value={d.epicId} onChange={(v) => set({ epicId: v })} />
           </Field>
         )}
-        <Field label={t('Story points')}>
+        <Field label={fieldName(board, 'storyPoints')}>
           <input
             className="input"
             inputMode="decimal"
@@ -149,10 +150,10 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
             placeholder="—"
           />
         </Field>
-        <Field label={t('Due date')}>
+        <Field label={fieldName(board, 'dueDate')}>
           <input className="input" type="date" value={d.dueDate ?? ''} onChange={(e) => set({ dueDate: e.target.value || null })} />
         </Field>
-        <Field label={t('Estimate')}>
+        <Field label={fieldName(board, 'estimate')}>
           <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder={t('e.g. 2d 4h')} maxLength={50} />
         </Field>
       </div>

@@ -687,7 +687,7 @@ textarea.input {
 }
 .design-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 4px;
 }
@@ -816,6 +816,45 @@ textarea.input {
 }
 .preview-fluent .pv-bar {
   border-bottom-color: transparent;
+}
+/* Linux: a dark panel with the blue-to-green accent line, hairline-bordered columns, a green "done" card. */
+.preview-linux {
+  --pv-bg: #f5f7fa;
+  --pv-bar: #ffffff;
+  --pv-line: #d3dae5;
+  --pv-col: #e8ecf2;
+  --pv-card: #ffffff;
+  --pv-accent: #2563d8;
+  --pv-done: #0e9f61;
+  --pv-r: 2px;
+}
+.preview-linux.is-dark {
+  --pv-bg: #11151c;
+  --pv-bar: #0b0e13;
+  --pv-line: #263042;
+  --pv-col: #0e1218;
+  --pv-card: #1a202b;
+  --pv-accent: #367bf0;
+  --pv-done: #29d68d;
+}
+.preview-linux .pv-bar {
+  border-bottom: 0;
+  background:
+    linear-gradient(90deg, var(--pv-accent), var(--pv-done)) bottom / 100% 1px no-repeat,
+    var(--pv-bar);
+}
+.preview-linux .pv-col {
+  box-shadow: inset 0 0 0 1px var(--pv-line);
+}
+.preview-linux .pv-card {
+  box-shadow: inset 0 0 0 1px var(--pv-line);
+}
+.preview-linux .pv-col:last-child .pv-card {
+  box-shadow: inset 2px 0 0 var(--pv-done), inset 0 0 0 1px var(--pv-line);
+}
+.preview-linux .pv-logo {
+  border-radius: 0;
+  background: var(--pv-done);
 }
 .design-name {
   font-size: 13px;
@@ -1746,6 +1785,24 @@ td.due-soon {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-subtlest);
+}
+/* Board settings → Issue fields: generic name, the board's name, reset. */
+.field-names {
+  display: grid;
+  gap: 6px;
+  max-width: 640px;
+}
+.field-names-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) 32px;
+  gap: 8px;
+  align-items: center;
+}
+.field-names-generic {
+  color: var(--text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .row-move {
   display: flex;
@@ -2989,5 +3046,489 @@ textarea.inline-input.issue-title {
   }
   .panel {
     padding: 12px 14px;
+  }
+}
+
+/* ==========================================================================
+   Progress view (charts)
+   ========================================================================== */
+/* Series colours per design and mode: "created" / all issues in blue, "completed" / done in green.
+   Each pair is checked for colour-blind separation, lightness band and contrast on its surface. */
+:root {
+  --chart-created: #0c66e4;
+  --chart-done: #22a06b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --chart-created: #388bff;
+    --chart-done: #1fa36c;
+  }
+}
+:root[data-theme='dark'] {
+  --chart-created: #388bff;
+  --chart-done: #1fa36c;
+}
+:root[data-design='apple'] {
+  --chart-created: #0071e3;
+  --chart-done: #248a3d;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design='apple']:not([data-theme='light']) {
+    --chart-created: #0a84ff;
+    --chart-done: #25a84a;
+  }
+}
+:root[data-design='apple'][data-theme='dark'] {
+  --chart-created: #0a84ff;
+  --chart-done: #25a84a;
+}
+:root[data-design='fluent'] {
+  --chart-created: #005fb8;
+  --chart-done: #0f7b0f;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design='fluent']:not([data-theme='light']) {
+    --chart-created: #2f8fd8;
+    --chart-done: #45a63b;
+  }
+}
+:root[data-design='fluent'][data-theme='dark'] {
+  --chart-created: #2f8fd8;
+  --chart-done: #45a63b;
+}
+:root[data-design='linux'] {
+  --chart-created: #2563d8;
+  --chart-done: #0e9f61;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design='linux']:not([data-theme='light']) {
+    --chart-created: #367bf0;
+    --chart-done: #18ad6c;
+  }
+}
+:root[data-design='linux'][data-theme='dark'] {
+  --chart-created: #367bf0;
+  --chart-done: #18ad6c;
+}
+/* The unfilled part of a meter and empty heatmap days: a light step of the "done" hue. */
+.progress-view {
+  --chart-track: color-mix(in srgb, var(--chart-done) 14%, var(--bg-hover));
+  max-width: 1200px;
+  width: 100%;
+  padding-bottom: 48px;
+}
+.progress-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.period-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.period-label {
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Stat tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+.stat-value {
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.stat-tile.is-hero .stat-value {
+  font-size: 48px;
+  line-height: 1.05;
+}
+.stat-delta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-subtlest);
+}
+.stat-delta b {
+  color: var(--text-subtle);
+}
+.stat-delta.is-good b,
+.stat-delta.is-good svg {
+  color: var(--done-text);
+}
+.stat-delta.is-bad b,
+.stat-delta.is-bad svg {
+  color: var(--danger-text);
+}
+.stat-tile-ring {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+.stat-tile-ring svg {
+  flex: none;
+}
+
+/* Chart cards */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.chart-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+}
+.chart-card {
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.chart-card-wide {
+  margin-bottom: 16px;
+}
+.chart-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.chart-card-titles {
+  min-width: 0;
+}
+.chart-title {
+  font-size: 15px;
+  line-height: 20px;
+}
+.chart-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-subtlest);
+}
+.chart-card-head .icon-btn.is-active {
+  background: var(--bg-selected);
+  color: var(--link);
+}
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.legend-line {
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* Plots */
+.chart {
+  position: relative;
+  border-radius: var(--radius);
+}
+.chart svg {
+  display: block;
+  overflow: visible;
+  touch-action: pan-y;
+}
+.chart-grid-lines line {
+  stroke: var(--border);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.chart-grid-lines .chart-baseline {
+  stroke: var(--border-strong);
+  stroke-opacity: 0.55;
+}
+.chart-tick {
+  font-size: 11px;
+  fill: var(--text-subtlest);
+  font-variant-numeric: tabular-nums;
+}
+.chart-tick.is-now {
+  fill: var(--text);
+  font-weight: 700;
+}
+.chart-hover-band {
+  fill: var(--bg-hover);
+}
+.chart-cols {
+  transition: opacity 0.12s;
+}
+.chart-cols.is-dim {
+  opacity: 0.4;
+}
+.chart-crosshair {
+  stroke: var(--text-subtlest);
+  stroke-width: 1;
+}
+.chart-dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.chart-end-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.chart-tooltip {
+  position: absolute;
+  top: 4px;
+  z-index: 5;
+  min-width: 128px;
+  padding: 8px 10px;
+  pointer-events: none;
+  background: var(--overlay);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-raised);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.chart-tooltip.is-left {
+  transform: translateX(-100%);
+}
+.tt-title {
+  margin-bottom: 4px;
+  color: var(--text-subtle);
+}
+.tt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 18px;
+}
+.tt-row b {
+  min-width: 2ch;
+  font-variant-numeric: tabular-nums;
+}
+.tt-row span:last-child {
+  color: var(--text-subtle);
+}
+.tt-key {
+  flex: none;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+}
+.chart-table-wrap {
+  max-height: 260px;
+  overflow: auto;
+}
+.chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.chart-table th,
+.chart-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.chart-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+.chart-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Year heatmap: five steps of the "done" hue (sequential, faint to strong in both modes). */
+.heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.heat-0 {
+  --heat: var(--chart-track);
+}
+.heat-1 {
+  --heat: color-mix(in srgb, var(--chart-done) 32%, var(--surface));
+}
+.heat-2 {
+  --heat: color-mix(in srgb, var(--chart-done) 55%, var(--surface));
+}
+.heat-3 {
+  --heat: color-mix(in srgb, var(--chart-done) 78%, var(--surface));
+}
+.heat-4 {
+  --heat: var(--chart-done);
+}
+.heat-cell {
+  fill: var(--heat);
+}
+.heat-cell.is-future {
+  opacity: 0.35;
+}
+.heat-cell.is-today,
+.heat-cell:hover {
+  stroke: var(--text-subtle);
+  stroke-width: 1.5;
+}
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-subtlest);
+}
+.heat-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--heat);
+}
+
+/* Breakdowns: horizontal bars growing from the left, 4 px rounded data end. */
+.bar-list {
+  display: grid;
+  gap: 8px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.bar-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.bar-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-track {
+  display: flex;
+  height: 10px;
+}
+.bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: 0 4px 4px 0;
+}
+.bar-value {
+  min-width: 2ch;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.progress-done-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+.done-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.done-row:hover {
+  background: var(--bg-hover);
+}
+.done-row-key {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--link);
+  white-space: nowrap;
+}
+.done-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.done-row-time {
+  white-space: nowrap;
+}
+.progress-note {
+  max-width: 760px;
+}
+@media (max-width: 600px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stat-value {
+    font-size: 24px;
+  }
+  .stat-tile.is-hero .stat-value {
+    font-size: 40px;
+  }
+  .stat-tile-ring {
+    grid-column: 1 / -1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart-cols {
+    transition: none;
   }
 }

@@ -270,6 +270,17 @@ describe('boards', () => {
     await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { color: '#22A06B', key: 'NEW1' }));
   });
 
+  test('field names: known fields only, short text; admins set them, editors cannot', async () => {
+    const db = as(BOARD_ADMIN);
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: { details: 'About', fixVersionId: 'Month', assigneeId: 'Who does it' } }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: {} }));
+    await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { title: 'Name' } }));
+    await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { epicId: 'x'.repeat(41) } }));
+    await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { epicId: 7 } }));
+    await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: 'Month' }));
+    await assertFails(updateDoc(doc(as(EDITOR), 'boards/b1'), { fieldNames: { epicId: 'Goal' } }));
+  });
+
   test('only the owner deletes the board', async () => {
     await assertFails(deleteDoc(doc(as(BOARD_ADMIN), 'boards/b1')));
     await assertSucceeds(deleteDoc(doc(as(OWNER), 'boards/b1')));

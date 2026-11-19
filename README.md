@@ -15,10 +15,12 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 - **Filters:** text search, assignees, type, priority, labels, components, version, epic, "My issues", "Updated this week".
 - **Issue list** with sorting and CSV export (opens in Excel).
 - **Releases:** versions and milestones with dates, progress, release and archive.
-- **Board settings:** columns and their categories, issue types (icon, color, description template, default checklist), labels, components.
+- **Progress charts** for a day, week, month or year (browse back through earlier periods): completed and created issues with the change against the previous period, median lead time, story points, the share of the board that is done, a created-vs-completed column chart, a burn-up chart, a GitHub-style activity heatmap for the year, breakdowns by type and assignee and the latest completed issues. Every chart has hover / keyboard tooltips and a table view.
+- **Field names per kind of board:** the issue fields are called the way the board's template suggests ("Milestone" and "Discipline" in game dev; "Who does it", "Room / area", "Month", "Goal", "Effort" at home; "Release" in software), and admins can rename any of them in the board settings.
+- **Board settings:** columns and their categories, issue types (icon, color, description template, default checklist), field names, labels, components.
 - **Members and permissions:** add people by GitHub username and pick one of 5 roles.
 - Board export/import as JSON, mobile layout.
-- **Appearance:** three designs — *Classic* (Atlassian-like), *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors) and *Fluent* (Windows 11: Segoe UI Variable, Mica backdrop, Acrylic menus, accent selection pills) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
+- **Appearance:** four designs — *Classic* (Atlassian-like), *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors), *Fluent* (Windows 11: Segoe UI Variable, Mica backdrop, Acrylic menus, accent selection pills) and *Linux* (inspired by Kali Linux: a monospaced UI in JetBrains Mono, near-black navy with the Kali blue and terminal green, `$` prompts with a blinking cursor, `[ DONE ]` status tags, glowing focus) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
 - Keyboard shortcuts: `C` creates an issue, `/` focuses search.
 
 ## Templates
@@ -32,7 +34,7 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 
 The game dev template comes with components (Gameplay, Graphics, Audio, UI/UX, AI, Networking…), milestones (Prototype → Vertical Slice → Alpha → Beta → Release 1.0) and description templates: steps to reproduce and environment for bugs, a definition of done for features, asset requirements for art and audio. The home template has rooms and areas of life, monthly versions and templates for repairs, payments, doctor visits and events. Everything can be changed in the board settings.
 
-A board's template text (column names, types, sample issues) is created in the interface language that is active when you create the board.
+A board's template text (column names, types, sample issues) is created in the interface language that is active when you create the board. Field names are not stored: each viewer sees the template's field names in their own language, until an admin renames a field (custom names are shown as typed).
 
 ## Roles
 

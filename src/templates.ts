@@ -1,4 +1,4 @@
-import type { BoardSetup, Column, IssueType, Priority, Version } from './types';
+import type { BoardSetup, Column, FieldNames, IssueType, Priority, Version } from './types';
 import { lang } from './i18n';
 import { addDays, monthName, todayISO, toISODate, uid } from './lib/utils';
 import { EN_TEMPLATES } from './locales/templates.en';
@@ -40,6 +40,8 @@ export interface TemplateContent<C extends string, T extends string, V extends s
   labels: string[];
   components: string[];
   versions: Record<V, { name: string; description: string }>;
+  /** Names of the issue fields that suit this kind of board (the rest keep the generic names). */
+  fields?: FieldNames;
   samples: SampleIssue[];
 }
 
@@ -57,6 +59,8 @@ export interface BoardTemplate {
   icon: string;
   color: string;
   defaultKey: string;
+  /** Field names of boards made from this template, in the UI language (see fieldName()). */
+  fields: FieldNames;
   build: () => { draft: BoardSetup; samples: SampleIssue[] };
 }
 
@@ -84,6 +88,7 @@ const gameDev: BoardTemplate = {
   id: 'gamedev',
   name: TEXT.gamedev.name,
   description: TEXT.gamedev.description,
+  fields: TEXT.gamedev.fields ?? {},
   icon: '🎮',
   color: '#6E5DC6',
   defaultKey: 'GAME',
@@ -123,6 +128,7 @@ const gameDev: BoardTemplate = {
           version('v-beta', x.versions.beta, 'unreleased', null, addDays(t, 150)),
           version('v-1-0', x.versions.release, 'unreleased', null, addDays(t, 210)),
         ],
+        fieldNames: {},
       },
       samples: x.samples,
     };
@@ -156,6 +162,7 @@ const home: BoardTemplate = {
   id: 'home',
   name: TEXT.home.name,
   description: TEXT.home.description,
+  fields: TEXT.home.fields ?? {},
   icon: '🏠',
   color: '#22A06B',
   defaultKey: 'HOME',
@@ -189,6 +196,7 @@ const home: BoardTemplate = {
         labels: x.labels,
         components: x.components,
         versions,
+        fieldNames: {},
       },
       samples: x.samples.map((s) => (s.version && monthIds[s.version] ? { ...s, version: monthIds[s.version] } : s)),
     };
@@ -203,6 +211,7 @@ const software: BoardTemplate = {
   id: 'software',
   name: TEXT.software.name,
   description: TEXT.software.description,
+  fields: TEXT.software.fields ?? {},
   icon: '💻',
   color: '#1D7AFC',
   defaultKey: 'DEV',
@@ -224,6 +233,7 @@ const software: BoardTemplate = {
         labels: x.labels,
         components: x.components,
         versions: [version('v1', x.versions.v1, 'unreleased', t, addDays(t, 14)), version('v1-1', x.versions.v1_1, 'unreleased', addDays(t, 14), addDays(t, 28))],
+        fieldNames: {},
       },
       samples: x.samples,
     };
@@ -238,6 +248,7 @@ const blank: BoardTemplate = {
   id: 'blank',
   name: TEXT.blank.name,
   description: TEXT.blank.description,
+  fields: TEXT.blank.fields ?? {},
   icon: '📋',
   color: '#626F86',
   defaultKey: 'KB',
@@ -253,6 +264,7 @@ const blank: BoardTemplate = {
         labels: x.labels,
         components: x.components,
         versions: [],
+        fieldNames: {},
       },
       samples: x.samples,
     };

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useApp } from '../app-context';
 import { EMPTY_FILTERS, filtersActive, isEpic, type Filters } from '../lib/issues';
 import { PRIORITIES, cls } from '../lib/utils';
+import { fieldName } from '../lib/fields';
 import { t } from '../i18n';
 import type { Priority } from '../types';
 import { useBoard } from './board-context';
@@ -64,20 +65,20 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
           <Avatar info={null} size={30} title={t('Unassigned')} />
         </button>
       </div>
-      <FilterSelect label={t('Type')} value={filters.types} onChange={(v) => set('types', v)} options={board.issueTypes.map((t) => ({ value: t.id, label: t.name, icon: <TypeIcon type={t} /> }))} />
+      <FilterSelect label={fieldName(board, 'type')} value={filters.types} onChange={(v) => set('types', v)} options={board.issueTypes.map((t) => ({ value: t.id, label: t.name, icon: <TypeIcon type={t} /> }))} />
       <FilterSelect
-        label={t('Priority')}
+        label={fieldName(board, 'priority')}
         value={filters.priorities}
         onChange={(v) => set('priorities', v as Priority[])}
         options={PRIORITIES.map((p) => ({ value: p.id, label: p.name, icon: <PriorityIcon priority={p.id} /> }))}
       />
-      {board.labels.length > 0 && <FilterSelect label={t('Labels')} value={filters.labels} onChange={(v) => set('labels', v)} options={board.labels.map((l) => ({ value: l, label: l }))} />}
+      {board.labels.length > 0 && <FilterSelect label={fieldName(board, 'labels')} value={filters.labels} onChange={(v) => set('labels', v)} options={board.labels.map((l) => ({ value: l, label: l }))} />}
       {board.components.length > 0 && (
-        <FilterSelect label={t('Components')} value={filters.components} onChange={(v) => set('components', v)} options={board.components.map((l) => ({ value: l, label: l }))} />
+        <FilterSelect label={fieldName(board, 'components')} value={filters.components} onChange={(v) => set('components', v)} options={board.components.map((l) => ({ value: l, label: l }))} />
       )}
       {board.versions.length > 0 && (
         <FilterSelect
-          label={t('Version')}
+          label={fieldName(board, 'fixVersionId')}
           value={filters.versions}
           onChange={(v) => set('versions', v)}
           options={[...board.versions.filter((v) => v.status !== 'archived').map((v) => ({ value: v.id, label: v.name, icon: <Icon name="release" size={14} /> })), { value: 'none', label: t('No version') }]}
@@ -85,7 +86,7 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
       )}
       {epics.length > 0 && (
         <FilterSelect
-          label={t('Epic')}
+          label={fieldName(board, 'epicId')}
           value={filters.epics}
           onChange={(v) => set('epics', v)}
           options={[...epics.map((e) => ({ value: e.id, label: `${board.key}-${e.number} ${e.title}`, icon: <TypeIcon type={board.issueTypes.find((t) => t.id === e.type)} /> })), { value: 'none', label: t('No epic') }]}

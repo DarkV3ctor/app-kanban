@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { Column, ColumnCategory, IssueType } from '../types';
+import type { Column, ColumnCategory, FieldNames, IssueType } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { navigate } from '../router';
 import { count, t } from '../i18n';
 import { exportBoard, statusSideEffects } from '../lib/issues';
+import { FIELDS, MAX_FIELD_NAME, defaultFieldName, genericFieldName } from '../lib/fields';
 import { downloadJSON, sanitizeKey, uid, cls } from '../lib/utils';
 import { newColumnId } from '../templates';
 import { useBoard } from './board-context';
@@ -44,6 +45,7 @@ export function SettingsView() {
       <General />
       <Columns />
       <IssueTypes />
+      <FieldNamesPanel />
       <ListEditor title={t('Labels')} hint={t('Suggestions for the Labels field. Members can also create new labels right in an issue.')} field="labels" chips />
       <ListEditor title={t('Components')} hint={t('Project areas: "Gameplay", "Graphics"… or rooms and areas of life for a home board.')} field="components" />
       <ExportPanel />
@@ -347,6 +349,85 @@ function TypeDialog({ type, onSave, onClose }: { type: IssueType; onSave: (it: I
         <textarea className="input" rows={4} value={checklist} onChange={(e) => setChecklist(e.target.value)} />
       </Field>
     </Modal>
+  );
+}
+
+/** Names typed in the panel → what is stored: trimmed, without empty entries, in a fixed key order. */
+function cleanFieldNames(names: FieldNames): FieldNames {
+  const out: FieldNames = {};
+  for (const { key } of FIELDS) {
+    const v = names[key]?.trim();
+    if (v) out[key] = v;
+  }
+  return out;
+}
+
+/**
+ * Field names: the template gives each kind of board its own names ("Milestone" in game dev,
+ * "Month" at home); here admins rename any field. An empty box falls back to the template's name.
+ */
+function FieldNamesPanel() {
+  const { board, updateBoard } = useBoard();
+  const [names, setNames] = useState<FieldNames>(board.fieldNames);
+  const stored = JSON.stringify(cleanFieldNames(board.fieldNames));
+  const dirty = JSON.stringify(cleanFieldNames(names)) !== stored;
+  const custom = Object.keys(cleanFieldNames(names)).length > 0;
+  return (
+    <div className="panel">
+      <div className="panel-title">{t('Issue fields')}</div>
+      <p className="muted small">{t('How the fields of an issue are called on this board. Each kind of board has its own names; type yours to rename a field, or leave the box empty to keep the name shown in grey.')}</p>
+      <div className="field-names">
+        <div className="field-names-row settings-row-head">
+          <span>{t('Field')}</span>
+          <span>{t('Name on this board')}</span>
+          <span />
+        </div>
+        {FIELDS.map(({ key }) => {
+          const value = names[key] ?? '';
+          return (
+            <div key={key} className="field-names-row">
+              <label className="field-names-generic" htmlFor={`field-name-${key}`}>
+                {key === 'details' ? t('Panel title') : genericFieldName(key)}
+              </label>
+              <input
+                id={`field-name-${key}`}
+                className="input"
+                value={value}
+                maxLength={MAX_FIELD_NAME}
+                placeholder={defaultFieldName(board.template, key)}
+                onChange={(e) => setNames({ ...names, [key]: e.target.value })}
+              />
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setNames({ ...names, [key]: '' })}
+                disabled={!value.trim()}
+                title={t('Use the default name')}
+                aria-label={t('Use the default name')}
+              >
+                <Icon name="history" size={16} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="form-actions">
+        {custom && (
+          <button className="btn btn-subtle" onClick={() => setNames({})}>
+            {t('Reset all')}
+          </button>
+        )}
+        <span className="grow" />
+        {dirty && (
+          <button className="btn btn-subtle" onClick={() => setNames(board.fieldNames)}>
+            {t('Discard')}
+          </button>
+        )}
+        <button className="btn btn-primary" disabled={!dirty} onClick={() => updateBoard({ fieldNames: cleanFieldNames(names) })}>
+          {t('Save names')}
+        </button>
+      </div>
+    </div>
   );
 }
 

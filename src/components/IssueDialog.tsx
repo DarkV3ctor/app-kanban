@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { Comment, HistoryEntry, Issue, LinkType } from '../types';
+import type { Comment, FieldKey, HistoryEntry, Issue, LinkType } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { LINK_TYPES, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
+import { fieldName } from '../lib/fields';
 import { columnCategory, formatDateTime, rankBetween, timeAgo, uid, cls, isDone } from '../lib/utils';
 import { BoardContext, useBoard } from './board-context';
 import { Icon, TypeIcon } from './Icons';
@@ -37,6 +38,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
   const canEdit = perms.edit;
   const canDelete = perms.admin || (perms.edit && issue.createdBy === user.ghId);
   const set = (patch: Partial<Issue>) => updateIssue(issue, patch);
+  const f = (k: FieldKey) => fieldName(board, k);
 
   const drafts = useRef(new Set<string>());
   const reportDraft = useCallback((k: string, dirty: boolean) => {
@@ -174,40 +176,40 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
                 )}
               </div>
               <div className="details">
-                <div className="details-title">{t('Details')}</div>
-                <Detail label={t('Assignee')}>
+                <div className="details-title">{f('details')}</div>
+                <Detail label={f('assigneeId')}>
                   <AssigneePicker board={board} value={issue.assigneeId} onChange={(v) => set({ assigneeId: v })} disabled={!canEdit} meId={user.ghId} />
                 </Detail>
-                <Detail label={t('Reporter')}>
+                <Detail label={f('reporterId')}>
                   <AssigneePicker board={board} value={issue.reporterId} onChange={(v) => v && set({ reporterId: v })} disabled={!canEdit} placeholder="—" />
                 </Detail>
-                <Detail label={t('Priority')}>
+                <Detail label={f('priority')}>
                   <PriorityPicker value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
                 </Detail>
-                <Detail label={t('Type')}>
+                <Detail label={f('type')}>
                   <TypePicker board={board} value={issue.type} onChange={(v) => set({ type: v })} disabled={!canEdit} />
                 </Detail>
-                <Detail label={t('Labels')}>
+                <Detail label={f('labels')}>
                   <LabelsPicker board={board} issues={issues} value={issue.labels} onChange={(l) => set({ labels: l })} disabled={!canEdit} />
                 </Detail>
-                <Detail label={t('Components')}>
+                <Detail label={f('components')}>
                   <ComponentsPicker board={board} value={issue.components} onChange={(c) => set({ components: c })} disabled={!canEdit} />
                 </Detail>
-                <Detail label={t('Fix version')}>
+                <Detail label={f('fixVersionId')}>
                   <VersionPicker board={board} value={issue.fixVersionId} onChange={(v) => set({ fixVersionId: v })} disabled={!canEdit} />
                 </Detail>
                 {!isEpic(board, issue) && (
-                  <Detail label={t('Epic')}>
+                  <Detail label={f('epicId')}>
                     <EpicPicker board={board} issues={issues} value={issue.epicId} onChange={(v) => set({ epicId: v })} disabled={!canEdit} selfId={issue.id} />
                   </Detail>
                 )}
-                <Detail label={t('Story points')}>
+                <Detail label={f('storyPoints')}>
                   <NumberInput value={issue.storyPoints} onSave={(v) => set({ storyPoints: v })} disabled={!canEdit} />
                 </Detail>
-                <Detail label={t('Estimate')}>
+                <Detail label={f('estimate')}>
                   <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder={t('e.g. 3d 4h')} />
                 </Detail>
-                <Detail label={t('Due date')}>
+                <Detail label={f('dueDate')}>
                   <DateInput value={issue.dueDate} onSave={(v) => set({ dueDate: v })} disabled={!canEdit} />
                 </Detail>
               </div>
@@ -786,7 +788,7 @@ function History({ issue }: { issue: Issue }) {
               </div>
               {h.changes.map((c, i) => (
                 <div key={i} className="history-change">
-                  <span className="history-field">{fieldLabel(c.field)}</span>
+                  <span className="history-field">{fieldLabel(board, c.field)}</span>
                   {c.field === 'description' ? (
                     <span className="muted">{t('changed')}</span>
                   ) : c.field === 'links' ? (

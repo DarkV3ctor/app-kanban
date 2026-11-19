@@ -36,6 +36,18 @@ const UI: Record<string, ReactNode> = {
     </>
   ),
   list: <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />,
+  chart: (
+    <>
+      <path d="M4 4v15.5h16" />
+      <path d="M8.5 16v-4M12.5 16V8M16.5 16v-6" />
+    </>
+  ),
+  table: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10" />
+    </>
+  ),
   release: (
     <>
       <path d="M3.5 12.5l8.5-8.5h7.5v7.5L11 20z" />

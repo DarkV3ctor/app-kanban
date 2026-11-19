@@ -111,6 +111,15 @@ export const EN_TEMPLATES: TemplateTexts = {
       beta: { name: 'Beta', description: 'Content complete, polish and bug fixing' },
       release: { name: 'Release 1.0', description: 'Store launch' },
     },
+    fields: {
+      details: 'Production',
+      reporterId: 'Reported by',
+      type: 'Discipline',
+      labels: 'Tags',
+      components: 'Game system',
+      fixVersionId: 'Milestone',
+      dueDate: 'Deadline',
+    },
     samples: [
       {
         title: 'Core gameplay loop',
@@ -190,6 +199,19 @@ export const EN_TEMPLATES: TemplateTexts = {
     components: ['Kitchen', 'Bathroom', 'Living room', 'Bedroom', 'Garden', 'Car', 'Kids', 'Pets', 'Documents'],
     versions: {},
     monthDescription: 'Things to do this month',
+    fields: {
+      details: 'About this task',
+      assigneeId: 'Who does it',
+      reporterId: 'Added by',
+      priority: 'Importance',
+      type: 'Category',
+      components: 'Room / area',
+      fixVersionId: 'Month',
+      epicId: 'Goal',
+      storyPoints: 'Effort',
+      estimate: 'Time needed',
+      dueDate: 'By when',
+    },
     samples: [
       { title: 'Get ready for the holidays', type: 'goal', status: 'planned', priority: 'medium', version: '$m1' },
       {
@@ -261,6 +283,12 @@ export const EN_TEMPLATES: TemplateTexts = {
     versions: {
       v1: { name: '1.0', description: '' },
       v1_1: { name: '1.1', description: '' },
+    },
+    fields: {
+      details: 'Issue details',
+      components: 'Component',
+      fixVersionId: 'Release',
+      estimate: 'Original estimate',
     },
     samples: [
       { title: 'Sign-up and login', type: 'epic', status: 'progress', version: 'v1' },

@@ -4,6 +4,7 @@ import type { Issue, Priority } from '../types';
 import { useApp } from '../app-context';
 import { applyFilters, isEpic, newIssueDraft } from '../lib/issues';
 import { PRIORITIES, cls, priorityName, rankBetween } from '../lib/utils';
+import { fieldName } from '../lib/fields';
 import { t } from '../i18n';
 import { newColumnId } from '../templates';
 import { useBoard } from './board-context';
@@ -171,9 +172,9 @@ export const KanbanView = memo(function KanbanView() {
               }}
               options={[
                 { value: 'none', label: t('None') },
-                { value: 'assignee', label: t('Assignee') },
-                { value: 'epic', label: t('Epic') },
-                { value: 'priority', label: t('Priority') },
+                { value: 'assignee', label: fieldName(board, 'assigneeId') },
+                { value: 'epic', label: fieldName(board, 'epicId') },
+                { value: 'priority', label: fieldName(board, 'priority') },
               ]}
               triggerClass="filter-btn"
               width={180}

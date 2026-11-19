@@ -1,0 +1,642 @@
+/* ==========================================================================
+   "Linux" design — enabled by <html data-design="linux"> (see src/appearance.ts).
+   A hacker-desktop look inspired by Kali Linux's dark theme:
+   - a monospaced UI (JetBrains Mono, bundled; other coding fonts as fallbacks);
+   - near-black navy surfaces, the Kali blue accent and terminal green for "done"
+     and prompts, on a faint grid backdrop with a blue glow at the top;
+   - shell motifs: "$ " prompts with a blinking block cursor in page titles,
+     "~/kanban" in the top bar, "# " section titles, [ BRACKETED ] status
+     lozenges like a boot log;
+   - hairline borders instead of soft shadows, and a blue glow on hover and focus;
+   - window-style dialogs with a title bar.
+   The light mode is the same system on paper-white surfaces.
+   Like the other designs, it redefines the tokens of styles.css and restyles a few
+   components on top; everything else follows the tokens.
+   ========================================================================== */
+
+@import '@fontsource-variable/jetbrains-mono/wght.css';
+
+/* --- Tokens: light ------------------------------------------------------ */
+:root[data-design='linux'] {
+  --bg: #f5f7fa;
+  --bg-sunken: #eceff4;
+  --bg-column: #e8ecf2;
+  --bg-hover: rgba(37, 99, 216, 0.07);
+  --bg-pressed: rgba(37, 99, 216, 0.13);
+  --bg-selected: rgba(37, 99, 216, 0.1);
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --overlay: #ffffff;
+  --border: #d3dae5;
+  --border-strong: #8994a8;
+  --text: #18202e;
+  --text-subtle: #3f4b60;
+  --text-subtlest: #5f6b80;
+  --text-inverse: #ffffff;
+  --link: #1f5fd6;
+  --primary: #2563d8;
+  --primary-hover: #1f55bd;
+  --primary-pressed: #1a47a0;
+  --danger: #d02f45;
+  --danger-hover: #b3263a;
+  --focus: #2563d8;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-raised: 0 12px 28px rgba(16, 24, 40, 0.14), 0 0 0 1px #d3dae5;
+  --shadow-drag: 0 16px 36px rgba(16, 24, 40, 0.18), 0 0 0 1px rgba(37, 99, 216, 0.55);
+  --todo-bg: #e3e8ef;
+  --todo-text: #3f4b60;
+  --progress-bg: #dce8fd;
+  --progress-text: #1a4fb3;
+  --done-bg: #d7f5e7;
+  --done-text: #0b6e43;
+  --danger-bg: #fde2e5;
+  --danger-text: #a3192d;
+  --warn-bg: #fff2cc;
+  --warn-text: #7a5600;
+  --epic-bg: #ede6ff;
+  --epic-text: #5b37b8;
+  --info-bg: #e6effd;
+  --topbar: #ffffff;
+  --success: #0e9f61;
+  --epic-accent: #7c4dff;
+  --backdrop: rgba(15, 20, 30, 0.45);
+  --brand-from: #2563d8;
+  --brand-to: #0e9f61;
+  --radius: 4px;
+  --radius-lg: 6px;
+  --radius-col: 6px;
+  --radius-tag: 3px;
+  --caps: uppercase;
+  --caps-spacing: 0.06em;
+  --font: 'JetBrains Mono Variable', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Ubuntu Mono', 'DejaVu Sans Mono', Menlo, Consolas, ui-monospace, monospace;
+  --mono: var(--font);
+
+  /* Tokens used only by this design. */
+  --term-green: #0e9f61;
+  --grid-line: rgba(37, 99, 216, 0.055);
+  --top-glow: rgba(37, 99, 216, 0.08);
+  --glow: rgba(37, 99, 216, 0.22);
+  --code-bg: #eef1f6;
+  --code-text: #0b6e43;
+  --cursor: #2563d8;
+  --scrollbar: #b7c0ce;
+  color-scheme: light;
+}
+
+/* --- Tokens: dark (system setting and explicit choice) -------------------- */
+@media (prefers-color-scheme: dark) {
+  :root[data-design='linux']:not([data-theme='light']) {
+    --bg: #11151c;
+    --bg-sunken: #0b0e13;
+    --bg-column: #0e1218;
+    --bg-hover: rgba(54, 123, 240, 0.1);
+    --bg-pressed: rgba(54, 123, 240, 0.18);
+    --bg-selected: rgba(54, 123, 240, 0.16);
+    --surface: #161b24;
+    --surface-raised: #1a202b;
+    --overlay: #161b24;
+    --border: #263042;
+    --border-strong: #3c4a63;
+    --text: #dbe3ef;
+    --text-subtle: #a8b4c7;
+    --text-subtlest: #7f8ca1;
+    --text-inverse: #0b0e13;
+    --link: #6ea8ff;
+    --primary: #367bf0;
+    --primary-hover: #4f8df5;
+    --primary-pressed: #2a62c4;
+    --danger: #ff5f6d;
+    --danger-hover: #ff7d88;
+    --focus: #5c9dff;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --shadow-raised: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px #263042;
+    --shadow-drag: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(54, 123, 240, 0.65), 0 0 24px rgba(54, 123, 240, 0.28);
+    --todo-bg: rgba(127, 140, 161, 0.14);
+    --todo-text: #a8b4c7;
+    --progress-bg: rgba(54, 123, 240, 0.16);
+    --progress-text: #7fb0ff;
+    --done-bg: rgba(41, 214, 141, 0.13);
+    --done-text: #4fe0a4;
+    --danger-bg: rgba(255, 95, 109, 0.14);
+    --danger-text: #ff8a94;
+    --warn-bg: rgba(255, 200, 61, 0.12);
+    --warn-text: #ffd36b;
+    --epic-bg: rgba(168, 132, 255, 0.15);
+    --epic-text: #c3a8ff;
+    --info-bg: rgba(54, 123, 240, 0.12);
+    --topbar: #0b0e13;
+    --success: #29d68d;
+    --epic-accent: #a884ff;
+    --backdrop: rgba(3, 5, 10, 0.72);
+    --brand-from: #367bf0;
+    --brand-to: #29d68d;
+    --term-green: #29d68d;
+    --grid-line: rgba(92, 157, 255, 0.045);
+    --top-glow: rgba(54, 123, 240, 0.13);
+    --glow: rgba(54, 123, 240, 0.35);
+    --code-bg: #0b0e13;
+    --code-text: #4fe0a4;
+    --cursor: #5c9dff;
+    --scrollbar: #2f3a4f;
+    color-scheme: dark;
+  }
+}
+:root[data-design='linux'][data-theme='dark'] {
+  --bg: #11151c;
+  --bg-sunken: #0b0e13;
+  --bg-column: #0e1218;
+  --bg-hover: rgba(54, 123, 240, 0.1);
+  --bg-pressed: rgba(54, 123, 240, 0.18);
+  --bg-selected: rgba(54, 123, 240, 0.16);
+  --surface: #161b24;
+  --surface-raised: #1a202b;
+  --overlay: #161b24;
+  --border: #263042;
+  --border-strong: #3c4a63;
+  --text: #dbe3ef;
+  --text-subtle: #a8b4c7;
+  --text-subtlest: #7f8ca1;
+  --text-inverse: #0b0e13;
+  --link: #6ea8ff;
+  --primary: #367bf0;
+  --primary-hover: #4f8df5;
+  --primary-pressed: #2a62c4;
+  --danger: #ff5f6d;
+  --danger-hover: #ff7d88;
+  --focus: #5c9dff;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-raised: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px #263042;
+  --shadow-drag: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(54, 123, 240, 0.65), 0 0 24px rgba(54, 123, 240, 0.28);
+  --todo-bg: rgba(127, 140, 161, 0.14);
+  --todo-text: #a8b4c7;
+  --progress-bg: rgba(54, 123, 240, 0.16);
+  --progress-text: #7fb0ff;
+  --done-bg: rgba(41, 214, 141, 0.13);
+  --done-text: #4fe0a4;
+  --danger-bg: rgba(255, 95, 109, 0.14);
+  --danger-text: #ff8a94;
+  --warn-bg: rgba(255, 200, 61, 0.12);
+  --warn-text: #ffd36b;
+  --epic-bg: rgba(168, 132, 255, 0.15);
+  --epic-text: #c3a8ff;
+  --info-bg: rgba(54, 123, 240, 0.12);
+  --topbar: #0b0e13;
+  --success: #29d68d;
+  --epic-accent: #a884ff;
+  --backdrop: rgba(3, 5, 10, 0.72);
+  --brand-from: #367bf0;
+  --brand-to: #29d68d;
+  --term-green: #29d68d;
+  --grid-line: rgba(92, 157, 255, 0.045);
+  --top-glow: rgba(54, 123, 240, 0.13);
+  --glow: rgba(54, 123, 240, 0.35);
+  --code-bg: #0b0e13;
+  --code-text: #4fe0a4;
+  --cursor: #5c9dff;
+  --scrollbar: #2f3a4f;
+  color-scheme: dark;
+}
+
+/* --- Base: grid backdrop, type, selection, scrollbars ---------------------- */
+[data-design='linux'] body {
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1100px 420px at 80% -8%, var(--top-glow), transparent 70%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    28px 28px,
+    28px 28px;
+  background-attachment: fixed;
+  font-variant-ligatures: none;
+}
+[data-design='linux'] ::selection {
+  background: color-mix(in srgb, var(--primary) 38%, transparent);
+  color: var(--text);
+}
+[data-design='linux'],
+[data-design='linux'] * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+[data-design='linux'] input,
+[data-design='linux'] textarea {
+  caret-color: var(--term-green);
+}
+[data-design='linux'] h1 {
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+/* Page titles read like a shell prompt with a blinking block cursor
+   (the "/ ''" part keeps the decoration out of screen readers). */
+[data-design='linux'] h1:not(.markdown h1)::before {
+  content: '$ ';
+  content: '$ ' / '';
+  color: var(--term-green);
+}
+[data-design='linux'] h1:not(.markdown h1)::after {
+  content: '';
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.25em;
+  vertical-align: -0.14em;
+  background: var(--cursor);
+  animation: linux-blink 1.1s steps(1) infinite;
+}
+@keyframes linux-blink {
+  50% {
+    opacity: 0;
+  }
+}
+[data-design='linux'] :focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px var(--glow);
+}
+[data-design='linux'] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+[data-design='linux'] code,
+[data-design='linux'] kbd {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border: 1px solid var(--border);
+  font-size: 0.92em;
+}
+[data-design='linux'] kbd {
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+[data-design='linux'] .markdown pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+[data-design='linux'] .markdown pre code {
+  border: 0;
+}
+
+/* --- Top bar: a panel with the accent line under it ------------------------- */
+[data-design='linux'] .topbar {
+  height: 50px;
+  border-bottom: 0;
+  background:
+    linear-gradient(90deg, var(--brand-from), var(--brand-to) 55%, transparent) bottom / 100% 1px no-repeat,
+    var(--topbar);
+  box-shadow: 0 1px 0 var(--border);
+}
+[data-design='linux'] .brand {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+[data-design='linux'] .brand > span {
+  text-transform: lowercase;
+}
+[data-design='linux'] .brand > span::before {
+  content: '~/';
+  content: '~/' / '';
+  color: var(--term-green);
+}
+[data-design='linux'] .topnav a::before {
+  content: './';
+  content: './' / '';
+  color: var(--text-subtlest);
+}
+
+/* --- Buttons ------------------------------------------------------------------ */
+[data-design='linux'] .btn {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition:
+    background-color 0.12s,
+    box-shadow 0.12s,
+    color 0.12s;
+}
+[data-design='linux'] .btn-primary:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px var(--primary), 0 0 14px var(--glow);
+}
+[data-design='linux'] .btn-subtle {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+[data-design='linux'] .btn-subtle:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--link);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+[data-design='linux'] .btn-danger:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px var(--danger), 0 0 14px color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+/* --- Text boxes and pickers ----------------------------------------------------- */
+[data-design='linux'] .input,
+[data-design='linux'] .filter-search,
+[data-design='linux'] .popover-search input,
+[data-design='linux'] .md-editor {
+  background: var(--bg-sunken);
+  border-color: var(--border);
+}
+[data-design='linux'] .input:focus,
+[data-design='linux'] .filter-search:focus-within,
+[data-design='linux'] .popover-search input:focus,
+[data-design='linux'] .md-editor:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+[data-design='linux'] .detail-value .input:not(:focus) {
+  background: transparent;
+  border-color: transparent;
+}
+[data-design='linux'] .detail-value .input:hover:not(:disabled):not(:focus) {
+  border-color: var(--border);
+}
+[data-design='linux'] :is(.select-trigger, .filter-btn):not(.status-trigger) {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+[data-design='linux'] .detail-value .select-trigger:not(.status-trigger) {
+  box-shadow: none;
+}
+[data-design='linux'] .detail-value .select-trigger:not(.status-trigger):hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+[data-design='linux'] .filter-btn.is-active:not(.status-trigger) {
+  background: var(--bg-selected);
+  color: var(--link);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+/* --- Segmented controls --------------------------------------------------------- */
+[data-design='linux'] .seg,
+[data-design='linux'] .lang-switch {
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+[data-design='linux'] .seg button.is-active,
+[data-design='linux'] .lang-switch button.is-active {
+  background: var(--bg-selected);
+  color: var(--link);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+/* --- Status lozenges: [ DONE ] like a boot log ------------------------------------ */
+[data-design='linux'] .lozenge {
+  gap: 0.35em;
+  padding: 0 5px;
+  font-size: 11px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+}
+[data-design='linux'] .lozenge::before {
+  content: '[';
+  content: '[' / '';
+  opacity: 0.7;
+}
+[data-design='linux'] .lozenge::after {
+  content: ']';
+  content: ']' / '';
+  opacity: 0.7;
+}
+[data-design='linux'] .lozenge-todo {
+  color: var(--todo-text);
+}
+[data-design='linux'] .lozenge-progress {
+  color: var(--progress-text);
+}
+[data-design='linux'] .lozenge-done {
+  color: var(--done-text);
+}
+[data-design='linux'] .lozenge-danger {
+  color: var(--danger-text);
+}
+[data-design='linux'] .lozenge-epic {
+  color: var(--epic-text);
+}
+[data-design='linux'] .status-trigger {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+}
+
+/* --- Panels: "# " headings ------------------------------------------------------------ */
+[data-design='linux'] .panel {
+  border-color: var(--border);
+  border-radius: var(--radius-lg);
+}
+[data-design='linux'] .panel-title {
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+[data-design='linux'] .panel-title::before,
+[data-design='linux'] .issue-section > .section-head h3::before {
+  content: '# ';
+  content: '# ' / '';
+  color: var(--term-green);
+}
+[data-design='linux'] .alert {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* --- App shell -------------------------------------------------------------------------- */
+[data-design='linux'] .sidebar {
+  background: color-mix(in srgb, var(--bg-sunken) 88%, transparent);
+  border-right-color: var(--border);
+}
+[data-design='linux'] .sidebar-link {
+  font-weight: 500;
+}
+[data-design='linux'] .sidebar-link.is-active {
+  background: var(--bg-selected);
+  color: var(--text) !important;
+}
+[data-design='linux'] .sidebar-link.is-active::before {
+  top: 6px;
+  bottom: 6px;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 10px var(--primary);
+}
+[data-design='linux'] .sidebar-link.is-active svg {
+  color: var(--link);
+}
+[data-design='linux'] .breadcrumbs {
+  font-size: 12px;
+}
+[data-design='linux'] .login {
+  background: none;
+}
+[data-design='linux'] .login-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow:
+    var(--shadow-raised),
+    0 0 48px var(--top-glow);
+}
+
+/* --- Boards page ---------------------------------------------------------------------------- */
+[data-design='linux'] .board-card {
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--board-color);
+  box-shadow: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+[data-design='linux'] .board-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--border));
+  border-top-color: var(--board-color);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent), 0 0 22px var(--glow);
+  transform: none;
+}
+
+/* --- Kanban ------------------------------------------------------------------------------------ */
+[data-design='linux'] .column-head {
+  font-size: 11px;
+  color: var(--text-subtle);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+}
+[data-design='linux'] .column {
+  border: 1px solid var(--border);
+  border-top: 0;
+}
+[data-design='linux'] .column-count {
+  color: var(--text-subtlest);
+}
+[data-design='linux'] .column-count::before {
+  content: '(';
+  content: '(' / '';
+}
+[data-design='linux'] .column-count::after {
+  content: ')';
+  content: ')' / '';
+}
+[data-design='linux'] .card {
+  border: 1px solid var(--border);
+  box-shadow: none;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    background-color 0.12s;
+}
+[data-design='linux'] .card:hover {
+  background: var(--surface-raised);
+  border-color: color-mix(in srgb, var(--primary) 65%, var(--border));
+  box-shadow: 0 0 16px var(--glow);
+}
+[data-design='linux'] .card.is-dragging {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-drag);
+  transform: rotate(1.5deg);
+}
+[data-design='linux'] .card-epic {
+  border-left: 3px solid var(--epic-accent);
+}
+[data-design='linux'] .progress {
+  height: 6px;
+  border-radius: 1px;
+}
+[data-design='linux'] .progress-done {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--success) 60%, transparent);
+}
+
+/* --- Lists ---------------------------------------------------------------------------------------- */
+[data-design='linux'] .issue-table th {
+  text-transform: var(--caps);
+  letter-spacing: var(--caps-spacing);
+  font-size: 11px;
+}
+[data-design='linux'] .issue-title {
+  letter-spacing: -0.02em;
+}
+
+/* --- Menus and popovers ----------------------------------------------------------------------------- */
+[data-design='linux'] .popover {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+[data-design='linux'] .menu-item:hover:not(:disabled),
+[data-design='linux'] .menu-item.is-active {
+  background: var(--bg-hover);
+}
+
+/* --- Dialogs: a window with a title bar -------------------------------------------------------------- */
+[data-design='linux'] .modal {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    var(--shadow-raised),
+    0 0 40px var(--top-glow);
+}
+[data-design='linux'] .modal-head {
+  margin-bottom: 8px;
+  padding: 10px 12px 10px 20px;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* --- Toasts ----------------------------------------------------------------------------------------------- */
+[data-design='linux'] .toast {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius);
+}
+[data-design='linux'] .toast-success {
+  border-left-color: var(--term-green);
+}
+[data-design='linux'] .toast-error {
+  border-left-color: var(--danger);
+}
+
+/* --- Responsive and motion ------------------------------------------------------------------------------------ */
+@media (max-width: 760px) {
+  [data-design='linux'] .sidebar {
+    background: var(--bg-sunken);
+  }
+  [data-design='linux'] .modal,
+  [data-design='linux'] .modal-head {
+    border-radius: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-design='linux'] h1::after {
+    animation: none;
+  }
+  [data-design='linux'] .card.is-dragging {
+    transform: none;
+  }
+}
+
+/* --- Progress view --------------------------------------------------------------------------------------------- */
+[data-design='linux'] .chart-title::before {
+  content: '# ';
+  content: '# ' / '';
+  color: var(--term-green);
+}
+[data-design='linux'] .stat-label {
+  text-transform: var(--caps);
+  letter-spacing: var(--caps-spacing);
+  font-size: 11px;
+}
+[data-design='linux'] .stat-tile.is-hero {
+  border-color: color-mix(in srgb, var(--chart-done) 45%, var(--border));
+  box-shadow: inset 0 0 32px color-mix(in srgb, var(--chart-done) 8%, transparent);
+}
+[data-design='linux'] .stat-tile.is-hero .stat-value {
+  color: var(--term-green);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--term-green) 35%, transparent);
+}
+[data-design='linux'] .period-label::before {
+  content: '[ ';
+  content: '[ ' / '';
+  color: var(--text-subtlest);
+}
+[data-design='linux'] .period-label::after {
+  content: ' ]';
+  content: ' ]' / '';
+  color: var(--text-subtlest);
+}

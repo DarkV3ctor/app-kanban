@@ -11,6 +11,7 @@ import { Icon } from './Icons';
 import { KanbanView } from './KanbanView';
 import { ListView } from './ListView';
 import { ReleasesView } from './ReleasesView';
+import { ProgressView } from './ProgressView';
 import { SettingsView } from './SettingsView';
 import { MembersView } from './MembersView';
 import { IssueDialog } from './IssueDialog';
@@ -19,6 +20,7 @@ import { CreateIssueDialog } from './CreateIssueDialog';
 const VIEWS = [
   { id: 'board', name: tk('Board'), icon: 'board' },
   { id: 'list', name: tk('Issue list'), icon: 'list' },
+  { id: 'progress', name: tk('Progress'), icon: 'chart' },
   { id: 'releases', name: tk('Releases'), icon: 'release' },
   { id: 'members', name: tk('Members'), icon: 'users' },
   { id: 'settings', name: tk('Settings'), icon: 'settings' },
@@ -228,6 +230,8 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
             <KanbanView />
           ) : current.id === 'list' ? (
             <ListView />
+          ) : current.id === 'progress' ? (
+            <ProgressView />
           ) : current.id === 'releases' ? (
             <ReleasesView />
           ) : current.id === 'members' ? (

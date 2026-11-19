@@ -51,6 +51,15 @@ export interface Version {
   releaseDate: string | null;
 }
 
+/**
+ * Issue fields a board can rename, plus "details" — the title of the fields panel in the issue dialog.
+ * The keys match the Issue properties (and the field keys of history entries).
+ */
+export type FieldKey = 'details' | 'assigneeId' | 'reporterId' | 'priority' | 'type' | 'labels' | 'components' | 'fixVersionId' | 'epicId' | 'storyPoints' | 'estimate' | 'dueDate';
+
+/** Custom field names of a board (only the renamed ones; the rest use the template's names). */
+export type FieldNames = Partial<Record<FieldKey, string>>;
+
 export interface Board {
   id: string;
   name: string;
@@ -68,6 +77,7 @@ export interface Board {
   labels: string[];
   components: string[];
   versions: Version[];
+  fieldNames: FieldNames;
   issueCounter: number;
   createdAt: number;
   updatedAt: number;

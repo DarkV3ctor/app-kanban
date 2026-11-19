@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { Board, Issue } from '../types';
 import { dueState, formatDate, hashColor, isDone, cls } from '../lib/utils';
+import { fieldName } from '../lib/fields';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
 import { t } from '../i18n';
 import { Avatar, LabelChip, memberOf } from './ui';
@@ -74,7 +75,7 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
           </span>
         )}
         {issue.storyPoints !== null && issue.storyPoints !== undefined && (
-          <span className="points" title={t('Story points')}>
+          <span className="points" title={fieldName(board, 'storyPoints')}>
             {issue.storyPoints}
           </span>
         )}

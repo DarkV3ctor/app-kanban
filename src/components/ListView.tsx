@@ -1,5 +1,7 @@
 import { memo, useMemo, useState } from 'react';
+import type { Board, FieldKey } from '../types';
 import { useApp } from '../app-context';
+import { fieldName, genericFieldName } from '../lib/fields';
 import { t, tk } from '../i18n';
 import { applyFilters, sortIssues, type SortKey } from '../lib/issues';
 import { downloadFile, dueState, formatDate, isDone, priorityName, timeAgo, cls } from '../lib/utils';
@@ -9,18 +11,26 @@ import { Icon, PriorityIcon, TypeIcon } from './Icons';
 import { Avatar, EmptyState, memberOf } from './ui';
 import { StatusBadge } from './IssueFields';
 
-const COLS: { key: SortKey; label: string; className?: string }[] = [
-  { key: 'type', label: tk('Type'), className: 'col-type' },
+/** `field`: the column shows that field, under the board's name for it (short columns keep their abbreviation until renamed). */
+const COLS: { key: SortKey; label: string; field?: FieldKey; className?: string }[] = [
+  { key: 'type', label: tk('Type'), field: 'type', className: 'col-type' },
   { key: 'key', label: tk('Key'), className: 'col-key' },
   { key: 'title', label: tk('Summary'), className: 'col-title' },
   { key: 'status', label: tk('Status') },
-  { key: 'assignee', label: tk('Assignee') },
-  { key: 'priority', label: tk('Priority') },
-  { key: 'version', label: tk('Version') },
-  { key: 'points', label: tk('SP'), className: 'col-num' },
-  { key: 'due', label: tk('Due') },
+  { key: 'assignee', label: tk('Assignee'), field: 'assigneeId' },
+  { key: 'priority', label: tk('Priority'), field: 'priority' },
+  { key: 'version', label: tk('Version'), field: 'fixVersionId' },
+  { key: 'points', label: tk('SP'), field: 'storyPoints', className: 'col-num' },
+  { key: 'due', label: tk('Due'), field: 'dueDate' },
   { key: 'updated', label: tk('Updated') },
 ];
+
+/** A column's header: the board's name for the field once it differs from the generic one. */
+function colLabel(board: Board, c: (typeof COLS)[number]): string {
+  if (!c.field) return t(c.label);
+  const name = fieldName(board, c.field);
+  return name === genericFieldName(c.field) ? t(c.label) : name;
+}
 
 const CSV_HEAD = [tk('Key'), tk('Type'), tk('Summary'), tk('Status'), tk('Assignee'), tk('Priority'), tk('Labels'), tk('Version'), tk('Epic'), tk('SP'), tk('Due'), tk('Created'), tk('Updated')];
 
@@ -92,7 +102,7 @@ export const ListView = memo(function ListView() {
                 {COLS.map((c) => (
                   <th key={c.key} className={c.className}>
                     <button onClick={() => setSort((s) => ({ key: c.key, dir: s.key === c.key ? (s.dir === 1 ? -1 : 1) : 1 }))}>
-                      {t(c.label)}
+                      {colLabel(board, c)}
                       {sort.key === c.key && <Icon name={sort.dir === 1 ? 'arrowUp' : 'arrowDown'} size={12} />}
                     </button>
                   </th>

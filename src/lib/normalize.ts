@@ -4,6 +4,8 @@ import type {
   Column,
   ColumnCategory,
   Comment,
+  FieldKey,
+  FieldNames,
   HistoryChange,
   HistoryEntry,
   Issue,
@@ -50,6 +52,10 @@ const LINK_TYPES: readonly LinkType[] = ['blocks', 'blocked_by', 'relates', 'dup
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
+/** Renamable issue fields and the longest name (see lib/fields.ts; keep in sync with validFieldNames() in firestore.rules). */
+export const FIELD_NAME_KEYS: readonly FieldKey[] = ['details', 'assigneeId', 'reporterId', 'priority', 'type', 'labels', 'components', 'fixVersionId', 'epicId', 'storyPoints', 'estimate', 'dueDate'];
+export const MAX_FIELD_NAME = 40;
+
 /** A color that is safe to put into CSS: only #rrggbb is accepted. */
 export function safeColor(v: unknown, def = '#626F86'): string {
   return typeof v === 'string' && HEX_COLOR.test(v) ? v : def;
@@ -87,10 +93,22 @@ function normalizeVersion(v: unknown, i: number): Version {
   };
 }
 
-/** Columns, types, labels, components and versions (the part of a board a template or import provides). */
+/** Custom field names: known keys with non-empty text only (see lib/fields.ts). */
+function normalizeFieldNames(v: unknown): FieldNames {
+  const o = obj(v);
+  const out: FieldNames = {};
+  for (const k of FIELD_NAME_KEYS) {
+    const name = str(o[k]).trim().slice(0, MAX_FIELD_NAME);
+    if (name) out[k] = name;
+  }
+  return out;
+}
+
+/** Columns, types, labels, components, versions and field names (the part of a board a template or import provides). */
 export function normalizeBoardSetup(o: Raw) {
   const columns = list(o.columns).map(normalizeColumn);
   return {
+    fieldNames: normalizeFieldNames(o.fieldNames),
     template: str(o.template, 'blank'),
     icon: str(o.icon, '📋'),
     color: safeColor(o.color),

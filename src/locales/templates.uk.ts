@@ -111,6 +111,15 @@ export const UK_TEMPLATES: TemplateTexts = {
       beta: { name: 'Beta', description: 'Контент готовий, поліровка та баги' },
       release: { name: 'Реліз 1.0', description: 'Вихід у магазині' },
     },
+    fields: {
+      details: 'Продакшн',
+      reporterId: 'Хто повідомив',
+      type: 'Напрям',
+      labels: 'Теги',
+      components: 'Система гри',
+      fixVersionId: 'Віха',
+      dueDate: 'Дедлайн',
+    },
     samples: [
       {
         title: 'Основний ігровий цикл',
@@ -190,6 +199,19 @@ export const UK_TEMPLATES: TemplateTexts = {
     components: ['Кухня', 'Ванна', 'Вітальня', 'Спальня', 'Дача / сад', 'Авто', 'Діти', 'Тварини', 'Документи'],
     versions: {},
     monthDescription: 'Справи на місяць',
+    fields: {
+      details: 'Про справу',
+      assigneeId: 'Хто робить',
+      reporterId: 'Хто додав',
+      priority: 'Важливість',
+      type: 'Категорія',
+      components: 'Кімната / сфера',
+      fixVersionId: 'Місяць',
+      epicId: 'Ціль',
+      storyPoints: 'Зусилля',
+      estimate: 'Скільки часу',
+      dueDate: 'До коли',
+    },
     samples: [
       { title: 'Підготуватися до свят', type: 'goal', status: 'planned', priority: 'medium', version: '$m1' },
       {
@@ -261,6 +283,12 @@ export const UK_TEMPLATES: TemplateTexts = {
     versions: {
       v1: { name: '1.0', description: '' },
       v1_1: { name: '1.1', description: '' },
+    },
+    fields: {
+      details: 'Деталі задачі',
+      components: 'Компонент',
+      fixVersionId: 'Реліз',
+      estimate: 'Оцінка часу',
     },
     samples: [
       { title: 'Реєстрація та вхід', type: 'epic', status: 'progress', version: 'v1' },

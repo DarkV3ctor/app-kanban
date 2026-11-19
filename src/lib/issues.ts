@@ -3,6 +3,7 @@ import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
 import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
 import { normalizeBoardSetup, normalizeIssue } from './normalize';
+import { fieldName, isFieldKey } from './fields';
 
 export const LINK_TYPES: { id: LinkType; name: string; inverse: LinkType }[] = [
   { id: 'blocks', name: tk('blocks'), inverse: 'blocked_by' },
@@ -108,22 +109,13 @@ export function buildSampleIssues(setup: BoardSetup, samples: SampleIssue[], use
 const FIELD_LABELS: Record<string, string> = {
   title: tk('Summary'),
   status: tk('Status'),
-  type: tk('Type'),
-  priority: tk('Priority'),
-  assigneeId: tk('Assignee'),
-  reporterId: tk('Reporter'),
-  labels: tk('Labels'),
-  components: tk('Components'),
-  fixVersionId: tk('Fix version'),
-  epicId: tk('Epic'),
-  storyPoints: tk('Story points'),
-  estimate: tk('Estimate'),
-  dueDate: tk('Due date'),
   description: tk('Description'),
   links: tk('Links'),
 };
 
-export function fieldLabel(field: string): string {
+/** The name of a history entry's field, as the board calls it (renamable fields use fieldName()). */
+export function fieldLabel(board: Board, field: string): string {
+  if (isFieldKey(field) && field !== 'details') return fieldName(board, field);
   // Own keys only: a history entry with the field "__proto__" must not resolve to Object.prototype.
   return Object.hasOwn(FIELD_LABELS, field) ? t(FIELD_LABELS[field]) : field;
 }
@@ -314,12 +306,12 @@ export interface BoardExport {
  * assignments to the person importing, so assignments to yourself (`me`) are kept.
  */
 export function exportBoard(board: Board, issues: Issue[], me: string): BoardExport {
-  const { name, key, description, template, icon, color, columns, issueTypes, labels, components, versions } = board;
+  const { name, key, description, template, icon, color, columns, issueTypes, labels, components, versions, fieldNames } = board;
   return {
     format: 'kanban-board',
     version: 1,
     exportedAt: new Date().toISOString(),
-    board: { name, key, description, template, icon, color, columns, issueTypes, labels, components, versions },
+    board: { name, key, description, template, icon, color, columns, issueTypes, labels, components, versions, fieldNames },
     issues: issues.map((i) => ({ ...i, assigneeId: i.assigneeId === me ? me : null, reporterId: '', createdBy: '' })),
   };
 }

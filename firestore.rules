@@ -128,7 +128,24 @@ service cloud.firestore {
         && d.components is list && d.components.size() <= 500
         && d.versions is list && d.versions.size() <= 500
         && d.issueCounter is int && d.issueCounter >= 0
-        && d.createdAt is int && d.updatedAt is int;
+        && d.createdAt is int && d.updatedAt is int
+        && (!('fieldNames' in d) || validFieldNames(d.fieldNames));
+    }
+
+    // Custom names of issue fields (optional; older boards have none). Keep the keys and the
+    // length in sync with FIELD_NAME_KEYS / MAX_FIELD_NAME in src/lib/normalize.ts.
+    function validFieldNames(m) {
+      return m is map
+        && m.keys().hasOnly(['details', 'assigneeId', 'reporterId', 'priority', 'type', 'labels',
+            'components', 'fixVersionId', 'epicId', 'storyPoints', 'estimate', 'dueDate'])
+        && fieldNameOk(m, 'details') && fieldNameOk(m, 'assigneeId') && fieldNameOk(m, 'reporterId')
+        && fieldNameOk(m, 'priority') && fieldNameOk(m, 'type') && fieldNameOk(m, 'labels')
+        && fieldNameOk(m, 'components') && fieldNameOk(m, 'fixVersionId') && fieldNameOk(m, 'epicId')
+        && fieldNameOk(m, 'storyPoints') && fieldNameOk(m, 'estimate') && fieldNameOk(m, 'dueDate');
+    }
+
+    function fieldNameOk(m, k) {
+      return !(k in m) || (m[k] is string && m[k].size() > 0 && m[k].size() <= 40);
     }
 
     function validIssue(d) {

@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './styles-apple.css';
 import './styles-fluent.css';
+import './styles-linux.css';
 import { initStore } from './store';
 import { Root } from './App';
 import { Spinner } from './components/ui';
