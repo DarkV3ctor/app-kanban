@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Store } from '../store';
 import { t } from '../i18n';
 import { GitHubMark, Icon } from './Icons';
@@ -8,6 +8,15 @@ export function LoginPage({ store }: { store: Store }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const demo = store.mode === 'local';
+
+  // Errors of a redirect sign-in arrive after the page has reloaded.
+  useEffect(() => {
+    let alive = true;
+    store.consumeAuthError().then((e) => alive && e && setError(e));
+    return () => {
+      alive = false;
+    };
+  }, [store]);
 
   const signIn = async () => {
     setBusy(true);

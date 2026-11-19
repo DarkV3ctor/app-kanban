@@ -10,7 +10,7 @@ let store: Store = localStore;
 export async function initStore(): Promise<Store> {
   if (config.firebase) {
     const { createFirebaseStore } = await import('./firebaseStore');
-    store = createFirebaseStore(config.firebase);
+    store = await createFirebaseStore(config.firebase);
   }
   return store;
 }

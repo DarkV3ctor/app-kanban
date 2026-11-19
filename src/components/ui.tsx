@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Component, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { Board, ColumnCategory, MemberInfo } from '../types';
 import { cls, hashColor } from '../lib/utils';
@@ -6,9 +6,69 @@ import { renderMarkdown } from '../lib/markdown';
 import { Icon } from './Icons';
 import { t } from '../i18n';
 
+export { toggleMarkdownTask } from '../lib/markdown';
+
+// ---------------------------------------------------------------------------
+// Error boundary
+// ---------------------------------------------------------------------------
+
+interface BoundaryProps {
+  children: ReactNode;
+  /** When this value changes, a caught error is cleared and the children are rendered again. */
+  resetKey?: unknown;
+  fallback?: (error: Error, reset: () => void) => ReactNode;
+}
+
+/** Keeps a rendering error in one part of the UI from unmounting the whole app. */
+export class ErrorBoundary extends Component<BoundaryProps, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error : new Error(String(error)) };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error(error);
+  }
+
+  componentDidUpdate(prev: BoundaryProps) {
+    if (this.state.error && prev.resetKey !== this.props.resetKey) this.setState({ error: null });
+  }
+
+  reset = () => this.setState({ error: null });
+
+  render() {
+    const { error } = this.state;
+    if (!error) return this.props.children;
+    return this.props.fallback ? this.props.fallback(error, this.reset) : <ErrorPanel error={error} onRetry={this.reset} />;
+  }
+}
+
+export function ErrorPanel({ error, onRetry }: { error: Error; onRetry?: () => void }) {
+  return (
+    <div className="error-panel" role="alert">
+      <h3>{t('Something went wrong')}</h3>
+      <p className="muted small">{error.message}</p>
+      <div className="form-actions">
+        {onRetry && (
+          <button className="btn btn-subtle" onClick={onRetry}>
+            {t('Try again')}
+          </button>
+        )}
+        <button className="btn btn-primary" onClick={() => location.reload()}>
+          {t('Reload the page')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Avatar
 // ---------------------------------------------------------------------------
+
+/** Avatars are loaded only from GitHub, so a forged profile cannot point them at a tracking server. */
+const AVATAR_URL = /^https:\/\/avatars\.githubusercontent\.com\//;
 
 export function Avatar({ info, size = 24, title }: { info?: Partial<MemberInfo> | null; size?: number; title?: string }) {
   const [broken, setBroken] = useState(false);
@@ -20,8 +80,20 @@ export function Avatar({ info, size = 24, title }: { info?: Partial<MemberInfo> 
       </span>
     );
   }
-  if (info.avatarUrl && !broken) {
-    return <img className="avatar" src={info.avatarUrl} width={size} height={size} alt="" title={label} onError={() => setBroken(true)} loading="lazy" />;
+  if (info.avatarUrl && AVATAR_URL.test(info.avatarUrl) && !broken) {
+    return (
+      <img
+        className="avatar"
+        src={info.avatarUrl}
+        width={size}
+        height={size}
+        alt=""
+        title={label}
+        onError={() => setBroken(true)}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
+    );
   }
   const letter = (info.name || info.login || '?').trim()[0]?.toUpperCase() ?? '?';
   return (
@@ -442,18 +514,23 @@ export function MarkdownView({ source, className, onToggleTask }: { source: stri
           }
         : null;
     });
+    // External images are placeholders until clicked (see lib/markdown.ts).
+    el.querySelectorAll<HTMLButtonElement>('button.md-image').forEach((b) => {
+      b.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const src = b.dataset.src ?? '';
+        if (!/^https?:\/\//i.test(src)) return;
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = b.dataset.alt ?? '';
+        img.referrerPolicy = 'no-referrer';
+        img.className = 'md-img';
+        b.replaceWith(img);
+      };
+    });
   }, [html, onToggleTask]);
   return <div ref={ref} className={cls('markdown', className)} dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-/** Toggles the N-th `- [ ]` checkbox in markdown text. */
-export function toggleMarkdownTask(src: string, index: number): string {
-  let n = -1;
-  return src.replace(/^(\s*(?:[-*+]|\d+\.)\s+)\[( |x|X)\]/gm, (m, pre: string, mark: string) => {
-    n++;
-    if (n !== index) return m;
-    return `${pre}[${mark === ' ' ? 'x' : ' '}]`;
-  });
 }
 
 export function MarkdownEditor({
@@ -463,6 +540,7 @@ export function MarkdownEditor({
   minRows = 6,
   autoFocus,
   onKeyDown,
+  maxLength,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -470,6 +548,8 @@ export function MarkdownEditor({
   minRows?: number;
   autoFocus?: boolean;
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  /** Keep in sync with the limits in firestore.rules. */
+  maxLength?: number;
 }) {
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const ta = useRef<HTMLTextAreaElement>(null);
@@ -543,6 +623,7 @@ export function MarkdownEditor({
           ref={ta}
           className="md-textarea"
           value={value}
+          maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? t('Markdown supported: **bold**, _italic_, lists, - [ ] checklists, tables, `code`')}
           rows={Math.max(minRows, Math.min(24, value.split('\n').length + 1))}
@@ -576,6 +657,7 @@ export function InlineText({
   className,
   placeholder,
   multiline,
+  maxLength,
 }: {
   value: string;
   onSave: (v: string) => void;
@@ -583,6 +665,7 @@ export function InlineText({
   className?: string;
   placeholder?: string;
   multiline?: boolean;
+  maxLength?: number;
 }) {
   const [edit, setEdit] = useState(false);
   const [v, setV] = useState(value);
@@ -610,6 +693,7 @@ export function InlineText({
   const props = {
     autoFocus: true,
     value: v,
+    maxLength,
     className: cls('inline-input', className),
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setV(e.target.value),
     onBlur: commit,

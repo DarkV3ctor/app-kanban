@@ -288,6 +288,7 @@ function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolea
         autoFocus
         rows={2}
         value={v}
+        maxLength={500}
         disabled={busy}
         placeholder={t('What needs to be done? (Enter — create, Esc — cancel)')}
         onChange={(e) => setV(e.target.value)}

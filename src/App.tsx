@@ -6,7 +6,7 @@ import { navigate, useRoute } from './router';
 import { config, isDemo } from './config';
 import { t } from './i18n';
 import { Icon, GitHubMark } from './components/Icons';
-import { Avatar, Popover, Spinner } from './components/ui';
+import { Avatar, ErrorBoundary, Popover, Spinner } from './components/ui';
 import { LoginPage } from './components/LoginPage';
 import { BoardsPage } from './components/BoardsPage';
 import { BoardPage } from './components/BoardPage';
@@ -61,7 +61,9 @@ function Shell() {
           </span>
         </div>
       )}
-      <div className="app-content">{content}</div>
+      <div className="app-content">
+        <ErrorBoundary resetKey={route.path}>{content}</ErrorBoundary>
+      </div>
     </div>
   );
 }

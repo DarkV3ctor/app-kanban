@@ -112,7 +112,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     >
       <div className="issue-grid">
         <div className="issue-main">
-          <InlineText className="issue-title" value={issue.title} onSave={(v) => set({ title: v })} disabled={!canEdit} multiline />
+          <InlineText className="issue-title" value={issue.title} onSave={(v) => set({ title: v })} disabled={!canEdit} multiline maxLength={500} />
           <Description issue={issue} canEdit={canEdit} onSave={(d) => set({ description: d })} />
           <Checklist issue={issue} canEdit={canEdit} onChange={(c) => set({ checklist: c })} />
           {isEpic(board, issue) && <EpicChildren epic={issue} />}
@@ -216,6 +216,7 @@ function TextInput({ value, onSave, disabled, placeholder }: { value: string; on
       className="input input-compact"
       value={v}
       onChange={(e) => setV(e.target.value)}
+      maxLength={50}
       onBlur={() => v.trim() !== value && onSave(v.trim())}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       disabled={disabled}
@@ -255,6 +256,7 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
             onChange={setDraft}
             autoFocus
             minRows={8}
+            maxLength={100_000}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
             }}
@@ -589,6 +591,7 @@ function Comments({ issue }: { issue: Issue }) {
                   onChange={setDraft}
                   autoFocus
                   minRows={3}
+                  maxLength={20_000}
                   placeholder={t('Add a comment… (Ctrl+Enter to send)')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send();
@@ -629,7 +632,7 @@ function Comments({ issue }: { issue: Issue }) {
               </div>
               {editing === c.id ? (
                 <>
-                  <MarkdownEditor value={editText} onChange={setEditText} autoFocus minRows={3} />
+                  <MarkdownEditor value={editText} onChange={setEditText} autoFocus minRows={3} maxLength={20_000} />
                   <div className="form-actions">
                     <button
                       className="btn btn-primary btn-sm"

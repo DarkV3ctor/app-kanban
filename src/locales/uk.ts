@@ -71,6 +71,14 @@ export const UK: Record<string, string> = {
   'Only users can be added, not organizations': 'Можна додати лише користувача, а не організацію',
   'Board not found': 'Дошку не знайдено',
   'Issue not found': 'Задачу не знайдено',
+  'The sign-in window was blocked. Allow pop-ups for this site and try again.':
+    'Вікно входу заблоковано. Дозвольте спливаючі вікна для цього сайту й спробуйте ще раз.',
+  'Something went wrong': 'Щось пішло не так',
+  'Try again': 'Спробувати ще раз',
+  'Reload the page': 'Перезавантажити сторінку',
+  'Imported board': 'Імпортована дошка',
+  'Load the image from {host}': 'Завантажити зображення з {host}',
+  'Save or discard the column changes first': 'Спочатку збережіть або скасуйте зміни колонок',
 
   // --- App admin dialog ---------------------------------------------------
   'Who can create boards': 'Хто може створювати дошки',

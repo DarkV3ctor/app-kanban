@@ -4,8 +4,12 @@ rules_version = '2';
 // Permissions are granted by numeric GitHub ID (not by username — usernames can change).
 // Roles: owner (5) > admin (4) > editor (3) > commenter (2) > viewer (1).
 //
-// Deploy: Firebase Console → Firestore Database → Rules → paste this file → Publish
-// or:     npx firebase-tools deploy --only firestore:rules --project <project-id>
+// Every write is also validated for shape and types: the client trusts what it reads,
+// so a malformed document written from the console could otherwise break the UI for others.
+//
+// Tests:  npm run test:rules   (needs Java 21+ for the Firestore emulator)
+// Deploy: npx firebase deploy --only firestore:rules --project <project-id>
+//         or Firebase Console → Firestore Database → Rules → paste this file → Publish
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -32,6 +36,16 @@ service cloud.firestore {
       return isAppAdmin() || exists(/databases/$(database)/documents/creators/$(ghId()));
     }
 
+    // ---- Helpers -------------------------------------------------------------
+
+    function optString(v) {
+      return v == null || v is string;
+    }
+
+    function optInt(v) {
+      return v == null || v is int;
+    }
+
     // ---- Board roles -------------------------------------------------------
 
     function roleRank(role) {
@@ -48,27 +62,89 @@ service cloud.firestore {
       return /databases/$(database)/documents/boards/$(boardId);
     }
 
+    function issuePath(boardId, issueId) {
+      return /databases/$(database)/documents/boards/$(boardId)/issues/$(issueId);
+    }
+
+    // Rank before the current request.
     function rankOn(boardId) {
       return rankIn(get(boardPath(boardId)).data);
     }
 
-    // Board shape is valid: memberIds matches the keys of members, and the owner is present.
+    // Rank after the current batch (used when a board and its issues are created together).
+    function rankAfter(boardId) {
+      return rankIn(getAfter(boardPath(boardId)).data);
+    }
+
+    // ---- Shapes --------------------------------------------------------------
+
     function validBoard(d) {
-      return d.name is string && d.name.size() > 0 && d.name.size() <= 200
-        && d.key is string && d.key.size() > 0 && d.key.size() <= 10
-        && d.members is map && d.memberIds is list
+      return d.keys().hasAll(['name', 'key', 'description', 'template', 'icon', 'color', 'ownerId',
+          'members', 'memberIds', 'memberInfo', 'columns', 'issueTypes', 'labels', 'components',
+          'versions', 'issueCounter', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.key is string && d.key.matches('^[A-Z0-9]{1,10}$')
+        && d.description is string && d.description.size() <= 5000
+        && d.template is string && d.template.size() <= 50
+        && d.icon is string && d.icon.size() <= 16
+        && d.color is string && d.color.matches('^#[0-9A-Fa-f]{6}$')
+        && d.ownerId is string
+        && d.members is map && d.memberIds is list && d.memberInfo is map
         && d.memberIds.size() <= 200
         && d.memberIds.hasAll(d.members.keys())
         && d.members.keys().hasAll(d.memberIds)
+        // Only known roles, and exactly one owner — the one named in ownerId.
+        && d.members.values().hasOnly(['owner', 'admin', 'editor', 'commenter', 'viewer'])
+        && d.members.values().removeAll(['admin', 'editor', 'commenter', 'viewer']).size() == 1
         && d.members.get(d.ownerId, '') == 'owner'
-        && d.issueCounter is int
-        && d.columns is list && d.columns.size() > 0;
+        && d.columns is list && d.columns.size() > 0 && d.columns.size() <= 50
+        && d.issueTypes is list && d.issueTypes.size() <= 50
+        && d.labels is list && d.labels.size() <= 500
+        && d.components is list && d.components.size() <= 500
+        && d.versions is list && d.versions.size() <= 500
+        && d.issueCounter is int && d.issueCounter >= 0
+        && d.createdAt is int && d.updatedAt is int;
+    }
+
+    function validIssue(d) {
+      return d.keys().hasAll(['number', 'title', 'description', 'type', 'status', 'priority',
+          'assigneeId', 'reporterId', 'labels', 'components', 'fixVersionId', 'epicId', 'storyPoints',
+          'estimate', 'dueDate', 'checklist', 'links', 'rank', 'createdAt', 'updatedAt',
+          'resolvedAt', 'createdBy'])
+        && d.number is int && d.number > 0
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 500
+        && d.description is string && d.description.size() <= 100000
+        && d.type is string && d.status is string
+        && d.priority in ['highest', 'high', 'medium', 'low', 'lowest']
+        && optString(d.assigneeId) && d.reporterId is string
+        && d.labels is list && d.labels.size() <= 50
+        && d.components is list && d.components.size() <= 50
+        && optString(d.fixVersionId) && optString(d.epicId)
+        && (d.storyPoints == null || d.storyPoints is number)
+        && d.estimate is string && d.estimate.size() <= 50
+        && optString(d.dueDate)
+        && d.checklist is list && d.checklist.size() <= 200
+        && d.links is list && d.links.size() <= 200
+        && d.rank is number
+        && d.createdAt is int && d.updatedAt is int
+        && optInt(d.resolvedAt)
+        && d.createdBy is string;
+    }
+
+    function validComment(d) {
+      return d.keys().hasOnly(['authorId', 'body', 'createdAt', 'editedAt'])
+        && d.authorId is string
+        && d.body is string && d.body.size() > 0 && d.body.size() <= 20000
+        && d.createdAt is int
+        && optInt(d.editedAt);
     }
 
     // ---- Who can create boards --------------------------------------------
 
     match /creators/{id} {
-      allow read: if signedIn();
+      // Everyone can check their own entry; only app admins see the whole list.
+      allow get: if signedIn() && (id == ghId() || isAppAdmin());
+      allow list: if isAppAdmin();
       allow write: if isAppAdmin();
     }
 
@@ -79,30 +155,36 @@ service cloud.firestore {
       // Board list: query where('memberIds', 'array-contains', ghId)
       allow list: if signedIn() && ghId() in resource.data.memberIds;
 
+      // A new board starts with its creator as the only member.
       allow create: if canCreateBoards()
+        && validBoard(request.resource.data)
         && request.resource.data.ownerId == ghId()
-        && validBoard(request.resource.data);
+        && request.resource.data.memberIds.size() == 1;
 
-      allow update: if validBoard(request.resource.data) && (
-        // Owner: anything, including transferring ownership to an existing member.
-        (rankIn(resource.data) == 5
-          && request.resource.data.ownerId in resource.data.memberIds)
-        ||
-        // Admin: anything except changing the owner or the owner's role.
-        (rankIn(resource.data) == 4
-          && request.resource.data.ownerId == resource.data.ownerId)
-        ||
-        // Editor: only the issue counter (when creating an issue).
-        (rankIn(resource.data) >= 3
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['issueCounter', 'updatedAt'])
-          && request.resource.data.issueCounter == resource.data.issueCounter + 1)
-        ||
-        // Any member except the owner can leave the board.
-        (rankIn(resource.data) >= 1 && resource.data.ownerId != ghId()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds', 'updatedAt'])
-          && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([ghId()])
-          && !(ghId() in request.resource.data.members))
-      );
+      allow update: if validBoard(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        // The counter never goes back, so issue numbers are never reused.
+        && request.resource.data.issueCounter >= resource.data.issueCounter
+        && (
+          // Owner: anything, including transferring ownership to an existing member.
+          (rankIn(resource.data) == 5
+            && request.resource.data.ownerId in resource.data.memberIds)
+          ||
+          // Admin: anything except changing the owner (validBoard keeps the owner's role).
+          (rankIn(resource.data) == 4
+            && request.resource.data.ownerId == resource.data.ownerId)
+          ||
+          // Editor: only the issue counter (when creating an issue).
+          (rankIn(resource.data) >= 3
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['issueCounter', 'updatedAt'])
+            && request.resource.data.issueCounter == resource.data.issueCounter + 1)
+          ||
+          // Any member except the owner can leave the board.
+          (rankIn(resource.data) >= 1 && resource.data.ownerId != ghId()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds', 'updatedAt'])
+            && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([ghId()])
+            && !(ghId() in request.resource.data.members))
+        );
 
       allow delete: if rankIn(resource.data) == 5;
 
@@ -110,16 +192,27 @@ service cloud.firestore {
 
       match /issues/{issueId} {
         allow read: if rankOn(boardId) >= 1;
-        allow create: if rankOn(boardId) >= 3
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0
-          && request.resource.data.title.size() <= 500
-          && request.resource.data.createdBy == ghId();
+
+        allow create: if validIssue(request.resource.data)
+          && request.resource.data.createdBy == ghId()
+          && (
+            // Regular issue: takes the next number; the board counter is incremented
+            // in the same transaction (the board rule allows exactly +1).
+            (rankOn(boardId) >= 3
+              && get(boardPath(boardId)).data.issueCounter == request.resource.data.number - 1
+              && getAfter(boardPath(boardId)).data.issueCounter == request.resource.data.number)
+            ||
+            // Board creation / import by an admin: pre-numbered issues within the counter.
+            (rankAfter(boardId) >= 4
+              && request.resource.data.number <= getAfter(boardPath(boardId)).data.issueCounter)
+          );
+
         allow update: if rankOn(boardId) >= 3
+          && validIssue(request.resource.data)
           && request.resource.data.number == resource.data.number
           && request.resource.data.createdBy == resource.data.createdBy
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0;
+          && request.resource.data.createdAt == resource.data.createdAt;
+
         // Delete: admins — any issue, editors — only their own.
         allow delete: if rankOn(boardId) >= 4
           || (rankOn(boardId) >= 3 && resource.data.createdBy == ghId());
@@ -129,25 +222,36 @@ service cloud.firestore {
         match /comments/{commentId} {
           allow read: if rankOn(boardId) >= 1;
           allow create: if rankOn(boardId) >= 2
+            && exists(issuePath(boardId, issueId))
+            && validComment(request.resource.data)
             && request.resource.data.authorId == ghId()
-            && request.resource.data.body is string
-            && request.resource.data.body.size() <= 20000;
+            && request.resource.data.editedAt == null;
+          // Authors may change only the text (and the edit mark) of their own comments.
           allow update: if rankOn(boardId) >= 2
             && resource.data.authorId == ghId()
-            && request.resource.data.authorId == ghId();
+            && validComment(request.resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['body', 'editedAt'])
+            && request.resource.data.editedAt is int;
           // Own comment, any comment for admins, or all comments of an issue being deleted.
           allow delete: if rankOn(boardId) >= 4
             || (rankOn(boardId) >= 2 && resource.data.authorId == ghId())
-            || (rankOn(boardId) >= 3 && !existsAfter(/databases/$(database)/documents/boards/$(boardId)/issues/$(issueId)));
+            || (rankOn(boardId) >= 3 && !existsAfter(issuePath(boardId, issueId)));
         }
 
         // ---- Change history ------------------------------------------------
 
         match /history/{entryId} {
           allow read: if rankOn(boardId) >= 1;
-          allow create: if rankOn(boardId) >= 3 && request.resource.data.actorId == ghId();
+          allow create: if rankOn(boardId) >= 3
+            && existsAfter(issuePath(boardId, issueId))
+            && request.resource.data.keys().hasOnly(['actorId', 'at', 'changes'])
+            && request.resource.data.actorId == ghId()
+            && request.resource.data.at is int
+            && request.resource.data.changes is list
+            && request.resource.data.changes.size() > 0
+            && request.resource.data.changes.size() <= 50;
           allow delete: if rankOn(boardId) >= 4
-            || (rankOn(boardId) >= 3 && !existsAfter(/databases/$(database)/documents/boards/$(boardId)/issues/$(issueId)));
+            || (rankOn(boardId) >= 3 && !existsAfter(issuePath(boardId, issueId)));
         }
       }
     }

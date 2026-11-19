@@ -13,7 +13,7 @@ import { StatusBadge } from './IssueFields';
 const STATUS_NAME: Record<Version['status'], string> = { unreleased: tk('Unreleased'), released: tk('Released'), archived: tk('Archived') };
 
 export function ReleasesView() {
-  const { confirm } = useApp();
+  const { store, user, run, confirm } = useApp();
   const { board, issues, perms, updateBoard, openIssue, setFilters } = useBoard();
   const [editing, setEditing] = useState<Version | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -31,14 +31,20 @@ export function ReleasesView() {
     updateBoard({ versions: board.versions.map((x) => (x.id === v.id ? { ...x, ...patch } : x)) });
   };
   const remove = async (v: Version) => {
-    const n = issues.filter((i) => i.fixVersionId === v.id).length;
+    const inVersion = issues.filter((i) => i.fixVersionId === v.id);
     const ok = await confirm({
       title: t('Delete version "{name}"?', { name: v.name }),
-      text: n ? t('Issues in this version ({n}) will lose their fix version.', { n }) : undefined,
+      text: inVersion.length ? t('Issues in this version ({n}) will lose their fix version.', { n: inVersion.length }) : undefined,
       confirmText: t('Delete'),
       danger: true,
     });
-    if (ok) updateBoard({ versions: board.versions.filter((x) => x.id !== v.id) });
+    if (!ok) return;
+    await run(async () => {
+      for (const i of inVersion) {
+        await store.updateIssue(board.id, i.id, { fixVersionId: null }, user, [{ field: 'fixVersionId', from: v.name, to: '' }]);
+      }
+      await store.updateBoard(board.id, { versions: board.versions.filter((x) => x.id !== v.id) });
+    });
   };
   const move = (v: Version, dir: -1 | 1) => {
     const list = [...board.versions];

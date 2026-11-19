@@ -9,6 +9,11 @@
  *
  * appAdmins: numeric GitHub IDs of the app administrators. Only they (and the users they allow)
  *            can create new boards. Must match the list in isAppAdmin() in firestore.rules.
+ *
+ * appCheckSiteKey: optional reCAPTCHA Enterprise site key for Firebase App Check
+ *                  (see "Security hardening" in the README). null = App Check is off.
+ *                  The build reads this file to add reCAPTCHA to the Content Security Policy,
+ *                  so rebuild after changing it.
  */
 window.KANBAN_CONFIG = {
   firebase: {
@@ -19,5 +24,6 @@ window.KANBAN_CONFIG = {
     messagingSenderId: "315511278198",
     appId: "1:315511278198:web:42c71ee4e9c975daaf6d57"
   },
-  appAdmins: ["78609208"]
+  appAdmins: ["78609208"],
+  appCheckSiteKey: null
 };

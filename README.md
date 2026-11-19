@@ -7,7 +7,7 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 ## Features
 
 - **Jira-like issues:** key (`GAME-12`), type, status, priority, assignee, reporter, labels, components, fix version, epic, story points, time estimate, due date.
-- **Markdown descriptions:** headings, lists, tables, code, links and clickable `- [ ]` checkboxes.
+- **Markdown descriptions:** headings, lists, tables, code, links and clickable `- [ ]` checkboxes. Raw HTML is shown as text, and external images load only when clicked (see [Security](#security)).
 - **Checklist** (sub-tasks) with progress shown on the card.
 - **Issue links:** blocks / is blocked by / relates to / duplicates.
 - **Comments** (Markdown, edit, delete) and a **change history** of every field.
@@ -46,7 +46,7 @@ A board's template text (column names, types, sample issues) is created in the i
 | Add members and assign roles | ✓ | ✓ | | | |
 | Delete the board, transfer ownership | ✓ | | | | |
 
-Permissions are enforced on the server by [`firestore.rules`](firestore.rules), not only in the UI. They are tied to the numeric GitHub ID rather than the username, so renaming a GitHub account does not break access.
+Permissions are enforced on the server by [`firestore.rules`](firestore.rules), not only in the UI. They are tied to the numeric GitHub ID rather than the username, so renaming a GitHub account does not break access. The rules also validate the shape of every document (field types, lengths, valid roles, exactly one owner, unique issue numbers) and are covered by tests (`npm run test:rules`).
 
 Separately, you control **who can create new boards**: the app admins (their GitHub IDs are listed in `config.js` and `firestore.rules`) and users they allow via the avatar menu → "Who can create boards". Everyone else sees only the boards they were invited to.
 
@@ -104,11 +104,14 @@ window.KANBAN_CONFIG = {
     messagingSenderId: "...",
     appId: "1:...:web:..."
   },
-  appAdmins: ["78609208"]
+  appAdmins: ["78609208"],
+  appCheckSiteKey: null
 };
 ```
 
 Commit and push to `main` — GitHub Actions builds and publishes the site. The `firebaseConfig` values are public identifiers, not secrets; data access is protected by the Firestore rules.
+
+**The rules are not deployed by CI.** Whenever `firestore.rules` changes, publish it again (step 4) — the site and the rules must match.
 
 ### Adding another app admin
 
@@ -121,6 +124,25 @@ Regular board members don't need this — a board owner or admin adds them on th
 
 ---
 
+## Security
+
+What the app does:
+
+- **Server-side rules** check permissions and validate every write ([`firestore.rules`](firestore.rules)); the client also normalizes everything it reads, so one malformed document cannot break the board for others, and rendering errors are contained by error boundaries.
+- **Markdown** (written by anyone with the commenter role) is rendered without raw HTML and sanitized with a strict allowlist; external images are shown as placeholders and load only when clicked, so they cannot be used as tracking pixels. Avatars load only from `avatars.githubusercontent.com`.
+- **Content Security Policy:** the production build adds a CSP `<meta>` tag (GitHub Pages cannot send headers), built from `public/config.js` in [`vite.config.ts`](vite.config.ts).
+- **Nothing is cached on disk:** boards are cached in memory only (an older on-disk copy is deleted on start), and signing out clears the app's local data and reloads the page.
+
+What you should set up in the consoles (one-time):
+
+1. **Restrict the API key.** Google Cloud Console → APIs & Services → Credentials → the "Browser key" of the project:
+   - *Application restrictions* → **Websites**: `https://darkv3ctor.github.io/*`, `http://localhost:5173/*`, `http://localhost:4173/*`, and `https://<project-id>.firebaseapp.com/*` (needed by the sign-in popup);
+   - *API restrictions* → **Restrict key**: Identity Toolkit API, Token Service API, Cloud Firestore API (and Firebase App Check API if you enable it).
+2. **Use a dedicated origin (recommended).** All GitHub Pages sites of one account share the origin `https://<user>.github.io`, so every other Pages site of `darkv3ctor` could read this app's sign-in token from the browser storage, and the authorized domain `darkv3ctor.github.io` covers all of them. If the account has (or will have) other Pages sites, give this one its own domain: add `public/CNAME` with e.g. `kanban.example.com`, point a DNS `CNAME` record to `darkv3ctor.github.io`, set it in the repo's Settings → Pages → Custom domain (with HTTPS), then in Firebase → Authentication → Settings → Authorized domains add the new domain and remove `darkv3ctor.github.io`. Update the API key restriction too.
+3. **App Check (optional).** Limits use of the project to your site: create a reCAPTCHA Enterprise key for your domain, register the web app in Firebase → App Check, put the site key into `appCheckSiteKey` in `public/config.js`, deploy, watch the App Check metrics, and only then turn on **Enforce** for Firestore and Authentication. Rebuild after changing the key — the CSP is generated from `config.js`.
+
+---
+
 ## Development
 
 ```bash
@@ -128,8 +150,13 @@ npm install
 npm run dev          # http://localhost:5173
 npm run typecheck
 npm run i18n:check   # every UI string has a Ukrainian translation
-npm run build        # outputs dist/
+npm test             # unit tests
+npm run test:rules   # security rules tests in the Firestore emulator (needs Java 21+)
+npm run build        # outputs dist/ (with the CSP meta tag)
+npm run preview      # serve dist/ locally to check the production build
 ```
+
+All of these run in CI before every deploy.
 
 `localhost` is in Firebase's Authorized domains by default, so GitHub sign-in also works locally.
 
@@ -142,13 +169,17 @@ UI strings are written in English and wrapped in `t('…')`; the English text is
 **Layout:**
 
 ```
-public/config.js              runtime settings (Firebase, app admins)
-firestore.rules               server-side access rules
+public/config.js              runtime settings (Firebase, app admins, App Check)
+firestore.rules               server-side access rules and data validation
 src/i18n.ts                   translation helpers and language switch
 src/locales/                  Ukrainian UI strings and template text (EN / UK)
 src/templates.ts              board templates (game dev, home, software, blank)
 src/store/                    storage: firebaseStore (cloud) and localStore (demo)
+src/lib/normalize.ts          coerces data read from the database into valid shapes
+src/lib/markdown.ts           safe Markdown rendering
 src/components/               UI: board, issue dialog, list, releases, settings, members
 scripts/check-i18n.ts         translation coverage check
-.github/workflows/deploy.yml  automatic deploy to GitHub Pages
+tests/unit/                   unit tests (node:test)
+tests/rules/                  security rules tests (Firestore emulator)
+.github/workflows/deploy.yml  tests and automatic deploy to GitHub Pages
 ```

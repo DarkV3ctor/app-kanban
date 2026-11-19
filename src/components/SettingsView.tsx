@@ -84,7 +84,7 @@ function General() {
         </Field>
       </div>
       <Field label={t('Description')}>
-        <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+        <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={5000} />
       </Field>
       <div className="form-grid">
         <Field label={t('Icon')}>
@@ -135,9 +135,19 @@ function Columns() {
   };
 
   const remove = async (c: Column) => {
-    if (cols.length <= 1) return;
+    // A column that was never saved is only removed from the draft.
+    if (!board.columns.some((x) => x.id === c.id)) {
+      setCols((cs) => cs.filter((x) => x.id !== c.id));
+      return;
+    }
+    if (board.columns.length <= 1) return;
+    // Deleting saves the board, so it must not silently save other unsaved edits too.
+    if (dirty) {
+      await confirm({ title: t('Save or discard the column changes first'), confirmText: t('Got it') });
+      return;
+    }
     const inCol = issues.filter((i) => i.status === c.id);
-    const target = cols.find((x) => x.id !== c.id)!;
+    const target = board.columns.find((x) => x.id !== c.id)!;
     const ok = await confirm({
       title: t('Delete column "{name}"?', { name: c.name }),
       text: inCol.length ? t('Its issues ({n}) will be moved to "{target}".', { n: inCol.length, target: target.name }) : undefined,
@@ -145,7 +155,7 @@ function Columns() {
       danger: true,
     });
     if (!ok) return;
-    const next = cols.filter((x) => x.id !== c.id);
+    const next = board.columns.filter((x) => x.id !== c.id);
     await run(async () => {
       for (const i of inCol) await store.updateIssue(board.id, i.id, { status: target.id }, user, [{ field: 'status', from: c.name, to: target.name }]);
       await store.updateBoard(board.id, { columns: next });

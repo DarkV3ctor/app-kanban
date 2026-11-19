@@ -10,6 +10,8 @@ export interface FirebaseWebConfig {
 interface KanbanConfig {
   firebase: FirebaseWebConfig | null;
   appAdmins: string[];
+  /** reCAPTCHA Enterprise site key for Firebase App Check (optional). */
+  appCheckSiteKey: string | null;
 }
 
 declare global {
@@ -23,6 +25,7 @@ const raw = window.KANBAN_CONFIG ?? {};
 export const config: KanbanConfig = {
   firebase: raw.firebase && raw.firebase.apiKey ? raw.firebase : null,
   appAdmins: (raw.appAdmins ?? []).map(String),
+  appCheckSiteKey: typeof raw.appCheckSiteKey === 'string' && raw.appCheckSiteKey ? raw.appCheckSiteKey : null,
 };
 
 export const isDemo = !config.firebase;

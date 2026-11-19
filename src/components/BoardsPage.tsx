@@ -4,7 +4,7 @@ import { useApp } from '../app-context';
 import { navigate } from '../router';
 import { count, t } from '../i18n';
 import { TEMPLATES } from '../templates';
-import { buildSampleIssues, prepareImport, type BoardExport } from '../lib/issues';
+import { buildSampleIssues, prepareImport } from '../lib/issues';
 import { roleName, sanitizeKey, suggestKey, cls } from '../lib/utils';
 import { Avatar, EmptyState, Field, Modal, Spinner } from './ui';
 import { Icon } from './Icons';
@@ -21,9 +21,27 @@ export function BoardsPage() {
     store.canCreateBoards(user).then(setCanCreate);
   }, [store, user]);
 
+  // Real issue counts (the board's issueCounter is the last issue number, not the count).
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const countedAt = useRef(new Map<string, number>());
+  useEffect(() => {
+    for (const b of boards ?? []) {
+      if (countedAt.current.get(b.id) === b.updatedAt) continue;
+      countedAt.current.set(b.id, b.updatedAt);
+      store.countIssues(b.id).then((n) => {
+        if (n !== null) setCounts((c) => ({ ...c, [b.id]: n }));
+      });
+    }
+  }, [boards, store]);
+
   const importFile = async (f: File) => {
     await run(async () => {
-      const data = JSON.parse(await f.text()) as BoardExport;
+      let data: unknown;
+      try {
+        data = JSON.parse(await f.text());
+      } catch {
+        throw new Error(t('This is not a board export file'));
+      }
       const p = prepareImport(data, user);
       const id = await store.createBoard(user, { draft: p.draft, name: `${p.name} (${t('import')})`, key: p.key, description: p.description, issues: p.issues });
       navigate(`/b/${id}`);
@@ -109,7 +127,7 @@ export function BoardsPage() {
                   ))}
                   {b.memberIds.length > 5 && <span className="avatar avatar-more">+{b.memberIds.length - 5}</span>}
                 </div>
-                <span className="muted small">{count(b.issueCounter, 'issue')}</span>
+                {counts[b.id] !== undefined && <span className="muted small">{count(counts[b.id], 'issue')}</span>}
               </div>
             </a>
           ))}
@@ -191,7 +209,7 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
         </Field>
       </div>
       <Field label={t('Description')}>
-        <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('What this board is about (optional)')} />
+        <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('What this board is about (optional)')} maxLength={5000} />
       </Field>
       {template.build().samples.length > 0 && (
         <label className="check-row">

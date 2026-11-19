@@ -1,5 +1,6 @@
 import type { AppUser, Board, Comment, HistoryEntry, Issue } from '../types';
 import { uid } from '../lib/utils';
+import { normalizeBoard, normalizeComment, normalizeHistoryEntry, normalizeIssue } from '../lib/normalize';
 import { t } from '../i18n';
 import type { CreatorEntry, Store } from './types';
 
@@ -72,6 +73,12 @@ const ck = (boardId: string, issueId: string) => `${boardId}/${issueId}`;
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 
+function boardOrThrow(boardId: string): Board {
+  const b = db.boards[boardId];
+  if (!b) throw new Error(t('Board not found'));
+  return b;
+}
+
 function demoUser(): AppUser {
   try {
     const raw = localStorage.getItem(USER_KEY);
@@ -105,6 +112,9 @@ export const localStore: Store = {
     localStorage.setItem('kb-local-signed-out', '1');
     window.dispatchEvent(new Event('kb-local-auth'));
   },
+  async consumeAuthError() {
+    return null;
+  },
 
   async canCreateBoards() {
     return true;
@@ -121,11 +131,14 @@ export const localStore: Store = {
   subscribeBoards(user, cb) {
     return sub(() => {
       const list = Object.values(db.boards).filter((b) => b.memberIds.includes(user.ghId));
-      cb(clone(list));
+      cb(list.map((b) => normalizeBoard(clone(b), b.id)));
     });
   },
   subscribeBoard(boardId, cb) {
-    return sub(() => cb(db.boards[boardId] ? clone(db.boards[boardId]) : null));
+    return sub(() => cb(db.boards[boardId] ? normalizeBoard(clone(db.boards[boardId]), boardId) : null));
+  },
+  async countIssues(boardId) {
+    return Object.keys(db.issues[boardId] ?? {}).length;
   },
   async createBoard(user, input) {
     const id = uid(16);
@@ -156,6 +169,36 @@ export const localStore: Store = {
     db.boards[boardId] = { ...b, ...clone(patch), updatedAt: Date.now() };
     save();
   },
+  async addMember(boardId, u, role) {
+    const b = boardOrThrow(boardId);
+    b.members[u.id] = role;
+    if (!b.memberIds.includes(u.id)) b.memberIds.push(u.id);
+    b.memberInfo[u.id] = { login: u.login, name: u.name, avatarUrl: u.avatarUrl };
+    b.updatedAt = Date.now();
+    save();
+  },
+  async setMemberRole(boardId, ghId, role) {
+    const b = boardOrThrow(boardId);
+    b.members[ghId] = role;
+    b.updatedAt = Date.now();
+    save();
+  },
+  async removeMember(boardId, ghId) {
+    const b = boardOrThrow(boardId);
+    delete b.members[ghId];
+    b.memberIds = b.memberIds.filter((x) => x !== ghId);
+    b.updatedAt = Date.now();
+    save();
+  },
+  async transferOwnership(boardId, fromId, toId) {
+    const b = boardOrThrow(boardId);
+    if (!b.memberIds.includes(toId)) throw new Error(t('Board not found'));
+    b.ownerId = toId;
+    b.members[toId] = 'owner';
+    b.members[fromId] = 'admin';
+    b.updatedAt = Date.now();
+    save();
+  },
   async deleteBoard(boardId) {
     delete db.boards[boardId];
     const issues = db.issues[boardId] ?? {};
@@ -168,7 +211,7 @@ export const localStore: Store = {
   },
 
   subscribeIssues(boardId, cb) {
-    return sub(() => cb(clone(Object.values(db.issues[boardId] ?? {}))));
+    return sub(() => cb(Object.values(db.issues[boardId] ?? {}).map((i) => normalizeIssue(clone(i), i.id))));
   },
   async createIssue(boardId, user, draft) {
     const b = db.boards[boardId];
@@ -206,7 +249,7 @@ export const localStore: Store = {
   },
 
   subscribeComments(boardId, issueId, cb) {
-    return sub(() => cb(clone(db.comments[ck(boardId, issueId)] ?? [])));
+    return sub(() => cb((db.comments[ck(boardId, issueId)] ?? []).map((c) => normalizeComment(clone(c), c.id))));
   },
   async addComment(boardId, issueId, user, body) {
     (db.comments[ck(boardId, issueId)] ??= []).push({ id: uid(), authorId: user.ghId, body, createdAt: Date.now(), editedAt: null });
@@ -228,6 +271,6 @@ export const localStore: Store = {
   },
 
   subscribeHistory(boardId, issueId, cb) {
-    return sub(() => cb(clone(db.history[ck(boardId, issueId)] ?? [])));
+    return sub(() => cb((db.history[ck(boardId, issueId)] ?? []).map((h) => normalizeHistoryEntry(clone(h), h.id))));
   },
 };

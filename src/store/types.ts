@@ -1,4 +1,4 @@
-import type { AppUser, Board, BoardSetup, Comment, HistoryChange, HistoryEntry, Issue, IssueDraft } from '../types';
+import type { AppUser, Board, BoardSetup, Comment, HistoryChange, HistoryEntry, Issue, IssueDraft, Role } from '../types';
 import type { GitHubUser } from '../lib/github';
 
 export type Unsub = () => void;
@@ -27,6 +27,8 @@ export interface Store {
   onAuth(cb: (u: AppUser | null) => void): Unsub;
   signIn(): Promise<void>;
   signOut(): Promise<void>;
+  /** Error from a redirect sign-in that finished while the page was reloading (null if none). */
+  consumeAuthError(): Promise<string | null>;
 
   canCreateBoards(user: AppUser): Promise<boolean>;
   subscribeCreators(cb: (list: CreatorEntry[]) => void, onErr?: ErrCb): Unsub;
@@ -35,8 +37,16 @@ export interface Store {
 
   subscribeBoards(user: AppUser, cb: (boards: Board[]) => void, onErr?: ErrCb): Unsub;
   subscribeBoard(boardId: string, cb: (b: Board | null) => void, onErr?: ErrCb): Unsub;
+  /** Number of issues on the board, or null if it cannot be counted right now. */
+  countIssues(boardId: string): Promise<number | null>;
   createBoard(user: AppUser, input: NewBoardInput): Promise<string>;
   updateBoard(boardId: string, patch: Partial<Board>): Promise<void>;
+  addMember(boardId: string, u: GitHubUser, role: Role): Promise<void>;
+  setMemberRole(boardId: string, ghId: string, role: Role): Promise<void>;
+  /** Removes a member (also used to leave a board). */
+  removeMember(boardId: string, ghId: string): Promise<void>;
+  /** The new owner must already be a member; the previous owner becomes an admin. */
+  transferOwnership(boardId: string, fromId: string, toId: string): Promise<void>;
   deleteBoard(boardId: string): Promise<void>;
 
   subscribeIssues(boardId: string, cb: (issues: Issue[]) => void, onErr?: ErrCb): Unsub;

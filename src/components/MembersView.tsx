@@ -24,8 +24,8 @@ const PERMISSIONS: [string, number][] = [
 ];
 
 export function MembersView() {
-  const { user, store, confirm, toast } = useApp();
-  const { board, perms, issues, updateBoard } = useBoard();
+  const { user, store, confirm, toast, run } = useApp();
+  const { board, perms, issues } = useBoard();
   const [login, setLogin] = useState('');
   const [role, setRole] = useState<Role>('editor');
   const [found, setFound] = useState<GitHubUser | null>(null);
@@ -62,17 +62,18 @@ export function MembersView() {
       toast(t('@{login} is already a member', { login: found.login }), 'info');
       return;
     }
-    await updateBoard({
-      members: { ...board.members, [found.id]: role },
-      memberIds: [...board.memberIds.filter((x) => x !== found.id), found.id],
-      memberInfo: { ...board.memberInfo, [found.id]: { login: found.login, name: found.name, avatarUrl: found.avatarUrl } },
-    });
+    try {
+      await store.addMember(board.id, found, role);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), 'error');
+      return;
+    }
     toast(t('@{login} added as {role}', { login: found.login, role: roleName(role) }), 'success');
     setFound(null);
     setLogin('');
   };
 
-  const changeRole = (id: string, r: Role) => updateBoard({ members: { ...board.members, [id]: r } });
+  const changeRole = (id: string, r: Role) => run(store.setMemberRole(board.id, id, r));
 
   const remove = async (id: string) => {
     const info = board.memberInfo[id];
@@ -84,18 +85,14 @@ export function MembersView() {
       danger: true,
     });
     if (!ok) return;
-    const next = { ...board.members };
-    delete next[id];
-    await updateBoard({ members: next, memberIds: board.memberIds.filter((x) => x !== id) });
+    await run(store.removeMember(board.id, id));
   };
 
   const leave = async () => {
     const ok = await confirm({ title: t('Leave the board?'), text: t('You will lose access until someone invites you again.'), confirmText: t('Leave'), danger: true });
     if (!ok) return;
-    const next = { ...board.members };
-    delete next[user.ghId];
     try {
-      await store.updateBoard(board.id, { members: next, memberIds: board.memberIds.filter((x) => x !== user.ghId) });
+      await store.removeMember(board.id, user.ghId);
       navigate('/');
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), 'error');
@@ -111,7 +108,7 @@ export function MembersView() {
       danger: true,
     });
     if (!ok) return;
-    await updateBoard({ ownerId: id, members: { ...board.members, [id]: 'owner', [user.ghId]: 'admin' } });
+    await run(store.transferOwnership(board.id, user.ghId, id));
   };
 
   return (

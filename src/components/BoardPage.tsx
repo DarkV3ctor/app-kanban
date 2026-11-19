@@ -6,7 +6,7 @@ import { permsFor, roleName, cls } from '../lib/utils';
 import { t, tk } from '../i18n';
 import { EMPTY_FILTERS, diffIssue, statusSideEffects, type Filters } from '../lib/issues';
 import { BoardContext, type BoardCtx } from './board-context';
-import { EmptyState, Spinner } from './ui';
+import { EmptyState, ErrorBoundary, ErrorPanel, Modal, Spinner } from './ui';
 import { Icon } from './Icons';
 import { KanbanView } from './KanbanView';
 import { ListView } from './ListView';
@@ -42,6 +42,8 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
   const [filters, setFiltersState] = useState<Filters>(() => loadFilters(boardId));
   const [creating, setCreating] = useState<Partial<IssueDraft> | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // An issue opened right after it was created may not have arrived in the snapshot yet.
+  const [pendingIssue, setPendingIssue] = useState<Issue | null>(null);
 
   useEffect(
     () =>
@@ -99,11 +101,22 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     [board, run, store],
   );
 
-  const openIssue = useCallback((i: Issue) => setQueryParam('i', String(i.number)), []);
+  const openIssue = useCallback((i: Issue) => {
+    setPendingIssue(i);
+    setQueryParam('i', String(i.number));
+  }, []);
   const newIssue = useCallback((d?: Partial<IssueDraft>) => setCreating(d ?? {}), []);
 
+  // Once the snapshot has the issue, the live copy is used (and a later deletion closes the dialog).
+  useEffect(() => {
+    if (pendingIssue && byId.has(pendingIssue.id)) setPendingIssue(null);
+  }, [pendingIssue, byId]);
+
   const openNumber = route.query.get('i');
-  const openedIssue = openNumber ? (issues ?? []).find((i) => String(i.number) === openNumber) : undefined;
+  const openedIssue = openNumber
+    ? (issues ?? []).find((i) => String(i.number) === openNumber) ?? (pendingIssue && String(pendingIssue.number) === openNumber ? pendingIssue : undefined)
+    : undefined;
+  const closeIssue = useCallback(() => setQueryParam('i', null), []);
 
   // Keyboard shortcuts: C — create issue, / — search
   useEffect(() => {
@@ -128,10 +141,13 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     return () => window.removeEventListener('keydown', h);
   }, [perms.edit]);
 
-  if (error && !board) {
+  // A failed listener does not recover (e.g. after being removed from the board), so the
+  // last known copy of the board must not stay on screen.
+  if (error) {
     return (
       <EmptyState icon="shield" title={t('No access to this board')}>
         <p className="muted">{t('The board does not exist or you are not a member. Ask a board admin to add @{login}.', { login: user.login })}</p>
+        <p className="muted small">{error}</p>
         <button className="btn btn-primary" onClick={() => navigate('/')}>
           {t('Back to boards')}
         </button>
@@ -225,15 +241,31 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
           )}
         </main>
       </div>
-      {openNumber && issues && (openedIssue ? <IssueDialog issue={openedIssue} onClose={() => setQueryParam('i', null)} /> : <MissingIssue onClose={() => setQueryParam('i', null)} />)}
+      {openNumber &&
+        issues &&
+        (openedIssue ? (
+          <ErrorBoundary
+            resetKey={openedIssue}
+            fallback={(e) => (
+              <Modal title={`${board.key}-${openedIssue.number}`} onClose={closeIssue}>
+                <ErrorPanel error={e} />
+              </Modal>
+            )}
+          >
+            <IssueDialog issue={openedIssue} onClose={closeIssue} />
+          </ErrorBoundary>
+        ) : (
+          <MissingIssue onClose={closeIssue} />
+        ))}
       {creating && <CreateIssueDialog defaults={creating} onClose={() => setCreating(null)} />}
     </BoardContext.Provider>
   );
 }
 
+/** A link to an issue that is not (or no longer) on the board: drop the parameter after a moment. */
 function MissingIssue({ onClose }: { onClose: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onClose, 50);
+    const t = setTimeout(onClose, 1000);
     return () => clearTimeout(t);
   }, [onClose]);
   return null;

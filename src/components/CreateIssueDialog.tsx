@@ -144,7 +144,7 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
           <input className="input" type="date" value={d.dueDate ?? ''} onChange={(e) => set({ dueDate: e.target.value || null })} />
         </Field>
         <Field label={t('Estimate')}>
-          <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder={t('e.g. 2d 4h')} />
+          <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder={t('e.g. 2d 4h')} maxLength={50} />
         </Field>
       </div>
     </Modal>

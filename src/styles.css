@@ -2620,6 +2620,53 @@ textarea.inline-input.issue-title {
 .markdown img {
   max-width: 100%;
 }
+/* External images are placeholders until clicked (see lib/markdown.ts). */
+.markdown .md-image {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.markdown .md-image::before {
+  content: '🖼';
+}
+.markdown .md-image:hover {
+  background: var(--bg-hover);
+}
+.markdown .md-image-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.markdown .md-image-host {
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.error-panel {
+  max-width: 560px;
+  margin: 32px auto;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: var(--danger-bg);
+  color: var(--text);
+}
+.error-panel h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.error-panel p {
+  margin: 0 0 12px;
+  word-break: break-word;
+}
 .markdown hr {
   border: 0;
   border-top: 1px solid var(--border);

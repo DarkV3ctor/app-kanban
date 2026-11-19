@@ -1,7 +1,8 @@
 import type { AppUser, Board, BoardSetup, HistoryChange, Issue, IssueDraft, LinkType, Priority } from '../types';
 import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
-import { PRIORITY_ORDER, addDays, columnCategory, priorityName, todayISO, uid } from './utils';
+import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
+import { normalizeBoardSetup, normalizeIssue } from './normalize';
 
 export const LINK_TYPES: { id: LinkType; name: string; inverse: LinkType }[] = [
   { id: 'blocks', name: tk('blocks'), inverse: 'blocked_by' },
@@ -312,38 +313,63 @@ export function exportBoard(board: Board, issues: Issue[]): BoardExport {
   return { format: 'kanban-board', version: 1, exportedAt: new Date().toISOString(), board: rest, issues };
 }
 
-/** Prepare an export file for import: new ids, links remapped. */
-export function prepareImport(data: BoardExport, me: AppUser): { draft: BoardSetup; name: string; key: string; description: string; issues: Issue[] } {
-  if (data?.format !== 'kanban-board' || !data.board || !Array.isArray(data.issues)) {
+/**
+ * Prepare an export file for import: the file is untrusted, so every field is normalized and
+ * clipped to the limits of the security rules; issues get new ids (links remapped) and unique numbers.
+ */
+export function prepareImport(data: unknown, me: AppUser): { draft: BoardSetup; name: string; key: string; description: string; issues: Issue[] } {
+  const d = (data ?? {}) as Partial<Record<keyof BoardExport, unknown>>;
+  if (d.format !== 'kanban-board' || !d.board || typeof d.board !== 'object' || !Array.isArray(d.issues)) {
     throw new Error(t('This is not a board export file'));
   }
-  const b = data.board;
-  const idMap = new Map<string, string>();
-  data.issues.forEach((i) => idMap.set(i.id, uid(16)));
+  const b = d.board as Record<string, unknown>;
+  const draft = normalizeBoardSetup(b);
+  draft.icon = [...draft.icon].slice(0, 4).join('');
+  const columnIds = new Set(draft.columns.map((c) => c.id));
+
+  const source = d.issues.slice(0, MAX_IMPORT_ISSUES).map((x, i) => {
+    const oldId = typeof (x as { id?: unknown })?.id === 'string' ? (x as { id: string }).id : `#${i}`;
+    return { oldId, issue: normalizeIssue(x, oldId) };
+  });
+  const idMap = new Map(source.map((s) => [s.oldId, uid(16)]));
+
+  // Issue numbers must be unique: duplicates get the next free numbers.
+  let maxNumber = source.reduce((m, s) => Math.max(m, s.issue.number), 0);
+  const usedNumbers = new Set<number>();
+
   // Members are not carried over, so every assignee except yourself is cleared.
-  const issues: Issue[] = data.issues.map((i) => ({
-    ...i,
-    id: idMap.get(i.id)!,
-    epicId: i.epicId ? idMap.get(i.epicId) ?? null : null,
-    links: (i.links ?? []).filter((l) => idMap.has(l.issueId)).map((l) => ({ ...l, issueId: idMap.get(l.issueId)! })),
-    assigneeId: i.assigneeId === me.ghId ? me.ghId : null,
-    reporterId: me.ghId,
-    createdBy: me.ghId,
-  }));
+  const issues: Issue[] = source.map(({ oldId, issue: i }) => {
+    const number = usedNumbers.has(i.number) ? ++maxNumber : i.number;
+    usedNumbers.add(number);
+    return {
+      ...i,
+      id: idMap.get(oldId)!,
+      number,
+      title: i.title.slice(0, 500),
+      description: i.description.slice(0, 100_000),
+      status: columnIds.has(i.status) ? i.status : draft.columns[0].id,
+      estimate: i.estimate.slice(0, 50),
+      labels: i.labels.slice(0, 50),
+      components: i.components.slice(0, 50),
+      checklist: i.checklist.slice(0, 200),
+      epicId: i.epicId ? idMap.get(i.epicId) ?? null : null,
+      links: i.links
+        .filter((l) => idMap.has(l.issueId))
+        .slice(0, 200)
+        .map((l) => ({ ...l, issueId: idMap.get(l.issueId)! })),
+      assigneeId: i.assigneeId === me.ghId ? me.ghId : null,
+      reporterId: me.ghId,
+      createdBy: me.ghId,
+    };
+  });
   return {
-    draft: {
-      template: b.template ?? 'blank',
-      icon: b.icon ?? '📋',
-      color: b.color ?? '#626F86',
-      columns: b.columns,
-      issueTypes: b.issueTypes,
-      labels: b.labels ?? [],
-      components: b.components ?? [],
-      versions: b.versions ?? [],
-    },
-    name: b.name,
-    key: b.key,
-    description: b.description ?? '',
+    draft,
+    name: (typeof b.name === 'string' ? b.name.trim() : '').slice(0, 180) || t('Imported board'),
+    key: sanitizeKey(typeof b.key === 'string' ? b.key : '') || 'IMP',
+    description: (typeof b.description === 'string' ? b.description : '').slice(0, 5000),
     issues,
   };
 }
+
+/** Large enough for any real board, small enough for the import to finish in reasonable time. */
+const MAX_IMPORT_ISSUES = 5000;
