@@ -25,5 +25,5 @@ window.KANBAN_CONFIG = {
     appId: "1:315511278198:web:42c71ee4e9c975daaf6d57"
   },
   appAdmins: ["78609208"],
-  appCheckSiteKey: null
+  appCheckSiteKey: "6LdNkiguAAAAALw0Ps-8-vwrYhtcafx8JVtZZ5Fw"
 };
