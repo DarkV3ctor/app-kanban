@@ -11,14 +11,13 @@
  *            can create new boards. Must match the list in isAppAdmin() in firestore.rules.
  */
 window.KANBAN_CONFIG = {
-  firebase: null,
-  // firebase: {
-  //   apiKey: "...",
-  //   authDomain: "your-project.firebaseapp.com",
-  //   projectId: "your-project",
-  //   storageBucket: "your-project.firebasestorage.app",
-  //   messagingSenderId: "...",
-  //   appId: "..."
-  // },
+  firebase: {
+    apiKey: "AIzaSyA8vV1IeiNP8u5JU-5BwysvDaeZSumxLOc",
+    authDomain: "home-planer-rd.firebaseapp.com",
+    projectId: "home-planer-rd",
+    storageBucket: "home-planer-rd.firebasestorage.app",
+    messagingSenderId: "315511278198",
+    appId: "1:315511278198:web:42c71ee4e9c975daaf6d57"
+  },
   appAdmins: ["78609208"]
 };

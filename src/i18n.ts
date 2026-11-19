@@ -21,8 +21,13 @@ function detect(): Lang {
   } catch {
     /* ignore */
   }
+  // Respect the browser's preference order: the first supported language wins.
   const prefs = navigator.languages?.length ? navigator.languages : [navigator.language];
-  return prefs.some((l) => /^(uk|ru|be)\b/i.test(l)) ? 'uk' : 'en';
+  for (const l of prefs) {
+    if (/^en\b/i.test(l)) return 'en';
+    if (/^(uk|ru|be)\b/i.test(l)) return 'uk';
+  }
+  return 'en';
 }
 
 export const lang: Lang = detect();
