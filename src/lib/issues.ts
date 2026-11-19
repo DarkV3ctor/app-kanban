@@ -250,6 +250,8 @@ export function filtersActive(f: Filters): boolean {
 export function applyFilters(board: Board, issues: Issue[], f: Filters, me: AppUser | null): Issue[] {
   const text = f.text.trim().toLowerCase();
   const weekAgo = Date.now() - 7 * 86400_000;
+  // As on the board's epic lanes: an issue whose epic is no longer an epic counts as "No epic".
+  const epicIds = f.epics.length ? new Set(issues.filter((i) => isEpic(board, i)).map((i) => i.id)) : null;
   return issues.filter((i) => {
     if (text) {
       const key = `${board.key}-${i.number}`.toLowerCase();
@@ -261,7 +263,7 @@ export function applyFilters(board: Board, issues: Issue[], f: Filters, me: AppU
     if (f.labels.length && !i.labels.some((l) => f.labels.includes(l))) return false;
     if (f.components.length && !i.components.some((c) => f.components.includes(c))) return false;
     if (f.versions.length && !f.versions.includes(i.fixVersionId ?? 'none')) return false;
-    if (f.epics.length && !f.epics.includes(i.epicId ?? 'none') && !f.epics.includes(i.id)) return false;
+    if (epicIds && !f.epics.includes(i.epicId && epicIds.has(i.epicId) ? i.epicId : 'none') && !f.epics.includes(i.id)) return false;
     if (f.onlyMine && me && i.assigneeId !== me.ghId) return false;
     if (f.recent && i.updatedAt < weekAgo) return false;
     if (f.hideDone && columnCategory(board, i.status) === 'done') return false;

@@ -78,6 +78,8 @@ export const UK: Record<string, string> = {
   'Issue not found': 'Задачу не знайдено',
   'The sign-in window was blocked. Allow pop-ups for this site and try again.':
     'Вікно входу заблоковано. Дозвольте спливаючі вікна для цього сайту й спробуйте ще раз.',
+  'The browser did not pass the reCAPTCHA check. Allow google.com and gstatic.com on this site (an ad or privacy blocker may stop them) and try again.':
+    'Браузер не пройшов перевірку reCAPTCHA. Дозвольте google.com і gstatic.com на цьому сайті (їх може блокувати блокувальник реклами чи трекерів) і спробуйте ще раз.',
   'Something went wrong': 'Щось пішло не так',
   'Try again': 'Спробувати ще раз',
   'Reload the page': 'Перезавантажити сторінку',

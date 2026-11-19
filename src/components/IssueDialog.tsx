@@ -34,7 +34,9 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
   const { board, issues, byId, perms, updateIssue, openIssue, newIssue } = boardCtx;
   const key = `${board.key}-${issue.number}`;
   const type = board.issueTypes.find((x) => x.id === issue.type);
-  const epic = issue.epicId ? byId.get(issue.epicId) : undefined;
+  // Only a real epic is shown as the parent (an issue whose epic changed type has none, as on the board).
+  const parent = issue.epicId ? byId.get(issue.epicId) : undefined;
+  const epic = parent && isEpic(board, parent) ? parent : undefined;
   const canEdit = perms.edit;
   const canDelete = perms.admin || (perms.edit && issue.createdBy === user.ghId);
   const set = (patch: Partial<Issue>) => updateIssue(issue, patch);

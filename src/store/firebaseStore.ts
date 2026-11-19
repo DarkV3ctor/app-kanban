@@ -166,6 +166,11 @@ function authError(e: unknown): Error {
     return new Error(t('Domain {host} is not listed in Firebase → Authentication → Settings → Authorized domains', { host: location.hostname }));
   }
   if (code === 'auth/operation-not-allowed') return new Error(t('GitHub sign-in is not enabled in Firebase → Authentication → Sign-in method'));
+  // App Check is enforced for sign-in; the server answers "Firebase App Check token is invalid.",
+  // which the SDK turns into the code auth/firebase-app-check-token-is-invalid.
+  if (code?.includes('app-check')) {
+    return new Error(t('The browser did not pass the reCAPTCHA check. Allow google.com and gstatic.com on this site (an ad or privacy blocker may stop them) and try again.'));
+  }
   return err(e);
 }
 

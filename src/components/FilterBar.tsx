@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useApp } from '../app-context';
 import { EMPTY_FILTERS, filtersActive, isEpic, type Filters } from '../lib/issues';
-import { PRIORITIES, cls } from '../lib/utils';
+import { PRIORITIES, cls, priorityName } from '../lib/utils';
 import { fieldName } from '../lib/fields';
 import { t } from '../i18n';
 import type { Priority } from '../types';
@@ -70,7 +70,7 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
         label={fieldName(board, 'priority')}
         value={filters.priorities}
         onChange={(v) => set('priorities', v as Priority[])}
-        options={PRIORITIES.map((p) => ({ value: p.id, label: p.name, icon: <PriorityIcon priority={p.id} /> }))}
+        options={PRIORITIES.map((p) => ({ value: p.id, label: priorityName(p.id), icon: <PriorityIcon priority={p.id} /> }))}
       />
       {board.labels.length > 0 && <FilterSelect label={fieldName(board, 'labels')} value={filters.labels} onChange={(v) => set('labels', v)} options={board.labels.map((l) => ({ value: l, label: l }))} />}
       {board.components.length > 0 && (
