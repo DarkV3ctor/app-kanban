@@ -1,562 +1,816 @@
 /* ==========================================================================
    "Fluent" design — enabled by <html data-design="fluent"> (see src/appearance.ts).
-   Follows Microsoft's Fluent Design System as it looks in Windows 11:
-   - Segoe UI Variable and the Windows accent blue (light blue with dark text in
-     dark mode);
-   - Mica: a softly tinted app backdrop under the top bar and the sidebar, with the
-     content on a lighter layer that has a rounded top-left corner;
-   - Acrylic (frosted) menus, toasts and the mobile sidebar;
-   - 4 px controls and 8 px overlays, elevation strokes under buttons and fields,
-     the accent underline of a focused text box;
-   - the accent "pill" that marks the selected item in navigation, lists and
-     segmented controls; dialogs with a shaded button bar.
-   Like the Apple design, it redefines the tokens of styles.css and restyles a few
-   components on top; everything else follows the tokens.
+   Microsoft's Fluent 2 design system as the Microsoft 365 web apps use it
+   (Fluent UI React v9). The values come from the official tokens package
+   (@fluentui/tokens: webLightTheme / webDarkTheme):
+   - Segoe UI and the Fluent type ramp (Body 1 14/20, Subtitle 2 16/22,
+     Subtitle 1 20/28, Title 3 24/32), semibold buttons and titles;
+   - the web brand ramp (#0f6cbd) and the neutral grey layers: a brand-coloured
+     Microsoft 365 header, the NavDrawer grey, a light canvas and white surfaces;
+   - depth from shadows, not lines: shadow4 cards, shadow8 on hover, shadow16
+     menus, shadow28 dragging, shadow64 dialogs;
+   - 4 px controls, 8 px cards and dialogs; buttons with a 1 px stroke and a
+     96 px minimum width; inputs with the accessible bottom stroke and the brand
+     underline that grows from the centre on focus;
+   - TabList selection (a 3 px brand bar) for segmented controls and the Nav
+     indicator in the sidebar; tint badges for statuses;
+   - icons go brand blue on hover; the two-tone focus ring.
+   Like the other designs, it redefines the tokens of styles.css and restyles a
+   few components on top; everything else follows the tokens.
    ========================================================================== */
 
-/* --- Tokens: light ------------------------------------------------------ */
+/* --- Tokens: light (webLightTheme) ------------------------------------------ */
 :root[data-design='fluent'] {
-  --bg: #f9f9f9; /* the content layer; the app backdrop is --mica */
-  --bg-sunken: #f3f3f3;
-  --bg-column: #efefef;
-  --bg-hover: rgba(0, 0, 0, 0.05);
-  --bg-pressed: rgba(0, 0, 0, 0.08);
-  --bg-selected: rgba(0, 95, 184, 0.1);
-  --surface: #ffffff;
+  --bg: #fafafa; /* colorNeutralBackground2: the canvas */
+  --bg-sunken: #f5f5f5; /* Background3 */
+  --bg-column: #f0f0f0; /* Background4 */
+  /* Hover / pressed / selected as alpha, so they work on every layer (≈ Background1Hover / Pressed / Selected on white). */
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-pressed: rgba(0, 0, 0, 0.12);
+  --bg-selected: rgba(0, 0, 0, 0.08);
+  --surface: #ffffff; /* Background1 */
   --surface-raised: #ffffff;
   --overlay: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --border-strong: #8a8a8a;
-  --text: #1b1b1b;
-  --text-subtle: #424242;
-  --text-subtlest: #616161;
+  --border: #e0e0e0; /* Stroke2 */
+  --border-strong: #616161; /* StrokeAccessible */
+  --text: #242424; /* Foreground1 */
+  --text-subtle: #424242; /* Foreground2 */
+  --text-subtlest: #616161; /* Foreground3 */
   --text-inverse: #ffffff;
-  --link: #005fb8;
-  --primary: #005fb8;
-  --primary-hover: #1a6fbf;
-  --primary-pressed: #337fc6;
-  --danger: #c42b1c;
-  --danger-hover: #b02719;
-  --focus: #1b1b1b; /* the Windows focus rectangle: black in light mode, white in dark mode */
-  /* Fluent 2 elevation: shadow2 (cards), shadow16 (flyouts), shadow28 (dragging). */
-  --shadow-card: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
-  --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
-  --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.14);
-  --todo-bg: #ebebeb;
+  --link: #115ea3; /* BrandForegroundLink */
+  --primary: #0f6cbd; /* brand 80 */
+  --primary-hover: #115ea3;
+  --primary-pressed: #0c3b5e;
+  --danger: #c50f1f; /* cranberry */
+  --danger-hover: #b10e1c;
+  --focus: #000000; /* StrokeFocus2 */
+  --shadow-card: 0 0 2px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.14); /* shadow4 */
+  --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14); /* shadow16 */
+  --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.14); /* shadow28 */
+  /* Tint badges: background / foreground (and the stroke below). */
+  --todo-bg: #f5f5f5;
   --todo-text: #424242;
-  --progress-bg: #e0eefb;
-  --progress-text: #0e4f8f;
-  --done-bg: #dff6dd;
+  --progress-bg: #ebf3fc;
+  --progress-text: #115ea3;
+  --done-bg: #f1faf1;
   --done-text: #0e700e;
-  --danger-bg: #fde7e9;
-  --danger-text: #a4262c;
-  --warn-bg: #fff4ce;
-  --warn-text: #7a4f00;
-  --epic-bg: #f1eafa;
-  --epic-text: #5c2e91;
-  --info-bg: #eaf3fc;
-  --topbar: transparent;
-  --success: #0f7b0f;
-  --epic-accent: #8764b8;
-  --backdrop: rgba(0, 0, 0, 0.3);
-  --brand-from: #3aa0f3;
-  --brand-to: #005fb8;
+  --danger-bg: #fdf3f4;
+  --danger-text: #b10e1c;
+  --warn-bg: #fff9f5;
+  --warn-text: #bc4b09;
+  --epic-bg: #f7f4fb;
+  --epic-text: #532982;
+  --info-bg: #ebf3fc;
+  --topbar: #0f6cbd;
+  --success: #107c10;
+  --epic-accent: #5c2e91;
+  --backdrop: rgba(0, 0, 0, 0.4);
+  --brand-from: #479ef5;
+  --brand-to: #0f6cbd;
   --radius: 4px;
   --radius-lg: 8px;
   --radius-col: 8px;
   --radius-tag: 4px;
   --caps: none;
   --caps-spacing: 0;
-  /* Inter (bundled by the Apple design) stands in for Segoe UI where neither Segoe nor Roboto exist. */
-  --font: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Inter Variable', 'Helvetica Neue', sans-serif;
-  --mono: 'Cascadia Code', 'Cascadia Mono', Consolas, ui-monospace, 'SF Mono', Menlo, monospace;
+  --font: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+  --mono: Consolas, 'Courier New', Courier, monospace;
 
   /* Tokens used only by this design. */
-  --font-display: 'Segoe UI Variable Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Inter Variable', sans-serif;
-  --mica: #f3f3f3;
-  --mica-tint-1: rgba(0, 120, 212, 0.07);
-  --mica-tint-2: rgba(135, 100, 184, 0.05);
-  --layer-stroke: rgba(0, 0, 0, 0.07);
-  --acrylic: rgba(252, 252, 252, 0.9);
-  --flyout-stroke: rgba(0, 0, 0, 0.08);
-  /* Standard controls (buttons, combo boxes, text boxes). The elevation edge is a darker
-     bottom line in light mode and a lighter top line in dark mode, as in WinUI. */
+  --brand-bg: #0f6cbd;
+  --brand-bg-hover: #115ea3;
+  --brand-bg-pressed: #0c3b5e;
+  --brand-fg: #0f6cbd; /* CompoundBrandForeground: indicators, hovered icons */
+  --brand-tint: #ebf3fc; /* BrandBackground2 */
+  --brand-stroke2: #b4d6fa;
+  --on-brand: #ffffff;
+  --stroke1: #d1d1d1;
+  --stroke1-hover: #c7c7c7;
+  --stroke1-pressed: #b3b3b3;
+  --stroke-accessible: #616161;
+  --stroke-accessible-hover: #575757;
   --control: #ffffff;
-  --control-hover: #f6f6f6;
-  --control-pressed: #f1f1f1;
-  --control-focus: #ffffff;
-  --control-alt: rgba(0, 0, 0, 0.025);
-  --control-stroke: rgba(0, 0, 0, 0.07);
-  --control-edge: rgba(0, 0, 0, 0.1);
-  --edge-y: -1px;
-  --input-edge: rgba(0, 0, 0, 0.45);
-  --accent-fill: #005fb8;
-  --on-accent: #ffffff;
-  --accent-edge: rgba(0, 0, 0, 0.3);
-  --seg-active: #ffffff;
-  --card-hover: #fafafa;
-  --dialog-foot: #f3f3f3;
-  --shadow-hover: 0 0 2px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.14);
-  --shadow-modal: 0 0 8px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.14);
-  --selection: #0078d4;
-  --scrollbar: rgba(0, 0, 0, 0.4);
+  --control-hover: #f5f5f5;
+  --control-pressed: #e0e0e0;
+  --control-selected: #ebebeb;
+  --disabled-bg: #f0f0f0;
+  --disabled-fg: #bdbdbd;
+  --disabled-stroke: #e0e0e0;
+  --nav: #f0f0f0; /* NavDrawer: Background4 */
+  --nav-hover: #fafafa;
+  --nav-selected: #ffffff;
+  --todo-stroke: #e0e0e0;
+  --progress-stroke: #b4d6fa;
+  --done-stroke: #9fd89f;
+  --danger-stroke: #eeacb2;
+  --warn-stroke: #fdcfb4;
+  --epic-stroke: #c6b1de;
+  --shadow8: 0 0 2px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.14);
+  --shadow64: 0 0 8px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.14);
+  /* The Microsoft 365 header: brand blue with white content. */
+  --header-fg: #ffffff;
+  --header-fg-subtle: rgba(255, 255, 255, 0.9);
+  --header-hover: rgba(255, 255, 255, 0.14);
+  --header-pressed: rgba(255, 255, 255, 0.24);
+  --header-chip: rgba(255, 255, 255, 0.14);
+  --header-chip-active: #ffffff;
+  --header-chip-active-fg: #0f6cbd;
+  --header-logo-from: rgba(255, 255, 255, 0.28);
+  --header-logo-to: rgba(255, 255, 255, 0.16);
+  --ease: cubic-bezier(0, 0, 0, 1); /* curveDecelerateMid */
+  --ease-max: cubic-bezier(0.1, 0.9, 0.2, 1); /* curveDecelerateMax */
   color-scheme: light;
 }
 
-/* --- Tokens: dark (system setting and explicit choice) -------------------- */
+/* --- Tokens: dark (webDarkTheme; system setting and explicit choice) ------------ */
 @media (prefers-color-scheme: dark) {
   :root[data-design='fluent']:not([data-theme='light']) {
-    --bg: #272727;
-    --bg-sunken: #202020;
-    --bg-column: #1e1e1e;
-    --bg-hover: rgba(255, 255, 255, 0.06);
-    --bg-pressed: rgba(255, 255, 255, 0.1);
-    --bg-selected: rgba(96, 205, 255, 0.14);
-    --surface: #2d2d2d;
-    --surface-raised: #2d2d2d;
-    --overlay: #2b2b2b;
-    --border: rgba(255, 255, 255, 0.09);
-    --border-strong: #9e9e9e;
+    --bg: #141414;
+    --bg-sunken: #1f1f1f;
+    --bg-column: #1f1f1f;
+    --bg-hover: rgba(255, 255, 255, 0.08);
+    --bg-pressed: rgba(0, 0, 0, 0.2);
+    --bg-selected: rgba(255, 255, 255, 0.06);
+    --surface: #292929;
+    --surface-raised: #292929;
+    --overlay: #292929;
+    --border: #3d3d3d;
+    --border-strong: #adadad;
     --text: #ffffff;
     --text-subtle: #d6d6d6;
     --text-subtlest: #adadad;
     --text-inverse: #000000;
-    --link: #60cdff;
-    --primary: #60cdff;
-    --primary-hover: #5abce9;
-    --primary-pressed: #55acd4;
-    --danger: #ff99a4;
-    --danger-hover: #ffb0b8;
+    --link: #479ef5;
+    --primary: #479ef5;
+    --primary-hover: #62abf5;
+    --primary-pressed: #2886de;
+    --danger: #dc626d;
+    --danger-hover: #e37d87;
     --focus: #ffffff;
-    --shadow-card: 0 0 2px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.28);
+    --shadow-card: 0 0 2px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.28);
     --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.28);
     --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.24), 0 14px 28px rgba(0, 0, 0, 0.28);
-    --todo-bg: rgba(255, 255, 255, 0.08);
+    --todo-bg: rgba(255, 255, 255, 0.06);
     --todo-text: #d6d6d6;
-    --progress-bg: rgba(96, 205, 255, 0.16);
-    --progress-text: #8fdcff;
-    --done-bg: rgba(108, 203, 95, 0.16);
-    --done-text: #8fd982;
-    --danger-bg: rgba(255, 153, 164, 0.16);
-    --danger-text: #ffb3bb;
-    --warn-bg: rgba(252, 225, 0, 0.12);
-    --warn-text: #f5dc6e;
-    --epic-bg: rgba(177, 146, 229, 0.18);
-    --epic-text: #cdb8f2;
-    --info-bg: rgba(96, 205, 255, 0.1);
-    --success: #6ccb5f;
-    --epic-accent: #b392f0;
-    --backdrop: rgba(0, 0, 0, 0.45);
-    --brand-from: #4cc2ff;
-    --brand-to: #0078d4;
-    --mica: #202020;
-    --mica-tint-1: rgba(96, 205, 255, 0.05);
-    --mica-tint-2: rgba(177, 146, 229, 0.04);
-    --layer-stroke: rgba(255, 255, 255, 0.05);
-    --acrylic: rgba(44, 44, 44, 0.94);
-    --flyout-stroke: rgba(255, 255, 255, 0.08);
-    --control: rgba(255, 255, 255, 0.06);
-    --control-hover: rgba(255, 255, 255, 0.085);
-    --control-pressed: rgba(255, 255, 255, 0.035);
-    --control-focus: #1e1e1e;
-    --control-alt: rgba(0, 0, 0, 0.1);
-    --control-stroke: rgba(255, 255, 255, 0.07);
-    --control-edge: rgba(255, 255, 255, 0.03);
-    --edge-y: 1px;
-    --input-edge: rgba(255, 255, 255, 0.54);
-    --accent-fill: #60cdff;
-    --on-accent: #000000;
-    --accent-edge: rgba(0, 0, 0, 0.14);
-    --seg-active: rgba(255, 255, 255, 0.1);
-    --card-hover: #323232;
-    --dialog-foot: #202020;
-    --shadow-hover: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
-    --shadow-modal: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
-    --scrollbar: rgba(255, 255, 255, 0.4);
+    --progress-bg: #082338;
+    --progress-text: #62abf5;
+    --done-bg: #052505;
+    --done-text: #54b054;
+    --danger-bg: #3b0509;
+    --danger-text: #dc626d;
+    --warn-bg: #4a1e04;
+    --warn-text: #faa06b;
+    --epic-bg: #1c0e2b;
+    --epic-text: #9470bd;
+    --info-bg: #082338;
+    --topbar: #0a0a0a;
+    --success: #54b054;
+    --epic-accent: #9470bd;
+    --backdrop: rgba(0, 0, 0, 0.5);
+    --brand-from: #62abf5;
+    --brand-to: #115ea3;
+    --brand-bg: #115ea3;
+    --brand-bg-hover: #0f6cbd;
+    --brand-bg-pressed: #0c3b5e;
+    --brand-fg: #479ef5;
+    --brand-tint: #082338;
+    --brand-stroke2: #0e4775;
+    --stroke1: #666666;
+    --stroke1-hover: #757575;
+    --stroke1-pressed: #6b6b6b;
+    --stroke-accessible: #adadad;
+    --stroke-accessible-hover: #bdbdbd;
+    --control: #292929;
+    --control-hover: #3d3d3d;
+    --control-pressed: #1f1f1f;
+    --control-selected: #383838;
+    --disabled-bg: #141414;
+    --disabled-fg: #5c5c5c;
+    --disabled-stroke: #424242;
+    --nav: #0a0a0a;
+    --nav-hover: #1f1f1f;
+    --nav-selected: #292929;
+    --todo-stroke: #525252;
+    --progress-stroke: #0e4775;
+    --done-stroke: #107c10;
+    --danger-stroke: #c50f1f;
+    --warn-stroke: #f7630c;
+    --epic-stroke: #5c2e91;
+    --shadow8: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
+    --shadow64: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
+    /* In dark mode the header is part of the dark chrome. */
+    --header-fg: #ffffff;
+    --header-fg-subtle: #d6d6d6;
+    --header-hover: rgba(255, 255, 255, 0.08);
+    --header-pressed: rgba(255, 255, 255, 0.04);
+    --header-chip: rgba(255, 255, 255, 0.06);
+    --header-chip-active: #292929;
+    --header-chip-active-fg: #ffffff;
+    --header-logo-from: #62abf5;
+    --header-logo-to: #115ea3;
     color-scheme: dark;
   }
 }
 :root[data-design='fluent'][data-theme='dark'] {
-  --bg: #272727;
-  --bg-sunken: #202020;
-  --bg-column: #1e1e1e;
-  --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-pressed: rgba(255, 255, 255, 0.1);
-  --bg-selected: rgba(96, 205, 255, 0.14);
-  --surface: #2d2d2d;
-  --surface-raised: #2d2d2d;
-  --overlay: #2b2b2b;
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: #9e9e9e;
+  --bg: #141414;
+  --bg-sunken: #1f1f1f;
+  --bg-column: #1f1f1f;
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-pressed: rgba(0, 0, 0, 0.2);
+  --bg-selected: rgba(255, 255, 255, 0.06);
+  --surface: #292929;
+  --surface-raised: #292929;
+  --overlay: #292929;
+  --border: #3d3d3d;
+  --border-strong: #adadad;
   --text: #ffffff;
   --text-subtle: #d6d6d6;
   --text-subtlest: #adadad;
   --text-inverse: #000000;
-  --link: #60cdff;
-  --primary: #60cdff;
-  --primary-hover: #5abce9;
-  --primary-pressed: #55acd4;
-  --danger: #ff99a4;
-  --danger-hover: #ffb0b8;
+  --link: #479ef5;
+  --primary: #479ef5;
+  --primary-hover: #62abf5;
+  --primary-pressed: #2886de;
+  --danger: #dc626d;
+  --danger-hover: #e37d87;
   --focus: #ffffff;
-  --shadow-card: 0 0 2px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 0 2px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.28);
   --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.28);
   --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.24), 0 14px 28px rgba(0, 0, 0, 0.28);
-  --todo-bg: rgba(255, 255, 255, 0.08);
+  --todo-bg: rgba(255, 255, 255, 0.06);
   --todo-text: #d6d6d6;
-  --progress-bg: rgba(96, 205, 255, 0.16);
-  --progress-text: #8fdcff;
-  --done-bg: rgba(108, 203, 95, 0.16);
-  --done-text: #8fd982;
-  --danger-bg: rgba(255, 153, 164, 0.16);
-  --danger-text: #ffb3bb;
-  --warn-bg: rgba(252, 225, 0, 0.12);
-  --warn-text: #f5dc6e;
-  --epic-bg: rgba(177, 146, 229, 0.18);
-  --epic-text: #cdb8f2;
-  --info-bg: rgba(96, 205, 255, 0.1);
-  --success: #6ccb5f;
-  --epic-accent: #b392f0;
-  --backdrop: rgba(0, 0, 0, 0.45);
-  --brand-from: #4cc2ff;
-  --brand-to: #0078d4;
-  --mica: #202020;
-  --mica-tint-1: rgba(96, 205, 255, 0.05);
-  --mica-tint-2: rgba(177, 146, 229, 0.04);
-  --layer-stroke: rgba(255, 255, 255, 0.05);
-  --acrylic: rgba(44, 44, 44, 0.94);
-  --flyout-stroke: rgba(255, 255, 255, 0.08);
-  --control: rgba(255, 255, 255, 0.06);
-  --control-hover: rgba(255, 255, 255, 0.085);
-  --control-pressed: rgba(255, 255, 255, 0.035);
-  --control-focus: #1e1e1e;
-  --control-alt: rgba(0, 0, 0, 0.1);
-  --control-stroke: rgba(255, 255, 255, 0.07);
-  --control-edge: rgba(255, 255, 255, 0.03);
-  --edge-y: 1px;
-  --input-edge: rgba(255, 255, 255, 0.54);
-  --accent-fill: #60cdff;
-  --on-accent: #000000;
-  --accent-edge: rgba(0, 0, 0, 0.14);
-  --seg-active: rgba(255, 255, 255, 0.1);
-  --card-hover: #323232;
-  --dialog-foot: #202020;
-  --shadow-hover: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
-  --shadow-modal: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
-  --scrollbar: rgba(255, 255, 255, 0.4);
+  --progress-bg: #082338;
+  --progress-text: #62abf5;
+  --done-bg: #052505;
+  --done-text: #54b054;
+  --danger-bg: #3b0509;
+  --danger-text: #dc626d;
+  --warn-bg: #4a1e04;
+  --warn-text: #faa06b;
+  --epic-bg: #1c0e2b;
+  --epic-text: #9470bd;
+  --info-bg: #082338;
+  --topbar: #0a0a0a;
+  --success: #54b054;
+  --epic-accent: #9470bd;
+  --backdrop: rgba(0, 0, 0, 0.5);
+  --brand-from: #62abf5;
+  --brand-to: #115ea3;
+  --brand-bg: #115ea3;
+  --brand-bg-hover: #0f6cbd;
+  --brand-bg-pressed: #0c3b5e;
+  --brand-fg: #479ef5;
+  --brand-tint: #082338;
+  --brand-stroke2: #0e4775;
+  --stroke1: #666666;
+  --stroke1-hover: #757575;
+  --stroke1-pressed: #6b6b6b;
+  --stroke-accessible: #adadad;
+  --stroke-accessible-hover: #bdbdbd;
+  --control: #292929;
+  --control-hover: #3d3d3d;
+  --control-pressed: #1f1f1f;
+  --control-selected: #383838;
+  --disabled-bg: #141414;
+  --disabled-fg: #5c5c5c;
+  --disabled-stroke: #424242;
+  --nav: #0a0a0a;
+  --nav-hover: #1f1f1f;
+  --nav-selected: #292929;
+  --todo-stroke: #525252;
+  --progress-stroke: #0e4775;
+  --done-stroke: #107c10;
+  --danger-stroke: #c50f1f;
+  --warn-stroke: #f7630c;
+  --epic-stroke: #5c2e91;
+  --shadow8: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
+  --shadow64: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
+  --header-fg: #ffffff;
+  --header-fg-subtle: #d6d6d6;
+  --header-hover: rgba(255, 255, 255, 0.08);
+  --header-pressed: rgba(255, 255, 255, 0.04);
+  --header-chip: rgba(255, 255, 255, 0.06);
+  --header-chip-active: #292929;
+  --header-chip-active-fg: #ffffff;
+  --header-logo-from: #62abf5;
+  --header-logo-to: #115ea3;
   color-scheme: dark;
 }
 
-/* --- Base: Mica backdrop, type ramp ---------------------------------------- */
+/* --- Base: type ramp, focus, icons ------------------------------------------------ */
 [data-design='fluent'] body {
-  background:
-    radial-gradient(90% 70% at 0% 0%, var(--mica-tint-1), transparent 70%),
-    radial-gradient(80% 70% at 100% 0%, var(--mica-tint-2), transparent 70%),
-    var(--mica);
-  background-attachment: fixed;
+  font-size: 14px;
+  line-height: 20px;
+  accent-color: var(--brand-fg);
 }
 [data-design='fluent'] h1 {
-  font-family: var(--font-display);
-  font-size: 28px;
-  line-height: 36px;
+  font-size: 24px; /* Title 3 */
+  line-height: 32px;
+  font-weight: 600;
   letter-spacing: 0;
 }
 [data-design='fluent'] h2 {
-  font-family: var(--font-display);
+  font-size: 20px; /* Subtitle 1 */
   line-height: 28px;
+  font-weight: 600;
 }
-[data-design='fluent'] ::selection {
-  background: var(--selection);
-  color: #fff;
+[data-design='fluent'] h3 {
+  font-size: 16px; /* Subtitle 2 */
+  line-height: 22px;
+  font-weight: 600;
+}
+[data-design='fluent'] :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+/* Fluent System Icons are drawn with a thin, even stroke. */
+[data-design='fluent'] svg[viewBox='0 0 24 24'][stroke='currentColor'] {
+  stroke-width: 1.5;
+}
+[data-design='fluent'] a:hover {
+  text-decoration: underline;
 }
 [data-design='fluent'],
 [data-design='fluent'] * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar) transparent;
+  scrollbar-color: var(--stroke1) transparent;
 }
 
-/* --- Buttons ----------------------------------------------------------------- */
+/* --- Buttons: primary, secondary (stroke), subtle, small / large ----------------- */
 [data-design='fluent'] .btn {
-  font-weight: 400;
+  height: 32px;
+  padding: 5px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
   transition:
-    background-color 0.083s,
-    color 0.083s;
+    background-color 0.1s var(--ease),
+    border-color 0.1s var(--ease),
+    color 0.1s var(--ease);
 }
-/* Accent button: accent fill with a slightly darker bottom edge. */
-[data-design='fluent'] .btn-primary {
-  background: var(--accent-fill);
-  color: var(--on-accent);
-  box-shadow: inset 0 -1px 0 var(--accent-edge);
+[data-design='fluent'] .btn:not(.btn-sm):not(.btn-link) {
+  min-width: 96px;
 }
-[data-design='fluent'] .btn-danger {
-  box-shadow: inset 0 -1px 0 var(--accent-edge);
-}
-[data-design='fluent'] .btn-primary:active:not(:disabled) {
-  background: var(--primary-pressed);
-  color: color-mix(in srgb, var(--on-accent) 75%, transparent);
-  box-shadow: none;
-}
-/* Standard button: a light fill, a hairline stroke and the elevation edge. */
-[data-design='fluent'] .btn-subtle {
-  background: var(--control);
-  color: var(--text);
-  box-shadow:
-    inset 0 0 0 1px var(--control-stroke),
-    inset 0 var(--edge-y) 0 var(--control-edge);
-}
-[data-design='fluent'] .btn-subtle:hover:not(:disabled) {
-  background: var(--control-hover);
-}
-[data-design='fluent'] .btn-subtle:active:not(:disabled) {
-  background: var(--control-pressed);
-  color: var(--text-subtle);
-  box-shadow: inset 0 0 0 1px var(--control-stroke);
+[data-design='fluent'] .btn-sm {
+  height: 24px;
+  min-width: 64px;
+  padding: 1px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
 }
 [data-design='fluent'] .btn-lg {
   height: 40px;
-  font-weight: 600;
+  padding: 8px 16px;
+  font-size: 16px;
+  line-height: 22px;
+}
+[data-design='fluent'] .btn-primary {
+  background: var(--brand-bg);
+  color: var(--on-brand);
+}
+[data-design='fluent'] .btn-primary:hover:not(:disabled) {
+  background: var(--brand-bg-hover);
+}
+[data-design='fluent'] .btn-primary:active:not(:disabled) {
+  background: var(--brand-bg-pressed);
+}
+[data-design='fluent'] .btn-subtle {
+  background: var(--control);
+  border-color: var(--stroke1);
+  color: var(--text);
+}
+[data-design='fluent'] .btn-subtle:hover:not(:disabled) {
+  background: var(--control-hover);
+  border-color: var(--stroke1-hover);
+}
+[data-design='fluent'] .btn-subtle:active:not(:disabled) {
+  background: var(--control-pressed);
+  border-color: var(--stroke1-pressed);
+}
+[data-design='fluent'] .btn-danger {
+  background: #c50f1f;
+  color: #ffffff;
+}
+[data-design='fluent'] .btn-danger:hover:not(:disabled) {
+  background: #b10e1c;
+}
+[data-design='fluent'] .btn-danger:active:not(:disabled) {
+  background: #960b18;
+}
+[data-design='fluent'] .btn:disabled {
+  opacity: 1;
+  background: var(--disabled-bg);
+  border-color: var(--disabled-stroke);
+  color: var(--disabled-fg);
+}
+[data-design='fluent'] .btn-link:disabled {
+  background: none;
+  border-color: transparent;
+}
+/* Subtle (icon) buttons: the icon turns brand blue on hover, like Fluent's subtle Button. */
+[data-design='fluent'] .icon-btn {
+  border-radius: 4px;
+  color: var(--text-subtle);
+  transition: background-color 0.1s var(--ease);
+}
+[data-design='fluent'] .icon-btn:hover:not(:disabled) {
+  color: var(--brand-fg);
 }
 [data-design='fluent'] .icon-btn:active:not(:disabled) {
   background: var(--bg-pressed);
 }
 
-/* --- Text boxes: hairline stroke, darker bottom edge, accent underline on focus -- */
+/* --- Inputs: stroke with an accessible bottom edge, brand underline on focus ------- */
 [data-design='fluent'] .input,
 [data-design='fluent'] .filter-search,
-[data-design='fluent'] .popover-search input,
-[data-design='fluent'] .md-editor {
-  border: 1px solid var(--control-stroke);
-  border-bottom-color: var(--input-edge);
-  background: var(--control);
+[data-design='fluent'] .popover-search input {
+  min-height: 32px;
+  border: 1px solid var(--stroke1);
+  border-bottom-color: var(--stroke-accessible);
+  border-radius: 4px;
+  background:
+    linear-gradient(var(--brand-fg), var(--brand-fg)) 50% 100% / 0 2px no-repeat,
+    var(--control);
+  transition:
+    background-size 0.2s var(--ease),
+    border-color 0.1s var(--ease);
+}
+[data-design='fluent'] .input {
+  padding: 5px 10px;
 }
 [data-design='fluent'] .input:hover:not(:disabled):not(:focus),
 [data-design='fluent'] .filter-search:hover:not(:focus-within),
 [data-design='fluent'] .popover-search input:hover:not(:focus) {
-  background: var(--control-hover);
+  border-color: var(--stroke1-hover);
+  border-bottom-color: var(--stroke-accessible-hover);
 }
 [data-design='fluent'] .input:focus,
 [data-design='fluent'] .filter-search:focus-within,
 [data-design='fluent'] .popover-search input:focus {
-  border-color: var(--control-stroke);
-  border-bottom-color: var(--primary);
-  box-shadow: inset 0 -1px 0 var(--primary);
-  background: var(--control-focus);
+  border-color: var(--stroke1);
+  border-bottom-color: var(--stroke-accessible);
+  background-size:
+    100% 2px,
+    auto;
+  box-shadow: none;
+  outline: none;
 }
-/* The editor's children cover an inset shadow, so its second underline pixel sits outside. */
-[data-design='fluent'] .md-editor:focus-within {
-  border-color: var(--control-stroke);
-  border-bottom-color: var(--primary);
-  box-shadow: 0 1px 0 var(--primary);
+[data-design='fluent'] .input:focus-visible,
+[data-design='fluent'] .popover-search input:focus-visible {
+  outline: none;
 }
 [data-design='fluent'] .input:disabled {
   background: transparent;
-  border-color: transparent;
+  border-color: var(--disabled-stroke);
+  color: var(--disabled-fg);
 }
-/* Detail fields in the issue dialog stay borderless until they are hovered or focused. */
-[data-design='fluent'] .detail-value .input:not(:focus) {
-  border-color: transparent;
-  background: none;
+/* The editor has its own children over its bottom edge: the underline sits just outside. */
+[data-design='fluent'] .md-editor {
+  border: 1px solid var(--stroke1);
+  border-bottom-color: var(--stroke-accessible);
+  border-radius: 4px;
+  background: var(--control);
+  transition: box-shadow 0.2s var(--ease);
 }
-[data-design='fluent'] .detail-value .input:hover:not(:disabled):not(:focus) {
-  background: var(--bg-hover);
+[data-design='fluent'] .md-editor:focus-within {
+  border-color: var(--stroke1);
+  border-bottom-color: var(--brand-fg);
+  box-shadow: 0 1px 0 var(--brand-fg);
 }
 [data-design='fluent'] .inline-input {
-  border: 1px solid var(--control-stroke);
-  border-bottom: 2px solid var(--primary);
-  padding-top: 3px;
-  background: var(--control-focus);
+  border: 1px solid var(--stroke1);
+  border-bottom: 2px solid var(--brand-fg);
+  border-radius: 4px;
+  background: var(--control);
+}
+/* Detail fields in the issue dialog stay quiet until hovered or focused. */
+[data-design='fluent'] .detail-value .input:not(:focus) {
+  border-color: transparent;
+  background: transparent;
+}
+[data-design='fluent'] .detail-value .input:hover:not(:disabled):not(:focus) {
+  border-color: var(--stroke1);
+  border-bottom-color: var(--stroke-accessible);
+  background: var(--control);
 }
 
-/* --- Combo boxes and filter buttons look like standard buttons ---------------- */
-[data-design='fluent'] :is(.select-trigger, .filter-btn):not(.status-trigger) {
-  font-weight: 400;
+/* --- Dropdowns and toolbar buttons ---------------------------------------------------- */
+[data-design='fluent'] .select-trigger:not(.status-trigger) {
+  border: 1px solid var(--stroke1);
+  border-bottom-color: var(--stroke-accessible);
+  border-radius: 4px;
   background: var(--control);
-  box-shadow:
-    inset 0 0 0 1px var(--control-stroke),
-    inset 0 var(--edge-y) 0 var(--control-edge);
 }
-[data-design='fluent'] :is(.select-trigger, .filter-btn):not(.status-trigger):hover:not(:disabled) {
-  background: var(--control-hover);
-}
-[data-design='fluent'] .select-trigger:disabled {
-  background: none;
-  box-shadow: none;
-}
-[data-design='fluent'] .filter-btn.is-active:not(.status-trigger) {
-  background: var(--bg-selected);
-  color: var(--link);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
-}
-[data-design='fluent'] .detail-value .select-trigger:not(.status-trigger) {
-  background: none;
-  box-shadow: none;
-}
-[data-design='fluent'] .detail-value .select-trigger:not(.status-trigger):hover:not(:disabled) {
-  background: var(--bg-hover);
+[data-design='fluent'] .select-trigger:not(.status-trigger):hover:not(:disabled) {
+  background: var(--control);
+  border-color: var(--stroke1-hover);
+  border-bottom-color: var(--stroke-accessible-hover);
 }
 [data-design='fluent'] .select-trigger.is-open:not(.status-trigger) {
-  background: var(--control-pressed);
-  box-shadow: inset 0 0 0 1px var(--control-stroke);
+  border-bottom-color: var(--brand-fg);
+  box-shadow: inset 0 -1px 0 var(--brand-fg);
 }
-[data-design='fluent'] .status-trigger.is-open {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent);
+[data-design='fluent'] .select-trigger:disabled {
+  border-color: transparent;
+  background: none;
+}
+[data-design='fluent'] .detail-value .select-trigger:not(.status-trigger) {
+  border-color: transparent;
+  background: none;
+}
+[data-design='fluent'] .detail-value .select-trigger:not(.status-trigger):hover:not(:disabled) {
+  border-color: var(--stroke1);
+  border-bottom-color: var(--stroke-accessible);
+  background: var(--control);
+}
+[data-design='fluent'] .filter-btn:not(.status-trigger) {
+  border: 1px solid var(--stroke1);
+  border-radius: 4px;
+  background: var(--control);
+  color: var(--text);
+  font-weight: 400;
+}
+[data-design='fluent'] .filter-btn:not(.status-trigger):hover {
+  background: var(--control-hover);
+  border-color: var(--stroke1-hover);
+}
+[data-design='fluent'] .filter-btn.is-active:not(.status-trigger) {
+  background: var(--brand-tint);
+  border-color: var(--brand-stroke2);
+  color: var(--link);
+}
+[data-design='fluent'] .filter-count {
+  background: var(--brand-bg);
+  color: var(--on-brand);
 }
 [data-design='fluent'] .checkbox {
-  border-width: 1px;
-  border-radius: 4px;
-  background: var(--control-alt);
+  border: 1px solid var(--stroke-accessible);
+  border-radius: 2px;
 }
 [data-design='fluent'] .checkbox.is-checked {
-  background: var(--accent-fill);
-  border-color: var(--accent-fill);
-  color: var(--on-accent);
+  background: var(--brand-fg);
+  border-color: var(--brand-fg);
+  color: var(--text-inverse);
 }
 
-/* --- Segmented controls: raised selected segment with an accent pill --------- */
-[data-design='fluent'] .seg,
-[data-design='fluent'] .lang-switch {
-  background: var(--control-alt);
-  box-shadow: inset 0 0 0 1px var(--control-stroke);
-  border-radius: 6px;
-  padding: 2px;
+/* --- Segmented controls become a TabList: a 3 px brand bar under the selected tab ----- */
+[data-design='fluent'] .seg {
+  gap: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
 }
-[data-design='fluent'] .seg button,
-[data-design='fluent'] .lang-switch button,
+[data-design='fluent'] .seg button {
+  position: relative;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  color: var(--text-subtle);
+  font-size: 14px;
+  font-weight: 400;
+}
+[data-design='fluent'] .seg button:hover:not(.is-active) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+[data-design='fluent'] .seg button.is-active {
+  background: none;
+  box-shadow: none;
+  color: var(--text);
+  font-weight: 600;
+}
+[data-design='fluent'] .seg button::after,
+[data-design='fluent'] .md-tabs button::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: transparent;
+  transition: background-color 0.1s var(--ease);
+}
+[data-design='fluent'] .seg button:hover:not(.is-active)::after,
+[data-design='fluent'] .md-tabs button:hover:not(.is-active)::after {
+  background: var(--stroke1-hover);
+}
+[data-design='fluent'] .seg button.is-active::after,
+[data-design='fluent'] .md-tabs button.is-active::after {
+  background: var(--brand-fg);
+}
+[data-design='fluent'] .seg button.is-active svg {
+  color: var(--brand-fg);
+}
 [data-design='fluent'] .md-tabs button {
   position: relative;
   border-radius: 4px;
 }
-[data-design='fluent'] .seg button {
-  font-weight: 400;
-}
-[data-design='fluent'] .seg button:not(.is-active):hover,
-[data-design='fluent'] .lang-switch button:not(.is-active):hover {
-  background: var(--bg-hover);
-}
-[data-design='fluent'] .seg button.is-active,
-[data-design='fluent'] .lang-switch button.is-active {
-  background: var(--seg-active);
-  color: var(--text);
-  box-shadow:
-    inset 0 0 0 1px var(--control-stroke),
-    inset 0 var(--edge-y) 0 var(--control-edge);
-}
-/* The Markdown Write / Preview tabs are a selector bar: no fill, just the pill. */
 [data-design='fluent'] .md-tabs button.is-active {
   background: none;
   color: var(--text);
-  box-shadow: none;
-}
-[data-design='fluent'] .md-tabs button.is-active:hover {
-  background: var(--bg-hover);
-}
-[data-design='fluent'] .seg button.is-active::after,
-[data-design='fluent'] .lang-switch button.is-active::after,
-[data-design='fluent'] .md-tabs button.is-active::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 1px;
-  width: 14px;
-  height: 3px;
-  margin-left: -7px;
-  border-radius: 2px;
-  background: var(--primary);
+  font-weight: 600;
 }
 
-/* --- Badges and tags: Fluent "tint" badges with a hairline of their own colour -- */
+/* --- Tint badges: statuses, epics, status pickers --------------------------------------- */
 [data-design='fluent'] .lozenge,
-[data-design='fluent'] .epic-tag {
+[data-design='fluent'] .status-trigger {
+  border: 1px solid transparent;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
-}
-[data-design='fluent'] .section-title {
-  font-size: 13px;
-  font-weight: 600;
   letter-spacing: 0;
+  text-transform: none;
+}
+[data-design='fluent'] .lozenge {
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+}
+[data-design='fluent'] .lozenge-todo,
+[data-design='fluent'] .status-trigger.status-todo {
+  border-color: var(--todo-stroke);
+}
+[data-design='fluent'] .lozenge-progress,
+[data-design='fluent'] .status-trigger.status-progress {
+  border-color: var(--progress-stroke);
+}
+[data-design='fluent'] .lozenge-done,
+[data-design='fluent'] .status-trigger.status-done {
+  border-color: var(--done-stroke);
+}
+[data-design='fluent'] .lozenge-danger {
+  border-color: var(--danger-stroke);
+}
+[data-design='fluent'] .lozenge-epic,
+[data-design='fluent'] .epic-tag {
+  border: 1px solid var(--epic-stroke);
+}
+[data-design='fluent'] .chip {
+  border-radius: 4px;
 }
 [data-design='fluent'] .alert {
+  border-radius: 4px;
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
-/* --- App shell: top bar and sidebar on Mica, content on a layer ------------------ */
+/* --- App shell: the Microsoft 365 header and the NavDrawer ------------------------------- */
 [data-design='fluent'] .topbar {
+  /* Everything in the header is drawn on the brand colour. */
+  --text: var(--header-fg);
+  --text-subtle: var(--header-fg-subtle);
+  --link: var(--header-fg);
+  --bg-hover: var(--header-hover);
+  --bg-pressed: var(--header-pressed);
+  --brand-fg: var(--header-fg);
   height: 48px;
   border-bottom: 0;
+  background: var(--topbar);
+  color: var(--header-fg);
+}
+[data-design='fluent'] .topbar .logo-from {
+  stop-color: var(--header-logo-from);
+}
+[data-design='fluent'] .topbar .logo-to {
+  stop-color: var(--header-logo-to);
 }
 [data-design='fluent'] .brand {
+  font-size: 16px;
   font-weight: 600;
 }
-[data-design='fluent'] .app-content {
-  background: var(--bg);
-  border-top: 1px solid var(--layer-stroke);
+[data-design='fluent'] .topnav a {
+  font-weight: 600;
 }
-[data-design='fluent'] .app-content:has(> .board-layout) {
-  background: none;
-  border-top: 0;
+[data-design='fluent'] .lang-switch {
+  background: var(--header-chip);
+  border-radius: 4px;
 }
-[data-design='fluent'] .board-main {
-  background: var(--bg);
-  border: 1px solid var(--layer-stroke);
-  border-width: 1px 0 0 1px;
-  border-top-left-radius: 8px;
+[data-design='fluent'] .lang-switch button {
+  border-radius: 3px;
+  color: var(--header-fg-subtle);
 }
-[data-design='fluent'] .login {
-  background: none;
+[data-design='fluent'] .lang-switch button.is-active {
+  background: var(--header-chip-active);
+  color: var(--header-chip-active-fg);
+  box-shadow: none;
 }
-[data-design='fluent'] .login-card {
-  border-radius: 8px;
-  background: var(--overlay);
-  box-shadow:
-    var(--shadow-drag),
-    0 0 0 1px var(--flyout-stroke);
+[data-design='fluent'] .login .lang-switch {
+  background: var(--control-selected);
 }
-
-/* --- Sidebar: navigation view with the selection pill --------------------------- */
+[data-design='fluent'] .login .lang-switch button {
+  color: var(--text-subtle);
+}
+[data-design='fluent'] .login .lang-switch button.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+}
 [data-design='fluent'] .sidebar {
-  background: none;
+  background: var(--nav);
   border-right: 0;
+  padding: 12px 8px;
 }
 [data-design='fluent'] .sidebar-link {
+  height: 40px;
+  padding: 0 10px 0 14px;
+  border-radius: 4px;
+  color: var(--text-subtle) !important;
   font-weight: 400;
+}
+[data-design='fluent'] .sidebar-link:hover {
+  background: var(--nav-hover);
   color: var(--text) !important;
 }
 [data-design='fluent'] .sidebar-link.is-active {
-  background: var(--bg-hover);
+  background: var(--nav-selected);
   color: var(--text) !important;
+  font-weight: 600;
 }
-[data-design='fluent'] .sidebar-link.is-active:hover {
-  background: var(--bg-pressed);
+[data-design='fluent'] .sidebar-link.is-active svg {
+  color: var(--brand-fg);
 }
+/* The Nav selection indicator: a 4 × 20 px brand pill at the start of the item. */
 [data-design='fluent'] .sidebar-link.is-active::before {
+  left: 4px;
   top: 50%;
   bottom: auto;
-  height: 16px;
-  margin-top: -8px;
+  width: 4px;
+  height: 20px;
+  margin-top: -10px;
   border-radius: 2px;
+  background: var(--brand-fg);
+}
+[data-design='fluent'] .breadcrumbs {
+  font-size: 14px;
+}
+[data-design='fluent'] .breadcrumbs a {
+  color: var(--text-subtle);
+}
+[data-design='fluent'] .login {
+  background: var(--bg);
+}
+[data-design='fluent'] .login-card {
+  border-radius: 8px;
+  box-shadow: var(--shadow-raised);
 }
 
-/* --- Boards page ------------------------------------------------------------------ */
+/* --- Cards: elevation instead of borders ---------------------------------------------------- */
+[data-design='fluent'] .panel,
+[data-design='fluent'] .chart-card,
+[data-design='fluent'] .stat-tile {
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+[data-design='fluent'] .panel-danger {
+  box-shadow:
+    var(--shadow-card),
+    inset 0 0 0 1px var(--danger-stroke);
+}
+[data-design='fluent'] .panel-title {
+  font-size: 16px;
+  line-height: 22px;
+}
 [data-design='fluent'] .board-card {
   border-top: 0;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 4px 0 var(--board-color),
+    var(--shadow-card);
   transition:
-    box-shadow 0.167s,
-    background-color 0.167s;
+    box-shadow 0.2s var(--ease),
+    background-color 0.2s var(--ease);
 }
 [data-design='fluent'] .board-card:hover {
-  background: var(--card-hover);
-  box-shadow: var(--shadow-hover);
+  box-shadow:
+    inset 0 4px 0 var(--board-color),
+    var(--shadow8);
   transform: none;
 }
+[data-design='fluent'] .details {
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+[data-design='fluent'] .details-title {
+  font-size: 14px;
+  border-bottom-color: var(--border);
+}
+[data-design='fluent'] .issue-row {
+  border-color: var(--border);
+}
 
-/* --- Kanban ------------------------------------------------------------------------ */
+/* --- Kanban: a grey bucket per column, white cards with shadow4 ------------------------------ */
 [data-design='fluent'] .kanban-header-row,
 [data-design='fluent'] .lane-row {
   gap: 12px;
 }
 [data-design='fluent'] .column-head {
-  padding: 12px 12px 6px 14px;
+  padding: 12px 12px 6px;
   font-size: 14px;
   color: var(--text);
 }
@@ -568,91 +822,82 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--bg-hover);
+  background: var(--bg-selected);
   color: var(--text-subtle);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 [data-design='fluent'] .column {
-  padding: 6px 6px 10px;
+  padding: 4px 8px 10px;
 }
 [data-design='fluent'] .card-wrap {
-  padding: 3px 0;
+  padding: 4px 0;
 }
 [data-design='fluent'] .card {
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 12px 12px 10px;
   transition:
-    box-shadow 0.167s,
-    background-color 0.167s;
+    box-shadow 0.2s var(--ease),
+    background-color 0.2s var(--ease);
 }
 [data-design='fluent'] .card:hover {
-  background: var(--card-hover);
-  box-shadow: var(--shadow-hover);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow8);
 }
 [data-design='fluent'] .card.is-dragging {
   box-shadow: var(--shadow-drag);
-  transform: rotate(1deg) scale(1.02);
+  transform: none;
 }
 [data-design='fluent'] .quick-create {
-  border-radius: 6px;
-}
-
-/* --- Lists and tables ---------------------------------------------------------------- */
-[data-design='fluent'] .issue-table th {
-  border-bottom-width: 1px;
+  border-radius: 4px;
 }
 [data-design='fluent'] .progress {
-  height: 6px;
-  border-radius: 3px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* --- Lists ------------------------------------------------------------------------------------- */
+[data-design='fluent'] .issue-table th {
+  font-weight: 600;
+  color: var(--text);
+  border-bottom-width: 1px;
 }
 [data-design='fluent'] .issue-title {
-  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 28px;
   font-weight: 600;
 }
 
-/* --- Menus and popovers: Acrylic flyouts, selection pill ----------------------------- */
+/* --- Menus and popovers: shadow16, 4 px corners, brand icon on hover ---------------------------- */
 [data-design='fluent'] .popover {
-  border-radius: 8px;
-  background: var(--acrylic);
-  box-shadow:
-    var(--shadow-raised),
-    0 0 0 1px var(--flyout-stroke);
-  -webkit-backdrop-filter: blur(30px) saturate(125%);
-  backdrop-filter: blur(30px) saturate(125%);
-  animation: fluent-flyout 0.25s cubic-bezier(0, 0, 0, 1);
-}
-[data-design='fluent'] .popover-search {
-  background: inherit;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-shadow: var(--shadow-raised);
+  animation: fluent-flyout 0.2s var(--ease-max);
 }
 [data-design='fluent'] .menu {
   padding: 4px;
 }
 [data-design='fluent'] .menu-item {
-  position: relative;
   min-height: 32px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-left: 0;
   border-radius: 4px;
+  color: var(--text-subtle);
+}
+[data-design='fluent'] .menu-item:hover:not(:disabled),
+[data-design='fluent'] .menu-item.is-active {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+[data-design='fluent'] .menu-item:hover:not(:disabled) svg {
+  color: var(--brand-fg);
 }
 [data-design='fluent'] .menu-item.is-selected {
-  background: var(--bg-hover);
-}
-[data-design='fluent'] .menu-item.is-selected:hover:not(:disabled),
-[data-design='fluent'] .menu-item.is-selected.is-active {
-  background: var(--bg-pressed);
-}
-[data-design='fluent'] .menu-item.is-selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 3px;
-  height: 16px;
-  margin-top: -8px;
-  border-radius: 2px;
-  background: var(--primary);
+  background: var(--bg-selected);
+  color: var(--text);
+  font-weight: 600;
 }
 @keyframes fluent-flyout {
   from {
@@ -661,42 +906,44 @@
   }
 }
 
-/* --- Dialogs: shaded button bar --------------------------------------------------------- */
+/* --- Dialogs: 8 px corners, shadow64, 24 px padding, Subtitle 1 title --------------------------- */
 [data-design='fluent'] .modal {
   border-radius: 8px;
-  box-shadow:
-    var(--shadow-modal),
-    0 0 0 1px var(--flyout-stroke);
-  animation: fluent-dialog 0.25s cubic-bezier(0, 0, 0, 1);
+  box-shadow: var(--shadow64);
+  animation: fluent-dialog 0.2s var(--ease);
+}
+[data-design='fluent'] .modal-head {
+  padding: 20px 16px 8px 24px;
+}
+[data-design='fluent'] .modal-head h2 {
+  font-size: 20px;
+  line-height: 28px;
+}
+[data-design='fluent'] .modal-body {
+  padding: 8px 24px 16px;
 }
 [data-design='fluent'] .modal-foot {
-  margin-top: 4px;
-  padding: 20px 24px;
-  background: var(--dialog-foot);
-  border-top: 1px solid var(--border);
-  border-radius: 0 0 8px 8px;
+  padding: 8px 24px 24px;
 }
 @keyframes fluent-dialog {
   from {
     opacity: 0;
-    transform: scale(1.04);
+    transform: scale(0.96);
   }
 }
 
-/* --- Toasts: Acrylic, with an info bar status icon -------------------------------------- */
+/* --- Toasts: an intent icon, shadow8 ----------------------------------------------------------------- */
 [data-design='fluent'] .toast {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding: 12px;
   border-left: 0;
-  border-radius: 8px;
-  background: var(--acrylic);
-  box-shadow:
-    var(--shadow-drag),
-    0 0 0 1px var(--flyout-stroke);
-  -webkit-backdrop-filter: blur(30px) saturate(125%);
-  backdrop-filter: blur(30px) saturate(125%);
-  animation: fluent-toast 0.367s cubic-bezier(0, 0, 0, 1);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow8);
+  font-weight: 600;
+  animation: fluent-toast 0.2s var(--ease-max);
 }
 [data-design='fluent'] .toast::before {
   content: 'i';
@@ -707,8 +954,8 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--accent-fill);
-  color: var(--text-inverse);
+  background: var(--brand-fg);
+  color: var(--surface);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
@@ -729,21 +976,23 @@
     transform: translateY(16px);
   }
 }
-/* --- Responsive and motion ----------------------------------------------------------------- */
+
+/* --- Progress view ------------------------------------------------------------------------------------- */
+[data-design='fluent'] .chart-title {
+  font-size: 16px;
+  line-height: 22px;
+}
+[data-design='fluent'] .stat-label {
+  font-weight: 400;
+  color: var(--text-subtle);
+}
+
+/* --- Responsive and motion ---------------------------------------------------------------------------------- */
 @media (max-width: 760px) {
-  /* The sidebar becomes an overlay pane: Acrylic, like a collapsed Windows navigation view. */
   [data-design='fluent'] .sidebar {
-    background: var(--acrylic);
-    -webkit-backdrop-filter: blur(30px) saturate(125%);
-    backdrop-filter: blur(30px) saturate(125%);
-    box-shadow: var(--shadow-modal);
+    box-shadow: var(--shadow64);
   }
-  [data-design='fluent'] .board-main {
-    border-left-width: 0;
-    border-top-left-radius: 0;
-  }
-  [data-design='fluent'] .modal,
-  [data-design='fluent'] .modal-foot {
+  [data-design='fluent'] .modal {
     border-radius: 0;
   }
 }
@@ -753,7 +1002,9 @@
   [data-design='fluent'] .toast {
     animation: none;
   }
-  [data-design='fluent'] .card.is-dragging {
-    transform: none;
+  [data-design='fluent'] .input,
+  [data-design='fluent'] .filter-search,
+  [data-design='fluent'] .popover-search input {
+    transition: none;
   }
 }

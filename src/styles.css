@@ -1,7 +1,8 @@
 /* ==========================================================================
    Design tokens — "Classic" design (inspired by the Atlassian Design System).
-   The "Apple" (styles-apple.css) and "Fluent" (styles-fluent.css) designs redefine
-   these tokens under :root[data-design='…'] and restyle a few components on top.
+   The other designs (styles-apple.css, styles-fluent.css, styles-linux.css,
+   styles-translucent.css) redefine these tokens under :root[data-design='…'] and
+   restyle a few components on top.
    ========================================================================== */
 :root {
   --bg: #ffffff;
@@ -687,7 +688,7 @@ textarea.input {
 }
 .design-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 4px;
 }
@@ -796,26 +797,62 @@ textarea.input {
   --pv-card: #3e3e42;
   --pv-accent: #0a84ff;
 }
-/* Fluent: the top bar sits on the Mica backdrop, so it has no divider. */
+/* Fluent: the brand-blue Microsoft 365 header, grey buckets, white cards with a shadow. */
 .preview-fluent {
-  --pv-bg: #f3f3f3;
-  --pv-bar: #f3f3f3;
-  --pv-line: rgba(0, 0, 0, 0.07);
-  --pv-col: #e8e8e8;
+  --pv-bg: #fafafa;
+  --pv-bar: #0f6cbd;
+  --pv-line: transparent;
+  --pv-col: #f0f0f0;
   --pv-card: #ffffff;
-  --pv-accent: #005fb8;
+  --pv-accent: #ffffff;
   --pv-r: 3px;
 }
 .preview-fluent.is-dark {
-  --pv-bg: #202020;
-  --pv-bar: #202020;
-  --pv-line: rgba(255, 255, 255, 0.07);
-  --pv-col: #2c2c2c;
-  --pv-card: #3b3b3b;
-  --pv-accent: #60cdff;
+  --pv-bg: #141414;
+  --pv-bar: #0a0a0a;
+  --pv-col: #1f1f1f;
+  --pv-card: #292929;
+  --pv-accent: #479ef5;
 }
-.preview-fluent .pv-bar {
-  border-bottom-color: transparent;
+.preview-fluent .pv-card {
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.preview-fluent .pv-logo {
+  opacity: 0.8;
+}
+/* Translucent: frosted panes over a pastel (or night) aurora. */
+.preview-translucent {
+  --pv-bg: #eef0fb;
+  --pv-bar: rgba(255, 255, 255, 0.55);
+  --pv-line: rgba(255, 255, 255, 0.8);
+  --pv-col: rgba(255, 255, 255, 0.4);
+  --pv-card: rgba(255, 255, 255, 0.85);
+  --pv-accent: #6d5dfc;
+  --pv-r: 6px;
+  background:
+    radial-gradient(70% 90% at 0% 0%, rgba(167, 139, 250, 0.8), transparent 70%),
+    radial-gradient(70% 90% at 100% 20%, rgba(125, 211, 252, 0.8), transparent 70%),
+    radial-gradient(70% 90% at 70% 100%, rgba(249, 168, 212, 0.8), transparent 70%),
+    #eef0fb;
+}
+.preview-translucent.is-dark {
+  --pv-bar: rgba(12, 16, 32, 0.5);
+  --pv-line: rgba(255, 255, 255, 0.12);
+  --pv-col: rgba(255, 255, 255, 0.06);
+  --pv-card: rgba(60, 66, 100, 0.75);
+  --pv-accent: #8b7cff;
+  background:
+    radial-gradient(70% 90% at 0% 0%, rgba(109, 40, 217, 0.75), transparent 70%),
+    radial-gradient(70% 90% at 100% 20%, rgba(8, 145, 178, 0.6), transparent 70%),
+    radial-gradient(70% 90% at 70% 100%, rgba(190, 24, 93, 0.5), transparent 70%),
+    #0b1020;
+}
+.preview-translucent .pv-btn {
+  border-radius: 3px;
+  background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+}
+.preview-translucent .pv-col {
+  box-shadow: inset 0 0 0 1px var(--pv-line);
 }
 /* Linux: a dark panel with the blue-to-green accent line, hairline-bordered columns, a green "done" card. */
 .preview-linux {
@@ -3083,18 +3120,32 @@ textarea.inline-input.issue-title {
   --chart-done: #25a84a;
 }
 :root[data-design='fluent'] {
-  --chart-created: #005fb8;
-  --chart-done: #0f7b0f;
+  --chart-created: #0f6cbd;
+  --chart-done: #107c10;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-design='fluent']:not([data-theme='light']) {
-    --chart-created: #2f8fd8;
-    --chart-done: #45a63b;
+    --chart-created: #2886de;
+    --chart-done: #359b35;
   }
 }
 :root[data-design='fluent'][data-theme='dark'] {
-  --chart-created: #2f8fd8;
-  --chart-done: #45a63b;
+  --chart-created: #2886de;
+  --chart-done: #359b35;
+}
+:root[data-design='translucent'] {
+  --chart-created: #6d5dfc;
+  --chart-done: #0f9f6e;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design='translucent']:not([data-theme='light']) {
+    --chart-created: #7c6cf6;
+    --chart-done: #21a87a;
+  }
+}
+:root[data-design='translucent'][data-theme='dark'] {
+  --chart-created: #7c6cf6;
+  --chart-done: #21a87a;
 }
 :root[data-design='linux'] {
   --chart-created: #2563d8;
