@@ -3,7 +3,7 @@ import type { Column, ColumnCategory, FieldNames, IssueType } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { navigate } from '../router';
 import { count, t } from '../i18n';
-import { exportBoard, statusSideEffects } from '../lib/issues';
+import { categorySideEffects, exportBoard, statusSideEffects } from '../lib/issues';
 import { FIELDS, MAX_FIELD_NAME, defaultFieldName, genericFieldName } from '../lib/fields';
 import { downloadJSON, sanitizeKey, uid, cls } from '../lib/utils';
 import { newColumnId } from '../templates';
@@ -118,10 +118,13 @@ function General() {
 
 function Columns() {
   const { store, user, run, confirm } = useApp();
-  const { board, issues, updateBoard } = useBoard();
+  const { board, issues } = useBoard();
   const [cols, setCols] = useState<Column[]>(board.columns);
-  useEffect(() => setCols(board.columns), [board.columns]);
-  const dirty = JSON.stringify(cols) !== JSON.stringify(board.columns);
+  // Every board snapshot carries a new columns array, also when only the issue counter changed
+  // (someone created an issue). The draft is reset only when the saved columns really differ.
+  const saved = JSON.stringify(board.columns);
+  useEffect(() => setCols(JSON.parse(saved) as Column[]), [saved]);
+  const dirty = JSON.stringify(cols) !== saved;
   const categories: { value: ColumnCategory; label: string }[] = [
     { value: 'todo', label: t('To do') },
     { value: 'progress', label: t('In progress') },
@@ -170,6 +173,16 @@ function Columns() {
     });
   };
 
+  const save = () => {
+    const next = cols.map((c) => ({ ...c, name: c.name.trim() }));
+    // A column that becomes "done" (or stops being one) also sets or clears its issues' resolution dates.
+    const resolved = categorySideEffects(board, next, issues);
+    run(async () => {
+      await store.updateBoard(board.id, { columns: next });
+      await store.updateIssues(board.id, user, resolved);
+    });
+  };
+
   return (
     <div className="panel">
       <div className="panel-title">{t('Columns (statuses)')}</div>
@@ -215,7 +228,7 @@ function Columns() {
             {t('Discard')}
           </button>
         )}
-        <button className="btn btn-primary" disabled={!dirty || cols.some((c) => !c.name.trim())} onClick={() => updateBoard({ columns: cols.map((c) => ({ ...c, name: c.name.trim() })) })}>
+        <button className="btn btn-primary" disabled={!dirty || cols.some((c) => !c.name.trim())} onClick={save}>
           {t('Save columns')}
         </button>
       </div>

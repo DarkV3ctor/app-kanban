@@ -104,6 +104,8 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
         title: t('Copy: {title}', { title: issue.title }).slice(0, 500),
         links: [],
         reporterId: user.ghId,
+        // The copy is resolved when it is created, not when the original was (progress charts count it by this date).
+        resolvedAt: isDone(board, issue) ? Date.now() : null,
         rank: rankBetween(issue.rank, next),
         checklist: issue.checklist.map((c) => ({ ...c, id: uid(8) })),
       }),
@@ -646,6 +648,7 @@ function Comments({ issue }: { issue: Issue }) {
   const [focused, setFocused] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
   useDraft('comment', draft.trim() !== '');
   useDraft('comment-edit', editing !== null && editText !== (list?.find((c) => c.id === editing)?.body ?? ''));
 
@@ -656,7 +659,24 @@ function Comments({ issue }: { issue: Issue }) {
     if (!body) return;
     setDraft('');
     setFocused(false);
-    await run(store.addComment(board.id, issue.id, user, body));
+    // A rejected comment (for example, the device clock is far off) gives its text back, unless a new one was started.
+    const ok = await run(store.addComment(board.id, issue.id, user, body).then(() => true));
+    if (!ok) {
+      setDraft((d) => d || body);
+      setFocused(true);
+    }
+  };
+
+  // The editor stays open until the edit is saved, so a rejected edit does not lose the text.
+  const saveEdit = async (c: Comment) => {
+    const body = editText.trim();
+    if (!body) return;
+    // Unchanged text: nothing to save, and the comment does not get an "edited" mark.
+    if (body === c.body) return setEditing(null);
+    setSavingEdit(true);
+    const ok = await run(store.updateComment(board.id, issue.id, c.id, body).then(() => true));
+    setSavingEdit(false);
+    if (ok) setEditing((e) => (e === c.id ? null : e));
   };
 
   const sorted = useMemo(() => [...(list ?? [])].sort((a, b) => b.createdAt - a.createdAt), [list]);
@@ -717,14 +737,7 @@ function Comments({ issue }: { issue: Issue }) {
                 <>
                   <MarkdownEditor value={editText} onChange={setEditText} autoFocus minRows={3} maxLength={20_000} />
                   <div className="form-actions">
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={async () => {
-                        setEditing(null);
-                        await run(store.updateComment(board.id, issue.id, c.id, editText.trim()));
-                      }}
-                      disabled={!editText.trim()}
-                    >
+                    <button className="btn btn-primary btn-sm" onClick={() => saveEdit(c)} disabled={!editText.trim() || savingEdit}>
                       {t('Save')}
                     </button>
                     <button className="btn btn-subtle btn-sm" onClick={() => setEditing(null)}>

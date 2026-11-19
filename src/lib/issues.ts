@@ -1,4 +1,4 @@
-import type { AppUser, Board, BoardDraft, BoardSetup, HistoryChange, Issue, IssueDraft, LinkType, Priority } from '../types';
+import type { AppUser, Board, BoardDraft, BoardSetup, Column, HistoryChange, Issue, IssueDraft, LinkType, Priority } from '../types';
 import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
 import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
@@ -177,6 +177,26 @@ export function statusSideEffects(board: Board, issue: Issue, newStatus: string)
   if (!was && now) return { resolvedAt: Date.now() };
   if (was && !now) return { resolvedAt: null };
   return {};
+}
+
+type ResolutionUpdate = { id: string; patch: Pick<Issue, 'resolvedAt'>; changes: HistoryChange[] };
+
+/**
+ * Resolution dates after the columns get new categories: the issues of a column that became
+ * "done" are resolved now, those of a column that stopped being "done" are unresolved again.
+ */
+export function categorySideEffects(board: Board, columns: Column[], issues: Issue[]): ResolutionUpdate[] {
+  const doneIn = (cols: Column[]) => new Set(cols.filter((c) => c.category === 'done').map((c) => c.id));
+  const wasDone = doneIn(board.columns);
+  const nowDone = doneIn(columns);
+  const now = Date.now();
+  return issues.flatMap((i): ResolutionUpdate[] => {
+    const was = wasDone.has(i.status);
+    const is = nowDone.has(i.status);
+    if (!was && is && i.resolvedAt === null) return [{ id: i.id, patch: { resolvedAt: now }, changes: [] }];
+    if (was && !is && i.resolvedAt !== null) return [{ id: i.id, patch: { resolvedAt: null }, changes: [] }];
+    return [];
+  });
 }
 
 // ---------------------------------------------------------------------------
