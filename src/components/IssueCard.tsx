@@ -61,26 +61,28 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
             ⛔
           </span>
         )}
-        <span className="card-meta-spacer" />
-        {issue.checklist.length > 0 && (
-          <span className={cls('card-badge', checkDone === issue.checklist.length && 'is-complete')} title={t('Checklist')}>
-            <Icon name="checklist" size={13} />
-            {checkDone}/{issue.checklist.length}
-          </span>
-        )}
-        {issue.dueDate && (
-          <span className={cls('card-badge', due && `due-${due}`)} title={t('Due: {date}', { date: formatDate(issue.dueDate) })}>
-            <Icon name="calendar" size={12} />
-            {formatDate(issue.dueDate)}
-          </span>
-        )}
-        {issue.storyPoints !== null && issue.storyPoints !== undefined && (
-          <span className="points" title={fieldName(board, 'storyPoints')}>
-            {issue.storyPoints}
-          </span>
-        )}
-        <PriorityIcon priority={issue.priority} />
-        <Avatar info={assignee} size={24} />
+        {/* Badges, priority and assignee: when they do not fit next to the key, they move to a line of their own, on the right. */}
+        <span className="card-meta-end">
+          {issue.checklist.length > 0 && (
+            <span className={cls('card-badge', checkDone === issue.checklist.length && 'is-complete')} title={t('Checklist')}>
+              <Icon name="checklist" size={13} />
+              {checkDone}/{issue.checklist.length}
+            </span>
+          )}
+          {issue.dueDate && (
+            <span className={cls('card-badge', due && `due-${due}`)} title={t('Due: {date}', { date: formatDate(issue.dueDate) })}>
+              <Icon name="calendar" size={12} />
+              {formatDate(issue.dueDate)}
+            </span>
+          )}
+          {issue.storyPoints !== null && issue.storyPoints !== undefined && (
+            <span className="points" title={fieldName(board, 'storyPoints')}>
+              {issue.storyPoints}
+            </span>
+          )}
+          <PriorityIcon priority={issue.priority} />
+          <Avatar info={assignee} size={24} />
+        </span>
       </div>
     </div>
   );

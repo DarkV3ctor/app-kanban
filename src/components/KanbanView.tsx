@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import type { Issue, Priority } from '../types';
 import { useApp } from '../app-context';
@@ -282,6 +282,14 @@ function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolea
   const [open, setOpen] = useState(false);
   const [v, setV] = useState('');
   const [busy, setBusy] = useState(false);
+  const ta = useRef<HTMLTextAreaElement>(null);
+  // The box grows with the title (up to max-height in CSS), so no line is cut off above the buttons.
+  useLayoutEffect(() => {
+    const el = ta.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [v, open]);
   if (!open) {
     return (
       <button className="quick-create-btn" onClick={() => setOpen(true)}>
@@ -300,6 +308,7 @@ function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolea
   return (
     <div className="quick-create">
       <textarea
+        ref={ta}
         autoFocus
         rows={2}
         value={v}

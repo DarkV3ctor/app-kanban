@@ -1539,9 +1539,21 @@ textarea.input {
 }
 .card-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px 6px;
   min-height: 24px;
+}
+/* Wraps below the key on a narrow card instead of running past its edge. */
+.card-meta-end {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px 6px;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
 }
 .card-key {
   font-size: 12px;
@@ -1554,9 +1566,6 @@ textarea.input {
 }
 .card-blocked {
   font-size: 11px;
-}
-.card-meta-spacer {
-  flex: 1;
 }
 .card-badge {
   display: inline-flex;
@@ -1633,13 +1642,18 @@ td.due-soon {
   padding: 8px;
 }
 .quick-create textarea {
+  display: block;
   width: 100%;
+  max-height: 168px; /* 8 lines, then it scrolls */
+  margin-bottom: 8px;
+  padding: 0;
   border: 0;
   outline: 0;
   resize: none;
   background: none;
   color: var(--text);
   font: inherit;
+  line-height: 21px;
 }
 .quick-create-actions {
   display: flex;
