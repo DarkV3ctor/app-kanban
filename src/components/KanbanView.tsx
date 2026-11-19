@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import type { Issue, Priority } from '../types';
 import { useApp } from '../app-context';
-import { applyFilters, isEpic, newIssueDraft } from '../lib/issues';
+import { applyFilters, epicOf, isEpic, newIssueDraft } from '../lib/issues';
 import { PRIORITIES, cls, priorityName, rankBetween } from '../lib/utils';
 import { fieldName } from '../lib/fields';
 import { t } from '../i18n';
@@ -60,12 +60,8 @@ export const KanbanView = memo(function KanbanView() {
     };
     for (const i of visible) {
       if (groupBy === 'assignee') push(i.assigneeId ?? 'none', i);
-      else if (groupBy === 'epic') {
-        // Only epics have lanes: an issue whose epic was changed to another type goes to "No epic"
-        // instead of disappearing from the board.
-        const epic = i.epicId ? byId.get(i.epicId) : undefined;
-        push(epic && isEpic(board, epic) ? epic.id : 'none', i);
-      }
+      // Only epics have lanes: an issue whose epic was changed to another type goes to "No epic".
+      else if (groupBy === 'epic') push(epicOf(board, byId, i)?.id ?? 'none', i);
       else push(i.priority, i);
     }
     const res: Lane[] = [];
@@ -255,7 +251,7 @@ export const KanbanView = memo(function KanbanView() {
                                   <Draggable key={i.id} draggableId={i.id} index={idx} isDragDisabled={!perms.edit}>
                                     {(dp, ds) => (
                                       <div ref={dp.innerRef} {...dp.draggableProps} {...dp.dragHandleProps} className="card-wrap" style={dp.draggableProps.style}>
-                                        <IssueCard board={board} issue={i} epic={i.epicId ? byId.get(i.epicId) : undefined} onOpen={openIssue} dragging={ds.isDragging} />
+                                        <IssueCard board={board} issue={i} epic={epicOf(board, byId, i)} onOpen={openIssue} dragging={ds.isDragging} />
                                       </div>
                                     )}
                                   </Draggable>

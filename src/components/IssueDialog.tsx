@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Comment, FieldKey, HistoryEntry, Issue, LinkType } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
-import { LINK_TYPES, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
+import { LINK_TYPES, epicOf, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
 import { fieldName } from '../lib/fields';
 import { columnCategory, formatDateTime, rankBetween, timeAgo, uid, cls, isDone } from '../lib/utils';
 import { BoardContext, useBoard } from './board-context';
@@ -34,9 +34,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
   const { board, issues, byId, perms, updateIssue, openIssue, newIssue } = boardCtx;
   const key = `${board.key}-${issue.number}`;
   const type = board.issueTypes.find((x) => x.id === issue.type);
-  // Only a real epic is shown as the parent (an issue whose epic changed type has none, as on the board).
-  const parent = issue.epicId ? byId.get(issue.epicId) : undefined;
-  const epic = parent && isEpic(board, parent) ? parent : undefined;
+  const epic = epicOf(board, byId, issue);
   const canEdit = perms.edit;
   const canDelete = perms.admin || (perms.edit && issue.createdBy === user.ghId);
   const set = (patch: Partial<Issue>) => updateIssue(issue, patch);

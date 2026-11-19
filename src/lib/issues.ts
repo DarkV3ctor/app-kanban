@@ -30,6 +30,15 @@ export function isEpic(board: Board, issue: Pick<Issue, 'type'>): boolean {
   return !!board.issueTypes.find((x) => x.id === issue.type)?.isEpic;
 }
 
+/**
+ * The epic an issue belongs to. Only a real epic counts: when an epic's type is changed to another
+ * one, its issues keep the reference but are shown, grouped and filtered as having no epic.
+ */
+export function epicOf(board: Board, byId: Map<string, Issue>, issue: Pick<Issue, 'epicId'>): Issue | undefined {
+  const parent = issue.epicId ? byId.get(issue.epicId) : undefined;
+  return parent && isEpic(board, parent) ? parent : undefined;
+}
+
 export function newIssueDraft(board: Board, me: AppUser, over: Partial<IssueDraft> = {}): IssueDraft {
   const type = over.type ?? defaultType(board);
   const it = board.issueTypes.find((x) => x.id === type);

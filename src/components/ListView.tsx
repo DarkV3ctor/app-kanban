@@ -3,7 +3,7 @@ import type { Board, FieldKey } from '../types';
 import { useApp } from '../app-context';
 import { fieldName, genericFieldName } from '../lib/fields';
 import { t, tk } from '../i18n';
-import { applyFilters, sortIssues, type SortKey } from '../lib/issues';
+import { applyFilters, epicOf, sortIssues, type SortKey } from '../lib/issues';
 import { downloadFile, dueState, formatDate, isDone, priorityName, timeAgo, cls } from '../lib/utils';
 import { useBoard } from './board-context';
 import { FilterBar } from './FilterBar';
@@ -50,8 +50,9 @@ export const ListView = memo(function ListView() {
       const cell = /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s) ? `'${s}` : s;
       return `"${cell.replace(/"/g, '""')}"`;
     };
-    const lines = rows.map((i) =>
-      [
+    const lines = rows.map((i) => {
+      const epic = epicOf(board, byId, i);
+      return [
         `${board.key}-${i.number}`,
         board.issueTypes.find((x) => x.id === i.type)?.name ?? i.type,
         i.title,
@@ -60,15 +61,15 @@ export const ListView = memo(function ListView() {
         priorityName(i.priority),
         i.labels.join(' '),
         board.versions.find((v) => v.id === i.fixVersionId)?.name ?? '',
-        i.epicId && byId.get(i.epicId) ? `${board.key}-${byId.get(i.epicId)!.number}` : '',
+        epic ? `${board.key}-${epic.number}` : '',
         i.storyPoints ?? '',
         i.dueDate ?? '',
         new Date(i.createdAt).toISOString(),
         new Date(i.updatedAt).toISOString(),
       ]
         .map((v) => esc(String(v)))
-        .join(','),
-    );
+        .join(',');
+    });
     // BOM so Excel detects UTF-8.
     downloadFile(`${board.key}-issues.csv`, '﻿' + [CSV_HEAD.map((h) => esc(t(h))).join(','), ...lines].join('\n'), 'text/csv;charset=utf-8');
   };
@@ -113,7 +114,7 @@ export const ListView = memo(function ListView() {
               {rows.map((i) => {
                 const done = isDone(board, i);
                 const due = dueState(i.dueDate, done);
-                const epic = i.epicId ? byId.get(i.epicId) : undefined;
+                const epic = epicOf(board, byId, i);
                 const a = memberOf(board, i.assigneeId);
                 return (
                   <tr key={i.id} onClick={() => openIssue(i)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openIssue(i)}>
