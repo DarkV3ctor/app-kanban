@@ -6,7 +6,7 @@ import { t } from '../i18n';
 import type { Priority } from '../types';
 import { useBoard } from './board-context';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
-import { Avatar, Select } from './ui';
+import { Avatar, Select, memberOf } from './ui';
 
 function FilterSelect({ label, value, options, onChange }: { label: string; value: string[]; options: { value: string; label: string; icon?: ReactNode }[]; onChange: (v: string[]) => void }) {
   return (
@@ -56,8 +56,8 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
       </label>
       <div className="filter-avatars">
         {assigneeIds.slice(0, 8).map((id) => (
-          <button key={id} className={cls('filter-avatar', filters.assignees.includes(id) && 'is-active')} onClick={() => toggleAssignee(id)} title={board.memberInfo[id]?.login}>
-            <Avatar info={board.memberInfo[id]} size={30} />
+          <button key={id} className={cls('filter-avatar', filters.assignees.includes(id) && 'is-active')} onClick={() => toggleAssignee(id)} title={memberOf(board, id)!.name}>
+            <Avatar info={memberOf(board, id)} size={30} />
           </button>
         ))}
         <button className={cls('filter-avatar', filters.assignees.includes('none') && 'is-active')} onClick={() => toggleAssignee('none')} title={t('Unassigned')}>

@@ -1,4 +1,4 @@
-import type { AppUser, Board, BoardSetup, HistoryChange, Issue, IssueDraft, LinkType, Priority } from '../types';
+import type { AppUser, Board, BoardDraft, BoardSetup, HistoryChange, Issue, IssueDraft, LinkType, Priority } from '../types';
 import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
 import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
@@ -124,7 +124,8 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 export function fieldLabel(field: string): string {
-  return FIELD_LABELS[field] ? t(FIELD_LABELS[field]) : field;
+  // Own keys only: a history entry with the field "__proto__" must not resolve to Object.prototype.
+  return Object.hasOwn(FIELD_LABELS, field) ? t(FIELD_LABELS[field]) : field;
 }
 
 /** Encodes a link change as a neutral value: "link:<type> <KEY>". */
@@ -303,14 +304,24 @@ export interface BoardExport {
   format: 'kanban-board';
   version: 1;
   exportedAt: string;
-  board: Omit<Board, 'id'>;
+  board: BoardDraft;
   issues: Issue[];
 }
 
-export function exportBoard(board: Board, issues: Issue[]): BoardExport {
-  const { id: _id, ...rest } = board;
-  void _id;
-  return { format: 'kanban-board', version: 1, exportedAt: new Date().toISOString(), board: rest, issues };
+/**
+ * The file is meant to be shared (as a template, or to move a board), so it carries no people:
+ * no member list, names or GitHub IDs. The import does not use them either — it keeps only
+ * assignments to the person importing, so assignments to yourself (`me`) are kept.
+ */
+export function exportBoard(board: Board, issues: Issue[], me: string): BoardExport {
+  const { name, key, description, template, icon, color, columns, issueTypes, labels, components, versions } = board;
+  return {
+    format: 'kanban-board',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    board: { name, key, description, template, icon, color, columns, issueTypes, labels, components, versions },
+    issues: issues.map((i) => ({ ...i, assigneeId: i.assigneeId === me ? me : null, reporterId: '', createdBy: '' })),
+  };
 }
 
 /**
@@ -324,8 +335,16 @@ export function prepareImport(data: unknown, me: AppUser): { draft: BoardSetup; 
   }
   const b = d.board as Record<string, unknown>;
   const draft = normalizeBoardSetup(b);
+  // Clipped to the limits of validBoard() in firestore.rules, otherwise the whole import is rejected.
+  draft.template = draft.template.slice(0, 50);
   draft.icon = [...draft.icon].slice(0, 4).join('');
+  draft.columns = draft.columns.slice(0, 50);
+  draft.issueTypes = draft.issueTypes.slice(0, 50);
+  draft.labels = draft.labels.slice(0, 500);
+  draft.components = draft.components.slice(0, 500);
+  draft.versions = draft.versions.slice(0, 500);
   const columnIds = new Set(draft.columns.map((c) => c.id));
+  const versionIds = new Set(draft.versions.map((v) => v.id));
 
   const source = d.issues.slice(0, MAX_IMPORT_ISSUES).map((x, i) => {
     const oldId = typeof (x as { id?: unknown })?.id === 'string' ? (x as { id: string }).id : `#${i}`;
@@ -333,13 +352,15 @@ export function prepareImport(data: unknown, me: AppUser): { draft: BoardSetup; 
   });
   const idMap = new Map(source.map((s) => [s.oldId, uid(16)]));
 
-  // Issue numbers must be unique: duplicates get the next free numbers.
-  let maxNumber = source.reduce((m, s) => Math.max(m, s.issue.number), 0);
+  // Issue numbers must be unique and small enough for the board counter to keep counting:
+  // duplicates and out-of-range numbers get the next free numbers.
+  const numberOk = (n: number) => n >= 1 && n <= MAX_ISSUE_NUMBER;
+  let maxNumber = source.reduce((m, s) => (numberOk(s.issue.number) ? Math.max(m, s.issue.number) : m), 0);
   const usedNumbers = new Set<number>();
 
   // Members are not carried over, so every assignee except yourself is cleared.
   const issues: Issue[] = source.map(({ oldId, issue: i }) => {
-    const number = usedNumbers.has(i.number) ? ++maxNumber : i.number;
+    const number = !numberOk(i.number) || usedNumbers.has(i.number) ? ++maxNumber : i.number;
     usedNumbers.add(number);
     return {
       ...i,
@@ -352,6 +373,7 @@ export function prepareImport(data: unknown, me: AppUser): { draft: BoardSetup; 
       labels: i.labels.slice(0, 50),
       components: i.components.slice(0, 50),
       checklist: i.checklist.slice(0, 200),
+      fixVersionId: i.fixVersionId && versionIds.has(i.fixVersionId) ? i.fixVersionId : null,
       epicId: i.epicId ? idMap.get(i.epicId) ?? null : null,
       links: i.links
         .filter((l) => idMap.has(l.issueId))
@@ -373,3 +395,6 @@ export function prepareImport(data: unknown, me: AppUser): { draft: BoardSetup; 
 
 /** Large enough for any real board, small enough for the import to finish in reasonable time. */
 const MAX_IMPORT_ISSUES = 5000;
+
+/** Imported issue numbers above this are renumbered. */
+const MAX_ISSUE_NUMBER = 1_000_000_000;

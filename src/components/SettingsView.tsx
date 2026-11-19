@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { Column, ColumnCategory, IssueType } from '../types';
-import { useApp } from '../app-context';
+import { useApp, useDiscardGuard } from '../app-context';
 import { navigate } from '../router';
 import { count, t } from '../i18n';
-import { exportBoard } from '../lib/issues';
+import { exportBoard, statusSideEffects } from '../lib/issues';
 import { downloadJSON, sanitizeKey, uid, cls } from '../lib/utils';
 import { newColumnId } from '../templates';
 import { useBoard } from './board-context';
 import { Icon, TYPE_GLYPHS, TypeIcon } from './Icons';
-import { Field, LabelChip, MarkdownEditor, Modal, Select } from './ui';
+import { Field, LabelChip, Modal, Select } from './ui';
+import { MarkdownEditor } from './markdown';
 
 const COLORS = ['#1D7AFC', '#22A06B', '#E2483D', '#E56910', '#B38600', '#904EE2', '#6E5DC6', '#CD519D', '#1D9AAA', '#626F86'];
 const EMOJIS = ['🎮', '🏠', '💻', '📋', '🚀', '🎨', '🎵', '🧩', '🗺️', '🛒', '💰', '❤️', '📚', '🌱', '🚗', '🐾', '✈️', '🏋️', '🎯', '⭐'];
@@ -157,7 +158,12 @@ function Columns() {
     if (!ok) return;
     const next = board.columns.filter((x) => x.id !== c.id);
     await run(async () => {
-      for (const i of inCol) await store.updateIssue(board.id, i.id, { status: target.id }, user, [{ field: 'status', from: c.name, to: target.name }]);
+      // Batched; moving between a "done" and another column also sets or clears the resolution date.
+      await store.updateIssues(
+        board.id,
+        user,
+        inCol.map((i) => ({ id: i.id, patch: { status: target.id, ...statusSideEffects(board, i, target.id) }, changes: [{ field: 'status', from: c.name, to: target.name }] })),
+      );
       await store.updateBoard(board.id, { columns: next });
     });
   };
@@ -270,10 +276,15 @@ function IssueTypes() {
 function TypeDialog({ type, onSave, onClose }: { type: IssueType; onSave: (it: IssueType) => void; onClose: () => void }) {
   const [it, setIt] = useState<IssueType>(type);
   const [checklist, setChecklist] = useState((type.checklist ?? []).join('\n'));
+  const canDiscard = useDiscardGuard();
+  const dirty = JSON.stringify(it) !== JSON.stringify(type) || checklist !== (type.checklist ?? []).join('\n');
+  const requestClose = async () => {
+    if (await canDiscard(dirty)) onClose();
+  };
   return (
     <Modal
       title={type.name ? t('Type "{name}"', { name: type.name }) : t('New issue type')}
-      onClose={onClose}
+      onClose={requestClose}
       size="md"
       footer={
         <>
@@ -348,7 +359,8 @@ function ListEditor({ title, hint, field, chips }: { title: string; hint: string
       .split(',')
       .map((s) => (chips ? s.trim().replace(/\s+/g, '-') : s.trim()))
       .filter((s) => s && !list.includes(s));
-    if (items.length) updateBoard({ [field]: [...list, ...items] });
+    // "a, a" adds one item, not two.
+    if (items.length) updateBoard({ [field]: [...list, ...new Set(items)] });
     setV('');
   };
   return (
@@ -387,12 +399,13 @@ function ListEditor({ title, hint, field, chips }: { title: string; hint: string
 }
 
 function ExportPanel() {
+  const { user } = useApp();
   const { board, issues } = useBoard();
   return (
     <div className="panel">
       <div className="panel-title">{t('Export')}</div>
-      <p className="muted small">{t('A JSON file with the board settings and all issues (without comments). You can import it on the Boards page — for example, to move a board out of demo mode.')}</p>
-      <button className="btn btn-subtle" onClick={() => downloadJSON(`${board.key}-board.json`, exportBoard(board, issues))}>
+      <p className="muted small">{t('A JSON file with the board settings and all issues (without comments and members). You can import it on the Boards page — for example, to move a board out of demo mode.')}</p>
+      <button className="btn btn-subtle" onClick={() => downloadJSON(`${board.key}-board.json`, exportBoard(board, issues, user.ghId))}>
         <Icon name="download" size={16} /> {t('Download JSON')}
       </button>
     </div>

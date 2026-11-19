@@ -12,6 +12,13 @@ export interface CreatorEntry {
   addedAt: number;
 }
 
+/** One issue change in a batch: the fields to set and the history entry to write (none if empty). */
+export interface IssueUpdate {
+  id: string;
+  patch: Partial<Issue>;
+  changes: HistoryChange[];
+}
+
 export interface NewBoardInput {
   draft: BoardSetup;
   name: string;
@@ -43,8 +50,11 @@ export interface Store {
   updateBoard(boardId: string, patch: Partial<Board>): Promise<void>;
   addMember(boardId: string, u: GitHubUser, role: Role): Promise<void>;
   setMemberRole(boardId: string, ghId: string, role: Role): Promise<void>;
-  /** Removes a member (also used to leave a board). */
-  removeMember(boardId: string, ghId: string): Promise<void>;
+  /**
+   * Removes a member together with their name entry (also used to leave a board).
+   * `forget`: name entries left behind by members removed earlier, deleted in the same write (admins only).
+   */
+  removeMember(boardId: string, ghId: string, forget?: string[]): Promise<void>;
   /** The new owner must already be a member; the previous owner becomes an admin. */
   transferOwnership(boardId: string, fromId: string, toId: string): Promise<void>;
   deleteBoard(boardId: string): Promise<void>;
@@ -52,6 +62,8 @@ export interface Store {
   subscribeIssues(boardId: string, cb: (issues: Issue[]) => void, onErr?: ErrCb): Unsub;
   createIssue(boardId: string, user: AppUser, draft: IssueDraft): Promise<Issue>;
   updateIssue(boardId: string, issueId: string, patch: Partial<Issue>, user: AppUser, changes: HistoryChange[]): Promise<void>;
+  /** Several issue changes in as few writes as possible (one atomic batch when they fit). */
+  updateIssues(boardId: string, user: AppUser, updates: IssueUpdate[]): Promise<void>;
   deleteIssue(boardId: string, issueId: string): Promise<void>;
 
   subscribeComments(boardId: string, issueId: string, cb: (c: Comment[]) => void, onErr?: ErrCb): Unsub;

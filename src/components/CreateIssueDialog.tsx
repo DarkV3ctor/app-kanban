@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { IssueDraft } from '../types';
-import { useApp } from '../app-context';
+import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { isEpic, newIssueDraft } from '../lib/issues';
 import { columnCategory, uid } from '../lib/utils';
 import { useBoard } from './board-context';
-import { Field, MarkdownEditor, Modal } from './ui';
+import { Field, Modal } from './ui';
+import { MarkdownEditor } from './markdown';
 import { AssigneePicker, ComponentsPicker, EpicPicker, LabelsPicker, PriorityPicker, StatusPicker, TypePicker, VersionPicker } from './IssueFields';
 
 export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<IssueDraft>; onClose: () => void }) {
@@ -54,10 +55,18 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
 
   const typeIsEpic = isEpic(board, d);
 
+  // Escape, the backdrop and the close button ask before a typed title or description is lost.
+  const canDiscard = useDiscardGuard();
+  const template = board.issueTypes.find((x) => x.id === d.type)?.template ?? '';
+  const dirty = d.title.trim() !== '' || d.description.trim() !== template.trim();
+  const requestClose = async () => {
+    if (await canDiscard(dirty)) onClose();
+  };
+
   return (
     <Modal
       title={t('Create issue')}
-      onClose={onClose}
+      onClose={requestClose}
       size="lg"
       footer={
         <>
@@ -88,7 +97,7 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
           value={d.title}
           onChange={(e) => set({ title: e.target.value })}
           placeholder={t('Briefly: what needs to be done')}
-          maxLength={255}
+          maxLength={500}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), submit())}
         />
       </Field>

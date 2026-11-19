@@ -144,6 +144,11 @@ export const UK: Record<string, string> = {
   'Search issues': 'Пошук задач',
   'Clear search': 'Очистити пошук',
   Unassigned: 'Не призначено',
+  'Former member': 'Колишній учасник',
+  'Discard unsaved changes?': 'Відкинути незбережені зміни?',
+  'A checklist holds up to {n} items': 'У чек-листі може бути до {n} пунктів',
+  'This app cannot be shown inside another site.': 'Цей застосунок не можна відкривати всередині іншого сайту.',
+  'Open it in a new tab': 'Відкрити в новій вкладці',
   'No version': 'Без версії',
   'No epic': 'Без епіка',
   'Assigned to @{login}': 'Призначені на @{login}',
@@ -391,8 +396,8 @@ export const UK: Record<string, string> = {
   'Project areas: "Gameplay", "Graphics"… or rooms and areas of life for a home board.': 'Області проєкту: «Геймплей», «Графіка»… або кімнати та сфери життя для домашньої дошки.',
   'Add (comma-separated is fine)': 'Додати (можна через кому)',
   Export: 'Експорт',
-  'A JSON file with the board settings and all issues (without comments). You can import it on the Boards page — for example, to move a board out of demo mode.':
-    'JSON-файл із налаштуваннями дошки та всіма задачами (без коментарів). Його можна імпортувати на сторінці «Дошки» — наприклад, щоб перенести дошку з демо-режиму.',
+  'A JSON file with the board settings and all issues (without comments and members). You can import it on the Boards page — for example, to move a board out of demo mode.':
+    'JSON-файл із налаштуваннями дошки та всіма задачами (без коментарів і учасників). Його можна імпортувати на сторінці «Дошки» — наприклад, щоб перенести дошку з демо-режиму.',
   'Download JSON': 'Завантажити JSON',
   'Danger zone': 'Небезпечна зона',
   'To delete the board, type its key': 'Щоб видалити дошку, введіть її ключ',

@@ -3,13 +3,13 @@ import { useSyncExternalStore } from 'react';
 /**
  * Appearance = design × colour mode. Both are saved in localStorage and applied as attributes
  * on <html>, which the stylesheets key off:
- *   data-design="classic|apple"  — the Apple design lives in styles-apple.css
+ *   data-design="classic|apple|fluent"  — styles-apple.css / styles-fluent.css
  *   data-theme="light|dark"      — no attribute means "follow the system setting"
  * public/theme.js applies the saved values before the app renders, so the page never flashes
  * in the wrong theme. Keep the storage keys in sync with that file.
  */
 
-export type Design = 'classic' | 'apple';
+export type Design = 'classic' | 'apple' | 'fluent';
 export type Mode = 'light' | 'dark' | 'system';
 
 interface Appearance {
@@ -22,7 +22,7 @@ const MODE_KEY = 'kb-theme';
 const root = document.documentElement;
 const listeners = new Set<() => void>();
 
-const asDesign = (v: string | null): Design => (v === 'apple' ? 'apple' : 'classic');
+const asDesign = (v: string | null): Design => (v === 'apple' || v === 'fluent' ? v : 'classic');
 const asMode = (v: string | null): Mode => (v === 'light' || v === 'dark' ? v : 'system');
 
 let current: Appearance = { design: asDesign(root.getAttribute('data-design')), mode: asMode(root.getAttribute('data-theme')) };

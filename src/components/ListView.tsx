@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useApp } from '../app-context';
 import { t, tk } from '../i18n';
 import { applyFilters, sortIssues, type SortKey } from '../lib/issues';
@@ -24,7 +24,8 @@ const COLS: { key: SortKey; label: string; className?: string }[] = [
 
 const CSV_HEAD = [tk('Key'), tk('Type'), tk('Summary'), tk('Status'), tk('Assignee'), tk('Priority'), tk('Labels'), tk('Version'), tk('Epic'), tk('SP'), tk('Due'), tk('Created'), tk('Updated')];
 
-export function ListView() {
+// Memoized: re-renders only when the board context changes, not on every BoardPage render.
+export const ListView = memo(function ListView() {
   const { user } = useApp();
   const { board, issues, byId, filters, openIssue, newIssue, perms } = useBoard();
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'key', dir: -1 });
@@ -33,7 +34,12 @@ export function ListView() {
   const points = rows.reduce((s, i) => s + (i.storyPoints ?? 0), 0);
 
   const exportCsv = () => {
-    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    // Every cell is quoted; text that a spreadsheet would run as a formula (=, +, -, @, tab, CR at the
+    // start) gets a leading apostrophe, so an issue title cannot inject formulas into the export.
+    const esc = (s: string) => {
+      const cell = /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s) ? `'${s}` : s;
+      return `"${cell.replace(/"/g, '""')}"`;
+    };
     const lines = rows.map((i) =>
       [
         `${board.key}-${i.number}`,
@@ -138,4 +144,4 @@ export function ListView() {
       )}
     </div>
   );
-}
+});

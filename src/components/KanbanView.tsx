@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import type { Issue, Priority } from '../types';
 import { useApp } from '../app-context';
@@ -10,7 +10,7 @@ import { useBoard } from './board-context';
 import { FilterBar } from './FilterBar';
 import { IssueCard } from './IssueCard';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
-import { Avatar, Select } from './ui';
+import { Avatar, Select, memberOf } from './ui';
 
 type GroupBy = 'none' | 'assignee' | 'epic' | 'priority';
 
@@ -36,7 +36,8 @@ function writePref(k: string, v: string) {
   }
 }
 
-export function KanbanView() {
+// Memoized: re-renders only when the board context changes, not on every BoardPage render.
+export const KanbanView = memo(function KanbanView() {
   const { user, store, run } = useApp();
   const { board, issues, byId, perms, filters, openIssue, newIssue, updateIssue, updateBoard } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupBy>(() => readPref('kb-group-' + board.id, 'none'));
@@ -69,7 +70,7 @@ export function KanbanView() {
     if (groupBy === 'assignee') {
       const ids = [...map.keys()].filter((k) => k !== 'none');
       ids.sort((a, b) => (a === user.ghId ? -1 : b === user.ghId ? 1 : (board.memberInfo[a]?.login ?? a).localeCompare(board.memberInfo[b]?.login ?? b)));
-      for (const id of ids) res.push({ key: id, title: board.memberInfo[id]?.name ?? id, icon: <Avatar info={board.memberInfo[id]} size={20} />, issues: map.get(id)! });
+      for (const id of ids) res.push({ key: id, title: memberOf(board, id)!.name, icon: <Avatar info={memberOf(board, id)} size={20} />, issues: map.get(id)! });
       res.push({ key: 'none', title: t('Unassigned'), icon: <Avatar info={null} size={20} />, issues: map.get('none') ?? [] });
       return res;
     }
@@ -91,7 +92,19 @@ export function KanbanView() {
     const [laneKey, colId] = destination.droppableId.split('::');
     const lane = lanes.find((l) => l.key === laneKey);
     const dest = (lane?.issues ?? []).filter((i) => i.status === colId && i.id !== issue.id).sort((a, b) => a.rank - b.rank);
-    const rank = rankBetween(dest[destination.index - 1]?.rank, dest[destination.index]?.rank);
+    const before = dest[destination.index - 1];
+    const after = dest[destination.index];
+    let rank = rankBetween(before?.rank, after?.rank);
+    // Halving the gap over and over runs out of floating-point precision. Then the whole column
+    // (all lanes, filtered-out cards included) is renumbered around the dropped card.
+    if ((before && !(rank > before.rank)) || (after && !(rank < after.rank))) {
+      const column = issues.filter((i) => i.status === colId && i.id !== issue.id).sort((a, b) => a.rank - b.rank);
+      const at = before ? column.findIndex((i) => i.id === before.id) + 1 : after ? Math.max(0, column.findIndex((i) => i.id === after.id)) : column.length;
+      column.splice(at, 0, issue);
+      rank = (at + 1) * 1000;
+      const renumber = column.flatMap((x, k) => (x.id !== issue.id && x.rank !== (k + 1) * 1000 ? [{ id: x.id, patch: { rank: (k + 1) * 1000 }, changes: [] }] : []));
+      run(store.updateIssues(board.id, user, renumber));
+    }
     const patch: Partial<Issue> = { rank };
     if (colId !== issue.status) patch.status = colId;
     const [srcLane] = source.droppableId.split('::');
@@ -261,7 +274,7 @@ export function KanbanView() {
       </DragDropContext>
     </div>
   );
-}
+});
 
 function QuickCreate({ onCreate }: { onCreate: (title: string) => Promise<boolean> }) {
   const [open, setOpen] = useState(false);

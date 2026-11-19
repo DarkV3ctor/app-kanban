@@ -30,6 +30,10 @@ const COMMENTER = '300';
 const VIEWER = '400';
 const STRANGER = '500';
 const CREATOR = '700';
+const FORMER = '900'; // removed earlier; their memberInfo entry was left behind
+
+const HOUR = 3600_000;
+const info = (login: string) => ({ login, name: login, avatarUrl: '' });
 
 let env: RulesTestEnvironment;
 
@@ -92,16 +96,16 @@ function issueData(over: Record<string, unknown> = {}) {
   };
 }
 
-const comment = (over: Record<string, unknown> = {}) => ({ authorId: COMMENTER, body: 'Hello', createdAt: 1, editedAt: null, ...over });
+const comment = (over: Record<string, unknown> = {}) => ({ authorId: COMMENTER, body: 'Hello', createdAt: Date.now(), editedAt: null, ...over });
 
 /** Creates an issue the way the app does: next number + counter increment in one transaction. */
-function createIssue(db: Firestore, id: string, createdBy: string) {
+function createIssue(db: Firestore, id: string, createdBy: string, createdAt = Date.now()) {
   return runTransaction(db, async (tx) => {
     const ref = doc(db, 'boards/b1');
     const snap = await tx.get(ref);
     const number = (snap.data()?.issueCounter as number) + 1;
-    tx.update(ref, { issueCounter: number, updatedAt: 2 });
-    tx.set(doc(db, `boards/b1/issues/${id}`), issueData({ number, createdBy }));
+    tx.update(ref, { issueCounter: number, updatedAt: createdAt });
+    tx.set(doc(db, `boards/b1/issues/${id}`), issueData({ number, createdBy, createdAt, updatedAt: createdAt }));
   });
 }
 
@@ -120,7 +124,10 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore() as unknown as Firestore;
-    await setDoc(doc(db, 'boards/b1'), boardData());
+    await setDoc(
+      doc(db, 'boards/b1'),
+      boardData({ memberInfo: Object.fromEntries([OWNER, BOARD_ADMIN, EDITOR, COMMENTER, VIEWER, FORMER].map((id) => [id, info(`user${id}`)])) }),
+    );
     await setDoc(doc(db, 'boards/b1/issues/i1'), issueData({ number: 1, createdBy: EDITOR }));
     await setDoc(doc(db, 'boards/b1/issues/i2'), issueData({ number: 2, createdBy: OWNER }));
     await setDoc(doc(db, 'boards/b1/issues/i1/comments/c1'), comment());
@@ -178,6 +185,9 @@ describe('boards', () => {
 
   test('a new board starts with only its creator', async () => {
     await assertFails(setDoc(doc(as(OWNER), 'boards/z'), boardData()));
+    const solo = { members: { [OWNER]: 'owner' }, memberIds: [OWNER] };
+    await assertFails(setDoc(doc(as(OWNER), 'boards/z'), boardData({ ...solo, memberInfo: { [OWNER]: info('me'), [EDITOR]: info('someone') } })));
+    await assertSucceeds(setDoc(doc(as(OWNER), 'boards/z'), boardData({ ...solo, memberInfo: { [OWNER]: info('me') } })));
   });
 
   test('roles must be valid and the owner is the only "owner"', async () => {
@@ -208,7 +218,9 @@ describe('boards', () => {
     await assertSucceeds(
       updateDoc(doc(db, 'boards/b1'), new FieldPath('members', '800'), 'viewer', 'memberIds', arrayUnion('800'), new FieldPath('memberInfo', '800'), { login: 'x', name: 'X', avatarUrl: '' }),
     );
-    await assertSucceeds(updateDoc(doc(db, 'boards/b1'), new FieldPath('members', '800'), deleteField(), 'memberIds', arrayRemove('800')));
+    await assertSucceeds(
+      updateDoc(doc(db, 'boards/b1'), new FieldPath('members', '800'), deleteField(), 'memberIds', arrayRemove('800'), new FieldPath('memberInfo', '800'), deleteField()),
+    );
     // members and memberIds must stay in sync
     await assertFails(updateDoc(doc(db, 'boards/b1'), new FieldPath('members', '801'), 'viewer'));
   });
@@ -217,6 +229,29 @@ describe('boards', () => {
     await assertFails(updateDoc(doc(as(VIEWER), 'boards/b1'), new FieldPath('members', COMMENTER), deleteField(), 'memberIds', arrayRemove(COMMENTER)));
     await assertSucceeds(updateDoc(doc(as(VIEWER), 'boards/b1'), new FieldPath('members', VIEWER), deleteField(), 'memberIds', arrayRemove(VIEWER), 'updatedAt', 5));
     await assertFails(updateDoc(doc(as(OWNER), 'boards/b1'), new FieldPath('members', OWNER), deleteField(), 'memberIds', arrayRemove(OWNER)));
+  });
+
+  test('member names cannot be rewritten, only added and removed with the member', async () => {
+    const db = as(BOARD_ADMIN);
+    // Renaming an existing member (the owner included) is rejected, for admins and the owner alike.
+    await assertFails(updateDoc(doc(db, 'boards/b1'), new FieldPath('memberInfo', OWNER), info('evil')));
+    await assertFails(updateDoc(doc(db, 'boards/b1'), new FieldPath('memberInfo', EDITOR), info('evil')));
+    await assertFails(updateDoc(doc(as(OWNER), 'boards/b1'), new FieldPath('memberInfo', EDITOR), info('evil')));
+    // So is an entry for someone who is not being added in the same write.
+    await assertFails(updateDoc(doc(db, 'boards/b1'), new FieldPath('memberInfo', '801'), info('x')));
+    // A current member's entry stays while they are a member.
+    await assertFails(updateDoc(doc(db, 'boards/b1'), new FieldPath('memberInfo', EDITOR), deleteField()));
+    // Entries left behind by former members can be cleaned up.
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1'), new FieldPath('memberInfo', FORMER), deleteField()));
+  });
+
+  test('a leaving member may remove only their own name entry', async () => {
+    const db = as(COMMENTER);
+    const leave = (...extra: unknown[]) =>
+      updateDoc(doc(db, 'boards/b1'), new FieldPath('members', COMMENTER), deleteField(), 'memberIds', arrayRemove(COMMENTER), ...extra);
+    await assertFails(leave(new FieldPath('memberInfo', EDITOR), deleteField()));
+    await assertFails(leave(new FieldPath('memberInfo', COMMENTER), info('renamed')));
+    await assertSucceeds(leave(new FieldPath('memberInfo', COMMENTER), deleteField()));
   });
 
   test('editors can only bump the counter', async () => {
@@ -248,8 +283,13 @@ describe('issues', () => {
 
   test('an issue without the counter increment is rejected (no duplicate numbers)', async () => {
     const db = as(EDITOR);
-    await assertFails(setDoc(doc(db, 'boards/b1/issues/dup'), issueData({ number: 2 })));
-    await assertFails(setDoc(doc(db, 'boards/b1/issues/skip'), issueData({ number: 3 })));
+    await assertFails(setDoc(doc(db, 'boards/b1/issues/dup'), issueData({ number: 2, createdAt: Date.now() })));
+    await assertFails(setDoc(doc(db, 'boards/b1/issues/skip'), issueData({ number: 3, createdAt: Date.now() })));
+  });
+
+  test('new issues cannot be back- or forward-dated (imports keep their dates)', async () => {
+    await assertFails(createIssue(as(EDITOR), 'old', EDITOR, Date.now() - HOUR));
+    await assertFails(createIssue(as(EDITOR), 'future', EDITOR, Date.now() + HOUR));
   });
 
   test('issues are attributed to their creator', async () => {
@@ -323,12 +363,19 @@ describe('comments', () => {
 
   test('authors change only the text of their own comments', async () => {
     const db = as(COMMENTER);
-    await assertSucceeds(updateDoc(doc(db, `${path}/c1`), { body: 'Edited', editedAt: 2 }));
-    await assertFails(updateDoc(doc(db, `${path}/c1`), { body: { evil: true }, editedAt: 3 }));
-    await assertFails(updateDoc(doc(db, `${path}/c1`), { body: 'x'.repeat(20001), editedAt: 3 }));
+    await assertSucceeds(updateDoc(doc(db, `${path}/c1`), { body: 'Edited', editedAt: Date.now() }));
+    await assertFails(updateDoc(doc(db, `${path}/c1`), { body: { evil: true }, editedAt: Date.now() + 1 }));
+    await assertFails(updateDoc(doc(db, `${path}/c1`), { body: 'x'.repeat(20001), editedAt: Date.now() + 1 }));
     await assertFails(updateDoc(doc(db, `${path}/c1`), { createdAt: 99 }));
     await assertFails(updateDoc(doc(db, `${path}/c1`), { body: 'No mark' }));
-    await assertFails(updateDoc(doc(as(EDITOR), `${path}/c1`), { body: 'Not mine', editedAt: 2 }));
+    await assertFails(updateDoc(doc(as(EDITOR), `${path}/c1`), { body: 'Not mine', editedAt: Date.now() }));
+  });
+
+  test('comments and edits cannot be back- or forward-dated', async () => {
+    const db = as(COMMENTER);
+    await assertFails(setDoc(doc(db, `${path}/old`), comment({ createdAt: Date.now() - HOUR })));
+    await assertFails(setDoc(doc(db, `${path}/future`), comment({ createdAt: Date.now() + HOUR })));
+    await assertFails(updateDoc(doc(db, `${path}/c1`), { body: 'Edited', editedAt: Date.now() - HOUR }));
   });
 
   test('authors and admins delete comments', async () => {
@@ -338,7 +385,7 @@ describe('comments', () => {
 });
 
 describe('history', () => {
-  const entry = (over: Record<string, unknown> = {}) => ({ actorId: EDITOR, at: 2, changes: [{ field: 'title', from: 'a', to: 'b' }], ...over });
+  const entry = (over: Record<string, unknown> = {}) => ({ actorId: EDITOR, at: Date.now(), changes: [{ field: 'title', from: 'a', to: 'b' }], ...over });
 
   test('history is written with the issue change', async () => {
     const db = as(EDITOR);
@@ -348,12 +395,28 @@ describe('history', () => {
     await assertSucceeds(batch.commit());
   });
 
+  test('a batch of 10 issue updates with their history stays within the rules limits', async () => {
+    // The client (updateIssues) puts at most 10 history entries into one batch: each checks its own issue.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore() as unknown as Firestore;
+      for (let n = 1; n <= 10; n++) await setDoc(doc(db, `boards/b1/issues/m${n}`), issueData({ number: 100 + n, createdBy: EDITOR }));
+    });
+    const db = as(EDITOR);
+    const batch = writeBatch(db);
+    for (let n = 1; n <= 10; n++) {
+      batch.update(doc(db, `boards/b1/issues/m${n}`), { status: 'done', updatedAt: Date.now() });
+      batch.set(doc(db, `boards/b1/issues/m${n}/history/h`), entry({ changes: [{ field: 'status', from: 'To do', to: 'Done' }] }));
+    }
+    await assertSucceeds(batch.commit());
+  });
+
   test('history entries are validated and immutable', async () => {
     const db = as(EDITOR);
     await assertFails(setDoc(doc(db, 'boards/b1/issues/i1/history/h2'), entry({ actorId: OWNER })));
     await assertFails(setDoc(doc(db, 'boards/b1/issues/i1/history/h3'), entry({ changes: [] })));
     await assertFails(setDoc(doc(db, 'boards/b1/issues/i1/history/h4'), entry({ extra: 1 })));
     await assertFails(setDoc(doc(db, 'boards/b1/issues/missing/history/h5'), entry()));
+    await assertFails(setDoc(doc(db, 'boards/b1/issues/i1/history/h7'), entry({ at: Date.now() - HOUR })));
     await assertSucceeds(setDoc(doc(db, 'boards/b1/issues/i1/history/h6'), entry()));
     await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1/history/h6'), { at: 3 }));
   });

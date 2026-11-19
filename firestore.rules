@@ -46,6 +46,14 @@ service cloud.firestore {
       return v == null || v is int;
     }
 
+    // Timestamps (ms) written by the client must be close to the server time, so comments, history
+    // and issues cannot be back- or forward-dated. 10 minutes of slack tolerate a slightly wrong clock.
+    function isNow(t) {
+      return t is int
+        && t > request.time.toMillis() - 600000
+        && t < request.time.toMillis() + 600000;
+    }
+
     // ---- Board roles -------------------------------------------------------
 
     function roleRank(role) {
@@ -74,6 +82,23 @@ service cloud.firestore {
     // Rank after the current batch (used when a board and its issues are created together).
     function rankAfter(boardId) {
       return rankIn(getAfter(boardPath(boardId)).data);
+    }
+
+    // Names and avatars (memberInfo) are written when a member is added and removed with them
+    // (or later, once they are no longer a member). An existing entry is never rewritten, so
+    // nobody can rename another member or point their profile link elsewhere.
+    function memberInfoOk(before, after) {
+      let info = after.memberInfo.diff(before.memberInfo);
+      let joined = after.members.diff(before.members).addedKeys();
+      return info.addedKeys().union(info.changedKeys()).difference(joined).size() == 0
+        && info.removedKeys().intersection(after.members.keys().toSet()).size() == 0;
+    }
+
+    // A member who leaves may only remove their own memberInfo entry.
+    function dropsOnlyOwnInfo(before, after) {
+      let info = after.memberInfo.diff(before.memberInfo);
+      return info.addedKeys().size() == 0 && info.changedKeys().size() == 0
+        && info.removedKeys().hasOnly([ghId()]);
     }
 
     // ---- Shapes --------------------------------------------------------------
@@ -159,7 +184,8 @@ service cloud.firestore {
       allow create: if canCreateBoards()
         && validBoard(request.resource.data)
         && request.resource.data.ownerId == ghId()
-        && request.resource.data.memberIds.size() == 1;
+        && request.resource.data.memberIds.size() == 1
+        && request.resource.data.memberInfo.keys().hasOnly([ghId()]);
 
       allow update: if validBoard(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
@@ -168,22 +194,25 @@ service cloud.firestore {
         && (
           // Owner: anything, including transferring ownership to an existing member.
           (rankIn(resource.data) == 5
-            && request.resource.data.ownerId in resource.data.memberIds)
+            && request.resource.data.ownerId in resource.data.memberIds
+            && memberInfoOk(resource.data, request.resource.data))
           ||
           // Admin: anything except changing the owner (validBoard keeps the owner's role).
           (rankIn(resource.data) == 4
-            && request.resource.data.ownerId == resource.data.ownerId)
+            && request.resource.data.ownerId == resource.data.ownerId
+            && memberInfoOk(resource.data, request.resource.data))
           ||
           // Editor: only the issue counter (when creating an issue).
           (rankIn(resource.data) >= 3
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['issueCounter', 'updatedAt'])
             && request.resource.data.issueCounter == resource.data.issueCounter + 1)
           ||
-          // Any member except the owner can leave the board.
+          // Any member except the owner can leave the board (and remove their own memberInfo entry).
           (rankIn(resource.data) >= 1 && resource.data.ownerId != ghId()
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds', 'updatedAt'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds', 'memberInfo', 'updatedAt'])
             && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([ghId()])
-            && !(ghId() in request.resource.data.members))
+            && !(ghId() in request.resource.data.members)
+            && dropsOnlyOwnInfo(resource.data, request.resource.data))
         );
 
       allow delete: if rankIn(resource.data) == 5;
@@ -200,7 +229,8 @@ service cloud.firestore {
             // in the same transaction (the board rule allows exactly +1).
             (rankOn(boardId) >= 3
               && get(boardPath(boardId)).data.issueCounter == request.resource.data.number - 1
-              && getAfter(boardPath(boardId)).data.issueCounter == request.resource.data.number)
+              && getAfter(boardPath(boardId)).data.issueCounter == request.resource.data.number
+              && isNow(request.resource.data.createdAt))
             ||
             // Board creation / import by an admin: pre-numbered issues within the counter.
             (rankAfter(boardId) >= 4
@@ -225,13 +255,14 @@ service cloud.firestore {
             && exists(issuePath(boardId, issueId))
             && validComment(request.resource.data)
             && request.resource.data.authorId == ghId()
+            && isNow(request.resource.data.createdAt)
             && request.resource.data.editedAt == null;
           // Authors may change only the text of their own comments, and every edit sets a new edit mark.
           allow update: if rankOn(boardId) >= 2
             && resource.data.authorId == ghId()
             && validComment(request.resource.data)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['body', 'editedAt'])
-            && request.resource.data.editedAt is int
+            && isNow(request.resource.data.editedAt)
             && request.resource.data.editedAt != resource.data.get('editedAt', null);
           // Own comment, any comment for admins, or all comments of an issue being deleted.
           allow delete: if rankOn(boardId) >= 4
@@ -247,7 +278,7 @@ service cloud.firestore {
             && existsAfter(issuePath(boardId, issueId))
             && request.resource.data.keys().hasOnly(['actorId', 'at', 'changes'])
             && request.resource.data.actorId == ghId()
-            && request.resource.data.at is int
+            && isNow(request.resource.data.at)
             && request.resource.data.changes is list
             && request.resource.data.changes.size() > 0
             && request.resource.data.changes.size() <= 50;

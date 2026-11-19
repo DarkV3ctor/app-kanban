@@ -4,7 +4,7 @@ import { PRIORITIES, priorityName, roleRank } from '../lib/utils';
 import { t } from '../i18n';
 import { isEpic } from '../lib/issues';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
-import { Avatar, LabelChip, Select, StatusLozenge } from './ui';
+import { Avatar, LabelChip, Select, StatusLozenge, memberOf } from './ui';
 
 interface Common {
   board: Board;
@@ -16,8 +16,8 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
     const ids = board.memberIds.filter((id) => roleRank(board, id) >= 1);
     if (value && !ids.includes(value)) ids.push(value);
     return ids.map((id) => {
-      const m = board.memberInfo[id];
-      return { value: id, label: m?.name ?? id, hint: m ? `@${m.login}` : undefined, icon: <Avatar info={m} size={20} /> };
+      const m = memberOf(board, id)!;
+      return { value: id, label: m.name, hint: m.login ? `@${m.login}` : undefined, icon: <Avatar info={m} size={20} /> };
     });
   }, [board, value]);
   return (
@@ -33,7 +33,7 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
         renderValue={(sel) =>
           sel[0] ? (
             <span className="select-value-item">
-              <Avatar info={board.memberInfo[sel[0].value]} size={22} />
+              <Avatar info={memberOf(board, sel[0].value as string)} size={22} />
               <span>{sel[0].label}</span>
             </span>
           ) : (

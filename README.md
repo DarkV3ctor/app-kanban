@@ -18,7 +18,7 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 - **Board settings:** columns and their categories, issue types (icon, color, description template, default checklist), labels, components.
 - **Members and permissions:** add people by GitHub username and pick one of 5 roles.
 - Board export/import as JSON, mobile layout.
-- **Appearance:** two designs — *Classic* (Atlassian-like) and *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
+- **Appearance:** three designs — *Classic* (Atlassian-like), *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors) and *Fluent* (Windows 11: Segoe UI Variable, Mica backdrop, Acrylic menus, accent selection pills) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
 - Keyboard shortcuts: `C` creates an issue, `/` focuses search.
 
 ## Templates
@@ -47,7 +47,7 @@ A board's template text (column names, types, sample issues) is created in the i
 | Add members and assign roles | ✓ | ✓ | | | |
 | Delete the board, transfer ownership | ✓ | | | | |
 
-Permissions are enforced on the server by [`firestore.rules`](firestore.rules), not only in the UI. They are tied to the numeric GitHub ID rather than the username, so renaming a GitHub account does not break access. The rules also validate the shape of every document (field types, lengths, valid roles, exactly one owner, unique issue numbers) and are covered by tests (`npm run test:rules`).
+Permissions are enforced on the server by [`firestore.rules`](firestore.rules), not only in the UI. They are tied to the numeric GitHub ID rather than the username, so renaming a GitHub account does not break access. The rules also validate the shape of every document (field types, lengths, valid roles, exactly one owner, unique issue numbers) and are covered by tests (`npm run test:rules`). Comments, history entries and new issues must carry the current time (±10 minutes, so a device clock that is far off makes these writes fail), and a member's name and avatar are written only when they are added and removed together with them — nobody can rename another member. People who are no longer on a board are shown as "Former member".
 
 Separately, you control **who can create new boards**: the app admins (their GitHub IDs are listed in `config.js` and `firestore.rules`) and users they allow via the avatar menu → "Who can create boards". Everyone else sees only the boards they were invited to.
 
@@ -132,7 +132,9 @@ What the app does:
 - **Server-side rules** check permissions and validate every write ([`firestore.rules`](firestore.rules)); the client also normalizes everything it reads, so one malformed document cannot break the board for others, and rendering errors are contained by error boundaries.
 - **Markdown** (written by anyone with the commenter role) is rendered without raw HTML and sanitized with a strict allowlist; external images are shown as placeholders and load only when clicked, so they cannot be used as tracking pixels. Avatars load only from `avatars.githubusercontent.com`.
 - **Content Security Policy:** the production build adds a CSP `<meta>` tag (GitHub Pages cannot send headers), built from `public/config.js` in [`vite.config.ts`](vite.config.ts).
-- **Nothing is cached on disk:** boards are cached in memory only (an older on-disk copy is deleted on start), and signing out clears the app's local data and reloads the page.
+- **Nothing is cached on disk:** boards are cached in memory only (an older on-disk copy is deleted on start), and signing out clears the app's local data (profiles, filters, per-board view settings — only the language and appearance stay) and reloads the page.
+- **No framing:** the app refuses to run inside another site's frame, so its buttons cannot be overlaid by a hostile page (GitHub Pages cannot send `frame-ancestors` / `X-Frame-Options`, so this is checked in the app).
+- **Exports carry no people:** a board's JSON export has no members, names or GitHub IDs (only assignments to yourself), so it can be shared as a template; CSV cells that a spreadsheet would run as formulas are escaped.
 
 What you should set up in the consoles (one-time):
 

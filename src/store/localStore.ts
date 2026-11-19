@@ -79,6 +79,18 @@ function boardOrThrow(boardId: string): Board {
   return b;
 }
 
+const updateIssues: Store['updateIssues'] = async (boardId, user, updates) => {
+  // All or nothing, like a Firestore batch.
+  if (updates.some((u) => !db.issues[boardId]?.[u.id])) throw new Error(t('Issue not found'));
+  for (const { id, patch, changes } of updates) {
+    db.issues[boardId][id] = { ...db.issues[boardId][id], ...clone(patch), id, updatedAt: Date.now() };
+    if (changes.length) {
+      (db.history[ck(boardId, id)] ??= []).push({ id: uid(), actorId: user.ghId, at: Date.now(), changes });
+    }
+  }
+  save();
+};
+
 function demoUser(): AppUser {
   try {
     const raw = localStorage.getItem(USER_KEY);
@@ -183,9 +195,10 @@ export const localStore: Store = {
     b.updatedAt = Date.now();
     save();
   },
-  async removeMember(boardId, ghId) {
+  async removeMember(boardId, ghId, forget = []) {
     const b = boardOrThrow(boardId);
     delete b.members[ghId];
+    for (const id of [ghId, ...forget]) delete b.memberInfo[id];
     b.memberIds = b.memberIds.filter((x) => x !== ghId);
     b.updatedAt = Date.now();
     save();
@@ -232,15 +245,8 @@ export const localStore: Store = {
     save();
     return clone(issue);
   },
-  async updateIssue(boardId, issueId, patch, user, changes) {
-    const issue = db.issues[boardId]?.[issueId];
-    if (!issue) throw new Error(t('Issue not found'));
-    db.issues[boardId][issueId] = { ...issue, ...clone(patch), updatedAt: Date.now() };
-    if (changes.length) {
-      (db.history[ck(boardId, issueId)] ??= []).push({ id: uid(), actorId: user.ghId, at: Date.now(), changes });
-    }
-    save();
-  },
+  updateIssue: (boardId, issueId, patch, user, changes) => updateIssues(boardId, user, [{ id: issueId, patch, changes }]),
+  updateIssues,
   async deleteIssue(boardId, issueId) {
     delete db.issues[boardId]?.[issueId];
     delete db.comments[ck(boardId, issueId)];

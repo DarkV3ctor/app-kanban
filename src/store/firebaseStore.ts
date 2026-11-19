@@ -76,12 +76,15 @@ function writeProfile(ghId: string, p: Omit<CachedProfile, 'at'>) {
   }
 }
 
-/** Removes what this app keeps in the browser for the signed-in user. */
+/** Settings of the device, not of the user: they stay after signing out (as does the demo mode's own data, kb-local-*). */
+const DEVICE_KEYS = new Set(['kb-lang', 'kb-theme', 'kb-design']);
+
+/** Removes what this app keeps in the browser for the signed-in user (profiles, filters, per-board view settings). */
 function clearLocalUserData() {
   for (const storage of [localStorage, sessionStorage]) {
     try {
       for (const k of Object.keys(storage)) {
-        if (k.startsWith(PROFILE_PREFIX) || k.startsWith('kb-filters-')) storage.removeItem(k);
+        if (k.startsWith('kb-') && !k.startsWith('kb-local-') && !DEVICE_KEYS.has(k)) storage.removeItem(k);
       }
     } catch {
       /* ignore */
@@ -227,6 +230,34 @@ export async function createFirebaseStore(cfg: FirebaseWebConfig): Promise<Store
     }
     await deleteDoc(boardRef(boardId));
   }
+
+  const updateIssues: Store['updateIssues'] = async (boardId, user, updates) => {
+    // A batch holds up to 500 writes, and the rules may look up at most 20 documents per request:
+    // every history entry checks its own issue, so one batch carries at most 10 of them.
+    let batch = writeBatch(fs);
+    let writes = 0;
+    let entries = 0;
+    for (const u of updates) {
+      const withHistory = u.changes.length > 0;
+      if (writes + 2 > 450 || (withHistory && entries >= 10)) {
+        await batch.commit();
+        batch = writeBatch(fs);
+        writes = 0;
+        entries = 0;
+      }
+      const { id: _omit, ...rest } = u.patch;
+      void _omit;
+      const now = Date.now();
+      batch.update(issueRef(boardId, u.id), clean({ ...rest, updatedAt: now }));
+      writes++;
+      if (withHistory) {
+        batch.set(doc(historyCol(boardId, u.id)), clean({ actorId: user.ghId, at: now, changes: u.changes }));
+        writes++;
+        entries++;
+      }
+    }
+    if (writes) await batch.commit();
+  };
 
   const issueData = (issue: Issue) => {
     const { id: _id, ...data } = issue;
@@ -396,8 +427,9 @@ export async function createFirebaseStore(cfg: FirebaseWebConfig): Promise<Store
     async setMemberRole(boardId, ghId, role) {
       await updateDoc(boardRef(boardId), new FieldPath('members', ghId), role, 'updatedAt', Date.now());
     },
-    async removeMember(boardId, ghId) {
-      await updateDoc(boardRef(boardId), new FieldPath('members', ghId), deleteField(), 'memberIds', arrayRemove(ghId), 'updatedAt', Date.now());
+    async removeMember(boardId, ghId, forget = []) {
+      const info = [...new Set([ghId, ...forget])].flatMap((id) => [new FieldPath('memberInfo', id), deleteField()]);
+      await updateDoc(boardRef(boardId), new FieldPath('members', ghId), deleteField(), 'memberIds', arrayRemove(ghId), ...info, 'updatedAt', Date.now());
     },
     async transferOwnership(boardId, fromId, toId) {
       await updateDoc(boardRef(boardId), 'ownerId', toId, new FieldPath('members', toId), 'owner', new FieldPath('members', fromId), 'admin', 'updatedAt', Date.now());
@@ -405,9 +437,18 @@ export async function createFirebaseStore(cfg: FirebaseWebConfig): Promise<Store
     deleteBoard,
 
     subscribeIssues(boardId, cb, onErr) {
+      // Only changed documents are normalized again; unchanged issues keep their objects, so
+      // memoized cards do not re-render when one issue of the board changes.
+      const cache = new Map<string, Issue>();
       return onSnapshot(
         issuesCol(boardId),
-        (s) => cb(s.docs.map((d) => normalizeIssue(d.data(), d.id))),
+        (s) => {
+          for (const ch of s.docChanges()) {
+            if (ch.type === 'removed') cache.delete(ch.doc.id);
+            else cache.set(ch.doc.id, normalizeIssue(ch.doc.data(), ch.doc.id));
+          }
+          cb(s.docs.map((d) => cache.get(d.id) ?? normalizeIssue(d.data(), d.id)));
+        },
         (e) => onErr?.(err(e)),
       );
     },
@@ -434,16 +475,8 @@ export async function createFirebaseStore(cfg: FirebaseWebConfig): Promise<Store
       });
       return { ...created, id: ref.id };
     },
-    async updateIssue(boardId, issueId, patch, user, changes) {
-      const { id: _omit, ...rest } = patch;
-      void _omit;
-      const batch = writeBatch(fs);
-      batch.update(issueRef(boardId, issueId), clean({ ...rest, updatedAt: Date.now() }));
-      if (changes.length) {
-        batch.set(doc(historyCol(boardId, issueId)), clean({ actorId: user.ghId, at: Date.now(), changes }));
-      }
-      await batch.commit();
-    },
+    updateIssue: (boardId, issueId, patch, user, changes) => updateIssues(boardId, user, [{ id: issueId, patch, changes }]),
+    updateIssues,
     async deleteIssue(boardId, issueId) {
       const [c, h] = await Promise.all([getDocs(commentsCol(boardId, issueId)), getDocs(historyCol(boardId, issueId))]);
       const refs = [...c.docs.map((x) => x.ref), ...h.docs.map((x) => x.ref)];

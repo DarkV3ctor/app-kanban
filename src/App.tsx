@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { AppUser } from './types';
 import type { Store } from './store';
 import { AppProvider, useApp } from './app-context';
@@ -9,10 +9,12 @@ import { AppLogo, Icon, GitHubMark } from './components/Icons';
 import { Avatar, ErrorBoundary, Popover, Spinner } from './components/ui';
 import { LoginPage } from './components/LoginPage';
 import { BoardsPage } from './components/BoardsPage';
-import { BoardPage } from './components/BoardPage';
 import { AdminDialog } from './components/AdminDialog';
+import { loadBoardPage } from './board-loader';
 import { LangSwitch } from './components/LangSwitch';
 import { AppearanceMenu } from './components/AppearanceMenu';
+
+const BoardPage = lazy(() => loadBoardPage().then((m) => ({ default: m.BoardPage })));
 
 export function Root({ store }: { store: Store }) {
   const [user, setUser] = useState<AppUser | null | undefined>(undefined);
@@ -48,7 +50,10 @@ function Shell() {
         </div>
       )}
       <div className="app-content">
-        <ErrorBoundary resetKey={route.path}>{content}</ErrorBoundary>
+        {/* A board chunk that fails to load (offline, or replaced by a new deploy) ends in the error boundary. */}
+        <ErrorBoundary resetKey={route.path}>
+          <Suspense fallback={<Spinner label={t('Loading board…')} />}>{content}</Suspense>
+        </ErrorBoundary>
       </div>
     </div>
   );
@@ -101,7 +106,7 @@ function TopBar() {
               </button>
             )}
             {store.mode === 'firebase' && (
-              <a className="menu-item" href={`https://github.com/${user.login}`} target="_blank" rel="noreferrer">
+              <a className="menu-item" href={`https://github.com/${encodeURIComponent(user.login)}`} target="_blank" rel="noreferrer">
                 <GitHubMark size={16} />
                 <span className="menu-label">{t('GitHub profile')}</span>
               </a>

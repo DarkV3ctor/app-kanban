@@ -85,7 +85,9 @@ export function MembersView() {
       danger: true,
     });
     if (!ok) return;
-    await run(store.removeMember(board.id, id));
+    // Also drop name entries that earlier removals left behind (before names were removed with the member).
+    const stale = Object.keys(board.memberInfo).filter((k) => k !== id && !board.members[k]);
+    await run(store.removeMember(board.id, id, stale));
   };
 
   const leave = async () => {
@@ -194,7 +196,7 @@ export function MembersView() {
                   </div>
                   <div className="muted small">
                     {info?.login && id !== 'local' ? (
-                      <a href={`https://github.com/${info.login}`} target="_blank" rel="noreferrer">
+                      <a href={`https://github.com/${encodeURIComponent(info.login)}`} target="_blank" rel="noreferrer">
                         @{info.login}
                       </a>
                     ) : (

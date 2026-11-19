@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Version } from '../types';
-import { useApp } from '../app-context';
+import { useApp, useDiscardGuard } from '../app-context';
 import { navigate } from '../router';
 import { t, tk } from '../i18n';
 import { EMPTY_FILTERS } from '../lib/issues';
@@ -40,9 +40,11 @@ export function ReleasesView() {
     });
     if (!ok) return;
     await run(async () => {
-      for (const i of inVersion) {
-        await store.updateIssue(board.id, i.id, { fixVersionId: null }, user, [{ field: 'fixVersionId', from: v.name, to: '' }]);
-      }
+      await store.updateIssues(
+        board.id,
+        user,
+        inVersion.map((i) => ({ id: i.id, patch: { fixVersionId: null }, changes: [{ field: 'fixVersionId', from: v.name, to: '' }] })),
+      );
       await store.updateBoard(board.id, { versions: board.versions.filter((x) => x.id !== v.id) });
     });
   };
@@ -156,10 +158,14 @@ export function ReleasesView() {
 
 function VersionDialog({ version, onSave, onClose }: { version: Version; onSave: (v: Version) => void; onClose: () => void }) {
   const [v, setV] = useState(version);
+  const canDiscard = useDiscardGuard();
+  const requestClose = async () => {
+    if (await canDiscard(JSON.stringify(v) !== JSON.stringify(version))) onClose();
+  };
   return (
     <Modal
       title={version.name ? t('Version "{name}"', { name: version.name }) : t('New version')}
-      onClose={onClose}
+      onClose={requestClose}
       size="sm"
       footer={
         <>

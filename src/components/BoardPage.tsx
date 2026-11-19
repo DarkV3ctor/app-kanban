@@ -24,6 +24,8 @@ const VIEWS = [
   { id: 'settings', name: tk('Settings'), icon: 'settings' },
 ];
 
+const NO_ISSUES: Issue[] = [];
+
 function loadFilters(boardId: string): Filters {
   try {
     const raw = sessionStorage.getItem('kb-filters-' + boardId);
@@ -58,7 +60,7 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     [store, boardId],
   );
 
-  const perms = permsFor(board, user.ghId);
+  const perms = useMemo(() => permsFor(board, user.ghId), [board, user.ghId]);
   const canView = perms.view;
 
   useEffect(() => {
@@ -118,6 +120,13 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     : undefined;
   const closeIssue = useCallback(() => setQueryParam('i', null), []);
 
+  // Stable while nothing in it changes, so the (memoized) views skip re-rendering when, for
+  // example, an issue dialog opens or the sidebar toggles.
+  const ctx = useMemo<BoardCtx | null>(
+    () => (board ? { board, issues: issues ?? NO_ISSUES, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard } : null),
+    [board, issues, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard],
+  );
+
   // Keyboard shortcuts: C — create issue, / — search
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -155,7 +164,7 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     );
   }
   if (board === undefined) return <Spinner label={t('Loading board…')} />;
-  if (board === null || !canView) {
+  if (board === null || !canView || !ctx) {
     return (
       <EmptyState icon="shield" title={board === null ? t('Board not found') : t('No access to this board')}>
         <p className="muted">{board === null ? t('It may have been deleted.') : t('Ask a board admin to add @{login}.', { login: user.login })}</p>
@@ -165,19 +174,6 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
       </EmptyState>
     );
   }
-
-  const ctx: BoardCtx = {
-    board,
-    issues: issues ?? [],
-    byId,
-    perms,
-    filters,
-    setFilters,
-    openIssue,
-    newIssue,
-    updateIssue,
-    updateBoard,
-  };
 
   const current = VIEWS.find((v) => v.id === view) ?? VIEWS[0];
   const myRole = board.ownerId === user.ghId ? 'owner' : board.members[user.ghId];
@@ -252,7 +248,8 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
               </Modal>
             )}
           >
-            <IssueDialog issue={openedIssue} onClose={closeIssue} />
+            {/* A new instance per issue: drafts and edit modes must not carry over to another issue. */}
+            <IssueDialog key={openedIssue.id} issue={openedIssue} onClose={closeIssue} />
           </ErrorBoundary>
         ) : (
           <MissingIssue onClose={closeIssue} />

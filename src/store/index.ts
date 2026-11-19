@@ -2,7 +2,7 @@ import { config } from '../config';
 import { localStore } from './localStore';
 import type { Store } from './types';
 
-export type { Store, Unsub, CreatorEntry, NewBoardInput } from './types';
+export type { Store, Unsub, CreatorEntry, IssueUpdate, NewBoardInput } from './types';
 
 let store: Store = localStore;
 

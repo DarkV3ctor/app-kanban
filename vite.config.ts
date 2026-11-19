@@ -51,9 +51,29 @@ function contentSecurityPolicy(): Plugin {
   };
 }
 
+/**
+ * With Firebase configured, nothing can render before the Firebase chunk has loaded. It is a
+ * dynamic import (demo mode does not need it), so without a hint the browser would request it only
+ * after the main chunk has run; <link rel="modulepreload"> lets both download in parallel.
+ */
+function preloadFirebaseChunk(): Plugin {
+  return {
+    name: 'kanban-preload-firebase',
+    apply: 'build',
+    transformIndexHtml(_html, ctx) {
+      if (!readAppConfig().firebase) return;
+      const chunk = Object.values(ctx.bundle ?? {}).find(
+        (c) => c.type === 'chunk' && !!c.facadeModuleId && c.facadeModuleId.replace(/\\/g, '/').endsWith('/src/store/firebaseStore.ts'),
+      );
+      if (!chunk) return;
+      return [{ tag: 'link', attrs: { rel: 'modulepreload', crossorigin: true, href: `./${chunk.fileName}` }, injectTo: 'head' }];
+    },
+  };
+}
+
 // base: './' — relative asset paths so the site works at https://<user>.github.io/<repo>/
 export default defineConfig({
   base: './',
-  plugins: [react(), contentSecurityPolicy()],
+  plugins: [react(), contentSecurityPolicy(), preloadFirebaseChunk()],
   build: { chunkSizeWarningLimit: 1500 },
 });

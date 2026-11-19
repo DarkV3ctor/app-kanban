@@ -29,9 +29,15 @@ const obj = (v: unknown): Raw => (v && typeof v === 'object' && !Array.isArray(v
 const str = (v: unknown, def = ''): string => (typeof v === 'string' ? v : def);
 const strOrNull = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
 const num = (v: unknown, def = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : def);
-const int = (v: unknown, def = 0): number => Math.round(num(v, def));
+const int = (v: unknown, def = 0): number => {
+  const n = Math.round(num(v, def));
+  return Number.isSafeInteger(n) ? n : def;
+};
 const numOrNull = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
-const intOrNull = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null);
+/** Largest time a Date can hold: a timestamp beyond it would make date formatting throw. */
+const MAX_TIME = 8.64e15;
+const timeOrNull = (v: unknown): number | null => (typeof v === 'number' && Math.abs(v) <= MAX_TIME ? Math.round(v) : null);
+const time = (v: unknown): number => timeOrNull(v) ?? 0;
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const strList = (v: unknown): string[] => list(v).filter((x): x is string => typeof x === 'string');
 const oneOf = <T extends string>(v: unknown, allowed: readonly T[], def: T): T => (allowed.includes(v as T) ? (v as T) : def);
@@ -98,11 +104,12 @@ export function normalizeBoardSetup(o: Raw) {
 
 export function normalizeBoard(raw: unknown, id: string): Board {
   const o = obj(raw);
-  const members: Record<string, Role> = {};
+  // Null-prototype maps: looking up an id such as "constructor" must not find an Object.prototype member.
+  const members: Record<string, Role> = Object.create(null);
   for (const [k, v] of Object.entries(obj(o.members))) {
     if (ROLES.includes(v as Role)) members[k] = v as Role;
   }
-  const memberInfo: Record<string, MemberInfo> = {};
+  const memberInfo: Record<string, MemberInfo> = Object.create(null);
   for (const [k, v] of Object.entries(obj(o.memberInfo))) memberInfo[k] = normalizeMemberInfo(v);
   return {
     ...normalizeBoardSetup(o),
@@ -115,8 +122,8 @@ export function normalizeBoard(raw: unknown, id: string): Board {
     memberIds: strList(o.memberIds),
     memberInfo,
     issueCounter: int(o.issueCounter),
-    createdAt: int(o.createdAt),
-    updatedAt: int(o.updatedAt),
+    createdAt: time(o.createdAt),
+    updatedAt: time(o.updatedAt),
   };
 }
 
@@ -155,16 +162,16 @@ export function normalizeIssue(raw: unknown, id: string): Issue {
       .map(normalizeLink)
       .filter((l): l is IssueLink => l !== null),
     rank: num(o.rank),
-    createdAt: int(o.createdAt),
-    updatedAt: int(o.updatedAt),
-    resolvedAt: intOrNull(o.resolvedAt),
+    createdAt: time(o.createdAt),
+    updatedAt: time(o.updatedAt),
+    resolvedAt: timeOrNull(o.resolvedAt),
     createdBy: str(o.createdBy),
   };
 }
 
 export function normalizeComment(raw: unknown, id: string): Comment {
   const o = obj(raw);
-  return { id, authorId: str(o.authorId), body: str(o.body), createdAt: int(o.createdAt), editedAt: intOrNull(o.editedAt) };
+  return { id, authorId: str(o.authorId), body: str(o.body), createdAt: time(o.createdAt), editedAt: timeOrNull(o.editedAt) };
 }
 
 function normalizeChange(v: unknown): HistoryChange {
@@ -174,5 +181,5 @@ function normalizeChange(v: unknown): HistoryChange {
 
 export function normalizeHistoryEntry(raw: unknown, id: string): HistoryEntry {
   const o = obj(raw);
-  return { id, actorId: str(o.actorId), at: int(o.at), changes: list(o.changes).map(normalizeChange) };
+  return { id, actorId: str(o.actorId), at: time(o.at), changes: list(o.changes).map(normalizeChange) };
 }

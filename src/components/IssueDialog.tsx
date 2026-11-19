@@ -1,23 +1,60 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Comment, HistoryEntry, Issue, LinkType } from '../types';
-import { useApp } from '../app-context';
+import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { LINK_TYPES, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
-import { columnCategory, formatDateTime, timeAgo, uid, cls, isDone } from '../lib/utils';
-import { useBoard } from './board-context';
+import { columnCategory, formatDateTime, rankBetween, timeAgo, uid, cls, isDone } from '../lib/utils';
+import { BoardContext, useBoard } from './board-context';
 import { Icon, TypeIcon } from './Icons';
-import { ActionMenu, Avatar, InlineText, MarkdownEditor, MarkdownView, Modal, ProgressBar, Select, memberOf, toggleMarkdownTask } from './ui';
+import { ActionMenu, Avatar, InlineText, Modal, ProgressBar, Select, memberOf } from './ui';
+import { MarkdownEditor, MarkdownView, toggleMarkdownTask } from './markdown';
 import { AssigneePicker, ComponentsPicker, EpicPicker, LabelsPicker, PriorityPicker, StatusBadge, StatusPicker, TypePicker, VersionPicker } from './IssueFields';
+
+/** Keep in sync with validIssue() in firestore.rules. */
+const MAX_CHECKLIST = 200;
+
+/**
+ * Unsaved text in the dialog (description, comment and checklist drafts). Closing the dialog or
+ * switching to another issue asks before such a draft is thrown away.
+ */
+const DraftsContext = createContext<(key: string, dirty: boolean) => void>(() => {});
+
+function useDraft(key: string, dirty: boolean) {
+  const report = useContext(DraftsContext);
+  useEffect(() => {
+    report(key, dirty);
+    return () => report(key, false);
+  }, [report, key, dirty]);
+}
 
 export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => void }) {
   const { store, user, run, confirm, toast } = useApp();
-  const { board, issues, byId, perms, updateIssue, openIssue, newIssue } = useBoard();
+  const boardCtx = useBoard();
+  const { board, issues, byId, perms, updateIssue, openIssue, newIssue } = boardCtx;
   const key = `${board.key}-${issue.number}`;
   const type = board.issueTypes.find((x) => x.id === issue.type);
   const epic = issue.epicId ? byId.get(issue.epicId) : undefined;
   const canEdit = perms.edit;
   const canDelete = perms.admin || (perms.edit && issue.createdBy === user.ghId);
   const set = (patch: Partial<Issue>) => updateIssue(issue, patch);
+
+  const drafts = useRef(new Set<string>());
+  const reportDraft = useCallback((k: string, dirty: boolean) => {
+    if (dirty) drafts.current.add(k);
+    else drafts.current.delete(k);
+  }, []);
+  const canDiscard = useDiscardGuard();
+  const requestClose = async () => {
+    if (await canDiscard(drafts.current.size > 0)) onClose();
+  };
+  const guardedOpen = useCallback(
+    async (i: Issue) => {
+      if (i.id === issue.id || (await canDiscard(drafts.current.size > 0))) openIssue(i);
+    },
+    [issue.id, canDiscard, openIssue],
+  );
+  // Links, epic children and other rows inside the dialog open issues through the guard too.
+  const innerCtx = useMemo(() => ({ ...boardCtx, openIssue: guardedOpen }), [boardCtx, guardedOpen]);
 
   const copyLink = () => {
     const url = `${location.origin}${location.pathname}#/b/${board.id}?i=${issue.number}`;
@@ -39,9 +76,11 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     const refs = issues.filter((i) => i.id !== issue.id && (i.epicId === issue.id || i.links?.some((l) => l.issueId === issue.id)));
     onClose();
     await run(async () => {
-      for (const r of refs) {
-        await store.updateIssue(board.id, r.id, { epicId: r.epicId === issue.id ? null : r.epicId, links: (r.links ?? []).filter((l) => l.issueId !== issue.id) }, user, []);
-      }
+      await store.updateIssues(
+        board.id,
+        user,
+        refs.map((r) => ({ id: r.id, patch: { epicId: r.epicId === issue.id ? null : r.epicId, links: (r.links ?? []).filter((l) => l.issueId !== issue.id) }, changes: [] })),
+      );
       await store.deleteIssue(board.id, issue.id);
     }, t('{key} deleted', { key }));
   };
@@ -53,19 +92,23 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     void _c;
     void _u;
     void _cb;
+    // Right below the original: halfway to the next card of the column (a fixed +1 would leave
+    // too little room for later moves between the two cards).
+    const next = issues.filter((i) => i.status === issue.status && i.rank > issue.rank).reduce<number | undefined>((m, i) => (m === undefined || i.rank < m ? i.rank : m), undefined);
     const created = await run(
       store.createIssue(board.id, user, {
         ...rest,
-        title: t('Copy: {title}', { title: issue.title }),
+        // Keep within the 500-character limit of firestore.rules.
+        title: t('Copy: {title}', { title: issue.title }).slice(0, 500),
         links: [],
         reporterId: user.ghId,
-        rank: issue.rank + 1,
+        rank: rankBetween(issue.rank, next),
         checklist: issue.checklist.map((c) => ({ ...c, id: uid(8) })),
       }),
     );
     if (created) {
       toast(t('Created {key}', { key: `${board.key}-${created.number}` }), 'success');
-      openIssue(created);
+      guardedOpen(created);
     }
   };
 
@@ -73,7 +116,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     <div className="issue-head-crumbs">
       {epic && (
         <>
-          <button className="crumb-link" onClick={() => openIssue(epic)}>
+          <button className="crumb-link" onClick={() => guardedOpen(epic)}>
             <TypeIcon type={board.issueTypes.find((x) => x.id === epic.type)} size={14} />
             {board.key}-{epic.number}
           </button>
@@ -90,90 +133,94 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
   );
 
   return (
-    <Modal
-      title={header}
-      onClose={onClose}
-      size="xl"
-      className="issue-modal"
-      headerExtra={
-        <>
-          <button className="icon-btn" onClick={copyLink} title={t('Copy link')} aria-label={t('Copy link')}>
-            <Icon name="link" size={18} />
-          </button>
-          <ActionMenu
-            actions={[
-              { label: t('Clone'), icon: 'copy', onClick: clone, hidden: !canEdit },
-              { label: t('Add issue to epic'), icon: 'plus', onClick: () => newIssue({ epicId: issue.id }), hidden: !canEdit || !isEpic(board, issue) },
-              { label: t('Delete'), icon: 'trash', onClick: remove, danger: true, hidden: !canDelete },
-            ]}
-          />
-        </>
-      }
-    >
-      <div className="issue-grid">
-        <div className="issue-main">
-          <InlineText className="issue-title" value={issue.title} onSave={(v) => set({ title: v })} disabled={!canEdit} multiline maxLength={500} />
-          <Description issue={issue} canEdit={canEdit} onSave={(d) => set({ description: d })} />
-          <Checklist issue={issue} canEdit={canEdit} onChange={(c) => set({ checklist: c })} />
-          {isEpic(board, issue) && <EpicChildren epic={issue} />}
-          <Links issue={issue} canEdit={canEdit} />
-          <Activity issue={issue} />
-        </div>
-        <aside className="issue-side">
-          <div className="issue-status-row">
-            <StatusPicker board={board} value={issue.status} onChange={(s) => set({ status: s })} disabled={!canEdit} />
-            {isDone(board, issue) && (
-              <span className="resolved-mark">
-                <Icon name="check" size={14} /> {t('Resolved')}
-              </span>
-            )}
+    <BoardContext.Provider value={innerCtx}>
+      <DraftsContext.Provider value={reportDraft}>
+        <Modal
+          title={header}
+          onClose={requestClose}
+          size="xl"
+          className="issue-modal"
+          headerExtra={
+            <>
+              <button className="icon-btn" onClick={copyLink} title={t('Copy link')} aria-label={t('Copy link')}>
+                <Icon name="link" size={18} />
+              </button>
+              <ActionMenu
+                actions={[
+                  { label: t('Clone'), icon: 'copy', onClick: clone, hidden: !canEdit },
+                  { label: t('Add issue to epic'), icon: 'plus', onClick: () => newIssue({ epicId: issue.id }), hidden: !canEdit || !isEpic(board, issue) },
+                  { label: t('Delete'), icon: 'trash', onClick: remove, danger: true, hidden: !canDelete },
+                ]}
+              />
+            </>
+          }
+        >
+          <div className="issue-grid">
+            <div className="issue-main">
+              <InlineText className="issue-title" value={issue.title} onSave={(v) => set({ title: v })} disabled={!canEdit} multiline maxLength={500} />
+              <Description issue={issue} canEdit={canEdit} onSave={(d) => set({ description: d })} />
+              <Checklist issue={issue} canEdit={canEdit} onChange={(c) => set({ checklist: c })} />
+              {isEpic(board, issue) && <EpicChildren epic={issue} />}
+              <Links issue={issue} canEdit={canEdit} />
+              <Activity issue={issue} />
+            </div>
+            <aside className="issue-side">
+              <div className="issue-status-row">
+                <StatusPicker board={board} value={issue.status} onChange={(s) => set({ status: s })} disabled={!canEdit} />
+                {isDone(board, issue) && (
+                  <span className="resolved-mark">
+                    <Icon name="check" size={14} /> {t('Resolved')}
+                  </span>
+                )}
+              </div>
+              <div className="details">
+                <div className="details-title">{t('Details')}</div>
+                <Detail label={t('Assignee')}>
+                  <AssigneePicker board={board} value={issue.assigneeId} onChange={(v) => set({ assigneeId: v })} disabled={!canEdit} meId={user.ghId} />
+                </Detail>
+                <Detail label={t('Reporter')}>
+                  <AssigneePicker board={board} value={issue.reporterId} onChange={(v) => v && set({ reporterId: v })} disabled={!canEdit} placeholder="—" />
+                </Detail>
+                <Detail label={t('Priority')}>
+                  <PriorityPicker value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
+                </Detail>
+                <Detail label={t('Type')}>
+                  <TypePicker board={board} value={issue.type} onChange={(v) => set({ type: v })} disabled={!canEdit} />
+                </Detail>
+                <Detail label={t('Labels')}>
+                  <LabelsPicker board={board} issues={issues} value={issue.labels} onChange={(l) => set({ labels: l })} disabled={!canEdit} />
+                </Detail>
+                <Detail label={t('Components')}>
+                  <ComponentsPicker board={board} value={issue.components} onChange={(c) => set({ components: c })} disabled={!canEdit} />
+                </Detail>
+                <Detail label={t('Fix version')}>
+                  <VersionPicker board={board} value={issue.fixVersionId} onChange={(v) => set({ fixVersionId: v })} disabled={!canEdit} />
+                </Detail>
+                {!isEpic(board, issue) && (
+                  <Detail label={t('Epic')}>
+                    <EpicPicker board={board} issues={issues} value={issue.epicId} onChange={(v) => set({ epicId: v })} disabled={!canEdit} selfId={issue.id} />
+                  </Detail>
+                )}
+                <Detail label={t('Story points')}>
+                  <NumberInput value={issue.storyPoints} onSave={(v) => set({ storyPoints: v })} disabled={!canEdit} />
+                </Detail>
+                <Detail label={t('Estimate')}>
+                  <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder={t('e.g. 3d 4h')} />
+                </Detail>
+                <Detail label={t('Due date')}>
+                  <DateInput value={issue.dueDate} onSave={(v) => set({ dueDate: v })} disabled={!canEdit} />
+                </Detail>
+              </div>
+              <div className="issue-dates muted small">
+                <div>{t('Created {date}', { date: formatDateTime(issue.createdAt) })}</div>
+                <div>{t('Updated {date}', { date: timeAgo(issue.updatedAt) })}</div>
+                {issue.resolvedAt && <div>{t('Resolved {date}', { date: formatDateTime(issue.resolvedAt) })}</div>}
+              </div>
+            </aside>
           </div>
-          <div className="details">
-            <div className="details-title">{t('Details')}</div>
-            <Detail label={t('Assignee')}>
-              <AssigneePicker board={board} value={issue.assigneeId} onChange={(v) => set({ assigneeId: v })} disabled={!canEdit} meId={user.ghId} />
-            </Detail>
-            <Detail label={t('Reporter')}>
-              <AssigneePicker board={board} value={issue.reporterId} onChange={(v) => v && set({ reporterId: v })} disabled={!canEdit} placeholder="—" />
-            </Detail>
-            <Detail label={t('Priority')}>
-              <PriorityPicker value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
-            </Detail>
-            <Detail label={t('Type')}>
-              <TypePicker board={board} value={issue.type} onChange={(v) => set({ type: v })} disabled={!canEdit} />
-            </Detail>
-            <Detail label={t('Labels')}>
-              <LabelsPicker board={board} issues={issues} value={issue.labels} onChange={(l) => set({ labels: l })} disabled={!canEdit} />
-            </Detail>
-            <Detail label={t('Components')}>
-              <ComponentsPicker board={board} value={issue.components} onChange={(c) => set({ components: c })} disabled={!canEdit} />
-            </Detail>
-            <Detail label={t('Fix version')}>
-              <VersionPicker board={board} value={issue.fixVersionId} onChange={(v) => set({ fixVersionId: v })} disabled={!canEdit} />
-            </Detail>
-            {!isEpic(board, issue) && (
-              <Detail label={t('Epic')}>
-                <EpicPicker board={board} issues={issues} value={issue.epicId} onChange={(v) => set({ epicId: v })} disabled={!canEdit} selfId={issue.id} />
-              </Detail>
-            )}
-            <Detail label={t('Story points')}>
-              <NumberInput value={issue.storyPoints} onSave={(v) => set({ storyPoints: v })} disabled={!canEdit} />
-            </Detail>
-            <Detail label={t('Estimate')}>
-              <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder={t('e.g. 3d 4h')} />
-            </Detail>
-            <Detail label={t('Due date')}>
-              <input className="input input-compact" type="date" value={issue.dueDate ?? ''} onChange={(e) => set({ dueDate: e.target.value || null })} disabled={!canEdit} />
-            </Detail>
-          </div>
-          <div className="issue-dates muted small">
-            <div>{t('Created {date}', { date: formatDateTime(issue.createdAt) })}</div>
-            <div>{t('Updated {date}', { date: timeAgo(issue.updatedAt) })}</div>
-            {issue.resolvedAt && <div>{t('Resolved {date}', { date: formatDateTime(issue.resolvedAt) })}</div>}
-          </div>
-        </aside>
-      </div>
-    </Modal>
+        </Modal>
+      </DraftsContext.Provider>
+    </BoardContext.Provider>
   );
 }
 
@@ -225,6 +272,29 @@ function TextInput({ value, onSave, disabled, placeholder }: { value: string; on
   );
 }
 
+/**
+ * Date field that saves only complete dates: typing a year digit by digit passes through values
+ * like 0002-11-19, which must not each become a write and a history entry.
+ */
+function DateInput({ value, onSave, disabled }: { value: string | null; onSave: (v: string | null) => void; disabled?: boolean }) {
+  const [v, setV] = useState(value ?? '');
+  useEffect(() => setV(value ?? ''), [value]);
+  return (
+    <input
+      className="input input-compact"
+      type="date"
+      value={v}
+      onChange={(e) => {
+        const next = e.target.value;
+        setV(next);
+        const complete = next === '' || (/^\d{4}-\d{2}-\d{2}$/.test(next) && Number(next.slice(0, 4)) >= 1900);
+        if (complete && (next || null) !== value) onSave(next || null);
+      }}
+      disabled={disabled}
+    />
+  );
+}
+
 // ---------------------------------------------------------------------------
 
 function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolean; onSave: (v: string) => void }) {
@@ -233,6 +303,7 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
   useEffect(() => {
     if (!edit) setDraft(issue.description);
   }, [issue.description, edit]);
+  useDraft('description', edit && draft !== issue.description);
 
   const save = () => {
     onSave(draft);
@@ -293,8 +364,10 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
 // ---------------------------------------------------------------------------
 
 function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolean; onChange: (c: Issue['checklist']) => void }) {
+  const { toast } = useApp();
   const [text, setText] = useState('');
   const [adding, setAdding] = useState(false);
+  useDraft('checklist', text.trim() !== '');
   const items = issue.checklist;
   const done = items.filter((i) => i.done).length;
   if (!items.length && !canEdit) return null;
@@ -305,7 +378,10 @@ function Checklist({ issue, canEdit, onChange }: { issue: Issue; canEdit: boolea
       .map((s) => s.trim())
       .filter(Boolean);
     if (!lines.length) return;
-    onChange([...items, ...lines.map((v) => ({ id: uid(8), text: v, done: false }))]);
+    const room = MAX_CHECKLIST - items.length;
+    if (lines.length > room) toast(t('A checklist holds up to {n} items', { n: MAX_CHECKLIST }), 'error');
+    if (room <= 0) return;
+    onChange([...items, ...lines.slice(0, room).map((v) => ({ id: uid(8), text: v, done: false }))]);
     setText('');
   };
   const move = (idx: number, dir: -1 | 1) => {
@@ -449,10 +525,13 @@ function Links({ issue, canEdit }: { issue: Issue; canEdit: boolean }) {
     const lb = add ? [...(b.links ?? []).filter((l) => l.issueId !== a.id), { type: inv, issueId: a.id }] : (b.links ?? []).filter((l) => !(l.issueId === a.id && l.type === inv));
     const va = linkValue(linkType, `${board.key}-${b.number}`);
     const vb = linkValue(inv, `${board.key}-${a.number}`);
-    await run(async () => {
-      await store.updateIssue(board.id, a.id, { links: la }, user, [{ field: 'links', from: add ? '' : va, to: add ? va : '' }]);
-      await store.updateIssue(board.id, b.id, { links: lb }, user, [{ field: 'links', from: add ? '' : vb, to: add ? vb : '' }]);
-    });
+    // Both sides in one write, so a link never ends up on just one of the two issues.
+    await run(
+      store.updateIssues(board.id, user, [
+        { id: a.id, patch: { links: la }, changes: [{ field: 'links', from: add ? '' : va, to: add ? va : '' }] },
+        { id: b.id, patch: { links: lb }, changes: [{ field: 'links', from: add ? '' : vb, to: add ? vb : '' }] },
+      ]),
+    );
   };
 
   const grouped = LINK_TYPES.map((lt) => ({ ...lt, items: links.filter((l) => l.type === lt.id) })).filter((g) => g.items.length);
@@ -565,6 +644,8 @@ function Comments({ issue }: { issue: Issue }) {
   const [focused, setFocused] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  useDraft('comment', draft.trim() !== '');
+  useDraft('comment-edit', editing !== null && editText !== (list?.find((c) => c.id === editing)?.body ?? ''));
 
   useEffect(() => store.subscribeComments(board.id, issue.id, setList, (e) => toast(e.message, 'error')), [store, board.id, issue.id, toast]);
 

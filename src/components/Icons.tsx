@@ -255,7 +255,8 @@ export const TYPE_ICON_KEYS = Object.keys(TYPE_GLYPHS);
 
 export function TypeIcon({ type, size = 16, title }: { type: IssueType | undefined; size?: number; title?: string }) {
   const color = type?.color ?? '#8590A2';
-  const glyph = type ? TYPE_GLYPHS[type.icon] : TYPE_GLYPHS.task;
+  // Own keys only: an icon name like "__proto__" must not resolve to Object.prototype.
+  const glyph = type ? (Object.hasOwn(TYPE_GLYPHS, type.icon) ? TYPE_GLYPHS[type.icon] : undefined) : TYPE_GLYPHS.task;
   return (
     <span className="type-icon" title={title ?? type?.name} style={{ width: size, height: size }}>
       {glyph ? (

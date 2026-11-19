@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Board } from '../types';
-import { useApp } from '../app-context';
+import { useApp, useDiscardGuard } from '../app-context';
+import { prefetchBoardPage } from '../board-loader';
 import { navigate } from '../router';
 import { count, t } from '../i18n';
 import { TEMPLATES } from '../templates';
@@ -17,6 +18,7 @@ export function BoardsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => store.subscribeBoards(user, setBoards, (e) => toast(e.message, 'error')), [store, user, toast]);
+  useEffect(prefetchBoardPage, []);
   useEffect(() => {
     store.canCreateBoards(user).then(setCanCreate);
   }, [store, user]);
@@ -152,6 +154,10 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
 
   const effectiveKey = keyTouched ? key : name ? sanitizeKey(suggestKey(name)) : template.defaultKey;
   const shownKey = effectiveKey || template.defaultKey;
+  const canDiscard = useDiscardGuard();
+  const requestClose = async () => {
+    if (await canDiscard(!!(name.trim() || description.trim()))) onClose();
+  };
 
   const create = async () => {
     setBusy(true);
@@ -168,7 +174,7 @@ function CreateBoardDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal
       title={t('Create board')}
-      onClose={onClose}
+      onClose={requestClose}
       size="lg"
       footer={
         <>

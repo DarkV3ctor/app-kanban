@@ -8,6 +8,7 @@ import { Popover } from './ui';
 const DESIGNS: { id: Design; label: () => string }[] = [
   { id: 'classic', label: () => t('Classic') },
   { id: 'apple', label: () => 'Apple' },
+  { id: 'fluent', label: () => 'Fluent' },
 ];
 
 const MODES: { id: Mode; icon: string; label: () => string; title?: () => string }[] = [
@@ -18,7 +19,7 @@ const MODES: { id: Mode; icon: string; label: () => string; title?: () => string
 
 const MODE_ICON: Record<Mode, string> = { light: 'sun', dark: 'moon', system: 'appearance' };
 
-/** Top bar button with a popover to pick the design (Classic / Apple) and the light / dark / auto mode. */
+/** Top bar button with a popover to pick the design (Classic / Apple / Fluent) and the light / dark / auto mode. */
 export function AppearanceMenu({ className }: { className?: string }) {
   const { design, mode } = useAppearance();
   const dark = useIsDark();
@@ -40,7 +41,7 @@ export function AppearanceMenu({ className }: { className?: string }) {
         <Icon name={MODE_ICON[mode]} size={18} />
       </button>
       {open && (
-        <Popover anchor={btn.current} onClose={() => setOpen(false)} width={296} align="end">
+        <Popover anchor={btn.current} onClose={() => setOpen(false)} width={332} align="end">
           <div className="appearance" role="dialog" aria-label={t('Appearance')}>
             <div className="appearance-label" id="appearance-design">
               {t('Style')}

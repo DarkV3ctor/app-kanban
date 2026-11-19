@@ -1,0 +1,759 @@
+/* ==========================================================================
+   "Fluent" design — enabled by <html data-design="fluent"> (see src/appearance.ts).
+   Follows Microsoft's Fluent Design System as it looks in Windows 11:
+   - Segoe UI Variable and the Windows accent blue (light blue with dark text in
+     dark mode);
+   - Mica: a softly tinted app backdrop under the top bar and the sidebar, with the
+     content on a lighter layer that has a rounded top-left corner;
+   - Acrylic (frosted) menus, toasts and the mobile sidebar;
+   - 4 px controls and 8 px overlays, elevation strokes under buttons and fields,
+     the accent underline of a focused text box;
+   - the accent "pill" that marks the selected item in navigation, lists and
+     segmented controls; dialogs with a shaded button bar.
+   Like the Apple design, it redefines the tokens of styles.css and restyles a few
+   components on top; everything else follows the tokens.
+   ========================================================================== */
+
+/* --- Tokens: light ------------------------------------------------------ */
+:root[data-design='fluent'] {
+  --bg: #f9f9f9; /* the content layer; the app backdrop is --mica */
+  --bg-sunken: #f3f3f3;
+  --bg-column: #efefef;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --bg-pressed: rgba(0, 0, 0, 0.08);
+  --bg-selected: rgba(0, 95, 184, 0.1);
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --overlay: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: #8a8a8a;
+  --text: #1b1b1b;
+  --text-subtle: #424242;
+  --text-subtlest: #616161;
+  --text-inverse: #ffffff;
+  --link: #005fb8;
+  --primary: #005fb8;
+  --primary-hover: #1a6fbf;
+  --primary-pressed: #337fc6;
+  --danger: #c42b1c;
+  --danger-hover: #b02719;
+  --focus: #1b1b1b; /* the Windows focus rectangle: black in light mode, white in dark mode */
+  /* Fluent 2 elevation: shadow2 (cards), shadow16 (flyouts), shadow28 (dragging). */
+  --shadow-card: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
+  --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
+  --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.14);
+  --todo-bg: #ebebeb;
+  --todo-text: #424242;
+  --progress-bg: #e0eefb;
+  --progress-text: #0e4f8f;
+  --done-bg: #dff6dd;
+  --done-text: #0e700e;
+  --danger-bg: #fde7e9;
+  --danger-text: #a4262c;
+  --warn-bg: #fff4ce;
+  --warn-text: #7a4f00;
+  --epic-bg: #f1eafa;
+  --epic-text: #5c2e91;
+  --info-bg: #eaf3fc;
+  --topbar: transparent;
+  --success: #0f7b0f;
+  --epic-accent: #8764b8;
+  --backdrop: rgba(0, 0, 0, 0.3);
+  --brand-from: #3aa0f3;
+  --brand-to: #005fb8;
+  --radius: 4px;
+  --radius-lg: 8px;
+  --radius-col: 8px;
+  --radius-tag: 4px;
+  --caps: none;
+  --caps-spacing: 0;
+  /* Inter (bundled by the Apple design) stands in for Segoe UI where neither Segoe nor Roboto exist. */
+  --font: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Inter Variable', 'Helvetica Neue', sans-serif;
+  --mono: 'Cascadia Code', 'Cascadia Mono', Consolas, ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Tokens used only by this design. */
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Inter Variable', sans-serif;
+  --mica: #f3f3f3;
+  --mica-tint-1: rgba(0, 120, 212, 0.07);
+  --mica-tint-2: rgba(135, 100, 184, 0.05);
+  --layer-stroke: rgba(0, 0, 0, 0.07);
+  --acrylic: rgba(252, 252, 252, 0.9);
+  --flyout-stroke: rgba(0, 0, 0, 0.08);
+  /* Standard controls (buttons, combo boxes, text boxes). The elevation edge is a darker
+     bottom line in light mode and a lighter top line in dark mode, as in WinUI. */
+  --control: #ffffff;
+  --control-hover: #f6f6f6;
+  --control-pressed: #f1f1f1;
+  --control-focus: #ffffff;
+  --control-alt: rgba(0, 0, 0, 0.025);
+  --control-stroke: rgba(0, 0, 0, 0.07);
+  --control-edge: rgba(0, 0, 0, 0.1);
+  --edge-y: -1px;
+  --input-edge: rgba(0, 0, 0, 0.45);
+  --accent-fill: #005fb8;
+  --on-accent: #ffffff;
+  --accent-edge: rgba(0, 0, 0, 0.3);
+  --seg-active: #ffffff;
+  --card-hover: #fafafa;
+  --dialog-foot: #f3f3f3;
+  --shadow-hover: 0 0 2px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.14);
+  --shadow-modal: 0 0 8px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.14);
+  --selection: #0078d4;
+  --scrollbar: rgba(0, 0, 0, 0.4);
+  color-scheme: light;
+}
+
+/* --- Tokens: dark (system setting and explicit choice) -------------------- */
+@media (prefers-color-scheme: dark) {
+  :root[data-design='fluent']:not([data-theme='light']) {
+    --bg: #272727;
+    --bg-sunken: #202020;
+    --bg-column: #1e1e1e;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-pressed: rgba(255, 255, 255, 0.1);
+    --bg-selected: rgba(96, 205, 255, 0.14);
+    --surface: #2d2d2d;
+    --surface-raised: #2d2d2d;
+    --overlay: #2b2b2b;
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: #9e9e9e;
+    --text: #ffffff;
+    --text-subtle: #d6d6d6;
+    --text-subtlest: #adadad;
+    --text-inverse: #000000;
+    --link: #60cdff;
+    --primary: #60cdff;
+    --primary-hover: #5abce9;
+    --primary-pressed: #55acd4;
+    --danger: #ff99a4;
+    --danger-hover: #ffb0b8;
+    --focus: #ffffff;
+    --shadow-card: 0 0 2px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.28);
+    --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.28);
+    --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.24), 0 14px 28px rgba(0, 0, 0, 0.28);
+    --todo-bg: rgba(255, 255, 255, 0.08);
+    --todo-text: #d6d6d6;
+    --progress-bg: rgba(96, 205, 255, 0.16);
+    --progress-text: #8fdcff;
+    --done-bg: rgba(108, 203, 95, 0.16);
+    --done-text: #8fd982;
+    --danger-bg: rgba(255, 153, 164, 0.16);
+    --danger-text: #ffb3bb;
+    --warn-bg: rgba(252, 225, 0, 0.12);
+    --warn-text: #f5dc6e;
+    --epic-bg: rgba(177, 146, 229, 0.18);
+    --epic-text: #cdb8f2;
+    --info-bg: rgba(96, 205, 255, 0.1);
+    --success: #6ccb5f;
+    --epic-accent: #b392f0;
+    --backdrop: rgba(0, 0, 0, 0.45);
+    --brand-from: #4cc2ff;
+    --brand-to: #0078d4;
+    --mica: #202020;
+    --mica-tint-1: rgba(96, 205, 255, 0.05);
+    --mica-tint-2: rgba(177, 146, 229, 0.04);
+    --layer-stroke: rgba(255, 255, 255, 0.05);
+    --acrylic: rgba(44, 44, 44, 0.94);
+    --flyout-stroke: rgba(255, 255, 255, 0.08);
+    --control: rgba(255, 255, 255, 0.06);
+    --control-hover: rgba(255, 255, 255, 0.085);
+    --control-pressed: rgba(255, 255, 255, 0.035);
+    --control-focus: #1e1e1e;
+    --control-alt: rgba(0, 0, 0, 0.1);
+    --control-stroke: rgba(255, 255, 255, 0.07);
+    --control-edge: rgba(255, 255, 255, 0.03);
+    --edge-y: 1px;
+    --input-edge: rgba(255, 255, 255, 0.54);
+    --accent-fill: #60cdff;
+    --on-accent: #000000;
+    --accent-edge: rgba(0, 0, 0, 0.14);
+    --seg-active: rgba(255, 255, 255, 0.1);
+    --card-hover: #323232;
+    --dialog-foot: #202020;
+    --shadow-hover: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
+    --shadow-modal: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
+    --scrollbar: rgba(255, 255, 255, 0.4);
+    color-scheme: dark;
+  }
+}
+:root[data-design='fluent'][data-theme='dark'] {
+  --bg: #272727;
+  --bg-sunken: #202020;
+  --bg-column: #1e1e1e;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-pressed: rgba(255, 255, 255, 0.1);
+  --bg-selected: rgba(96, 205, 255, 0.14);
+  --surface: #2d2d2d;
+  --surface-raised: #2d2d2d;
+  --overlay: #2b2b2b;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: #9e9e9e;
+  --text: #ffffff;
+  --text-subtle: #d6d6d6;
+  --text-subtlest: #adadad;
+  --text-inverse: #000000;
+  --link: #60cdff;
+  --primary: #60cdff;
+  --primary-hover: #5abce9;
+  --primary-pressed: #55acd4;
+  --danger: #ff99a4;
+  --danger-hover: #ffb0b8;
+  --focus: #ffffff;
+  --shadow-card: 0 0 2px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-raised: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.28);
+  --shadow-drag: 0 0 8px rgba(0, 0, 0, 0.24), 0 14px 28px rgba(0, 0, 0, 0.28);
+  --todo-bg: rgba(255, 255, 255, 0.08);
+  --todo-text: #d6d6d6;
+  --progress-bg: rgba(96, 205, 255, 0.16);
+  --progress-text: #8fdcff;
+  --done-bg: rgba(108, 203, 95, 0.16);
+  --done-text: #8fd982;
+  --danger-bg: rgba(255, 153, 164, 0.16);
+  --danger-text: #ffb3bb;
+  --warn-bg: rgba(252, 225, 0, 0.12);
+  --warn-text: #f5dc6e;
+  --epic-bg: rgba(177, 146, 229, 0.18);
+  --epic-text: #cdb8f2;
+  --info-bg: rgba(96, 205, 255, 0.1);
+  --success: #6ccb5f;
+  --epic-accent: #b392f0;
+  --backdrop: rgba(0, 0, 0, 0.45);
+  --brand-from: #4cc2ff;
+  --brand-to: #0078d4;
+  --mica: #202020;
+  --mica-tint-1: rgba(96, 205, 255, 0.05);
+  --mica-tint-2: rgba(177, 146, 229, 0.04);
+  --layer-stroke: rgba(255, 255, 255, 0.05);
+  --acrylic: rgba(44, 44, 44, 0.94);
+  --flyout-stroke: rgba(255, 255, 255, 0.08);
+  --control: rgba(255, 255, 255, 0.06);
+  --control-hover: rgba(255, 255, 255, 0.085);
+  --control-pressed: rgba(255, 255, 255, 0.035);
+  --control-focus: #1e1e1e;
+  --control-alt: rgba(0, 0, 0, 0.1);
+  --control-stroke: rgba(255, 255, 255, 0.07);
+  --control-edge: rgba(255, 255, 255, 0.03);
+  --edge-y: 1px;
+  --input-edge: rgba(255, 255, 255, 0.54);
+  --accent-fill: #60cdff;
+  --on-accent: #000000;
+  --accent-edge: rgba(0, 0, 0, 0.14);
+  --seg-active: rgba(255, 255, 255, 0.1);
+  --card-hover: #323232;
+  --dialog-foot: #202020;
+  --shadow-hover: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
+  --shadow-modal: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
+  --scrollbar: rgba(255, 255, 255, 0.4);
+  color-scheme: dark;
+}
+
+/* --- Base: Mica backdrop, type ramp ---------------------------------------- */
+[data-design='fluent'] body {
+  background:
+    radial-gradient(90% 70% at 0% 0%, var(--mica-tint-1), transparent 70%),
+    radial-gradient(80% 70% at 100% 0%, var(--mica-tint-2), transparent 70%),
+    var(--mica);
+  background-attachment: fixed;
+}
+[data-design='fluent'] h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 36px;
+  letter-spacing: 0;
+}
+[data-design='fluent'] h2 {
+  font-family: var(--font-display);
+  line-height: 28px;
+}
+[data-design='fluent'] ::selection {
+  background: var(--selection);
+  color: #fff;
+}
+[data-design='fluent'],
+[data-design='fluent'] * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+
+/* --- Buttons ----------------------------------------------------------------- */
+[data-design='fluent'] .btn {
+  font-weight: 400;
+  transition:
+    background-color 0.083s,
+    color 0.083s;
+}
+/* Accent button: accent fill with a slightly darker bottom edge. */
+[data-design='fluent'] .btn-primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: inset 0 -1px 0 var(--accent-edge);
+}
+[data-design='fluent'] .btn-danger {
+  box-shadow: inset 0 -1px 0 var(--accent-edge);
+}
+[data-design='fluent'] .btn-primary:active:not(:disabled) {
+  background: var(--primary-pressed);
+  color: color-mix(in srgb, var(--on-accent) 75%, transparent);
+  box-shadow: none;
+}
+/* Standard button: a light fill, a hairline stroke and the elevation edge. */
+[data-design='fluent'] .btn-subtle {
+  background: var(--control);
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 1px var(--control-stroke),
+    inset 0 var(--edge-y) 0 var(--control-edge);
+}
+[data-design='fluent'] .btn-subtle:hover:not(:disabled) {
+  background: var(--control-hover);
+}
+[data-design='fluent'] .btn-subtle:active:not(:disabled) {
+  background: var(--control-pressed);
+  color: var(--text-subtle);
+  box-shadow: inset 0 0 0 1px var(--control-stroke);
+}
+[data-design='fluent'] .btn-lg {
+  height: 40px;
+  font-weight: 600;
+}
+[data-design='fluent'] .icon-btn:active:not(:disabled) {
+  background: var(--bg-pressed);
+}
+
+/* --- Text boxes: hairline stroke, darker bottom edge, accent underline on focus -- */
+[data-design='fluent'] .input,
+[data-design='fluent'] .filter-search,
+[data-design='fluent'] .popover-search input,
+[data-design='fluent'] .md-editor {
+  border: 1px solid var(--control-stroke);
+  border-bottom-color: var(--input-edge);
+  background: var(--control);
+}
+[data-design='fluent'] .input:hover:not(:disabled):not(:focus),
+[data-design='fluent'] .filter-search:hover:not(:focus-within),
+[data-design='fluent'] .popover-search input:hover:not(:focus) {
+  background: var(--control-hover);
+}
+[data-design='fluent'] .input:focus,
+[data-design='fluent'] .filter-search:focus-within,
+[data-design='fluent'] .popover-search input:focus {
+  border-color: var(--control-stroke);
+  border-bottom-color: var(--primary);
+  box-shadow: inset 0 -1px 0 var(--primary);
+  background: var(--control-focus);
+}
+/* The editor's children cover an inset shadow, so its second underline pixel sits outside. */
+[data-design='fluent'] .md-editor:focus-within {
+  border-color: var(--control-stroke);
+  border-bottom-color: var(--primary);
+  box-shadow: 0 1px 0 var(--primary);
+}
+[data-design='fluent'] .input:disabled {
+  background: transparent;
+  border-color: transparent;
+}
+/* Detail fields in the issue dialog stay borderless until they are hovered or focused. */
+[data-design='fluent'] .detail-value .input:not(:focus) {
+  border-color: transparent;
+  background: none;
+}
+[data-design='fluent'] .detail-value .input:hover:not(:disabled):not(:focus) {
+  background: var(--bg-hover);
+}
+[data-design='fluent'] .inline-input {
+  border: 1px solid var(--control-stroke);
+  border-bottom: 2px solid var(--primary);
+  padding-top: 3px;
+  background: var(--control-focus);
+}
+
+/* --- Combo boxes and filter buttons look like standard buttons ---------------- */
+[data-design='fluent'] :is(.select-trigger, .filter-btn):not(.status-trigger) {
+  font-weight: 400;
+  background: var(--control);
+  box-shadow:
+    inset 0 0 0 1px var(--control-stroke),
+    inset 0 var(--edge-y) 0 var(--control-edge);
+}
+[data-design='fluent'] :is(.select-trigger, .filter-btn):not(.status-trigger):hover:not(:disabled) {
+  background: var(--control-hover);
+}
+[data-design='fluent'] .select-trigger:disabled {
+  background: none;
+  box-shadow: none;
+}
+[data-design='fluent'] .filter-btn.is-active:not(.status-trigger) {
+  background: var(--bg-selected);
+  color: var(--link);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+[data-design='fluent'] .detail-value .select-trigger:not(.status-trigger) {
+  background: none;
+  box-shadow: none;
+}
+[data-design='fluent'] .detail-value .select-trigger:not(.status-trigger):hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+[data-design='fluent'] .select-trigger.is-open:not(.status-trigger) {
+  background: var(--control-pressed);
+  box-shadow: inset 0 0 0 1px var(--control-stroke);
+}
+[data-design='fluent'] .status-trigger.is-open {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent);
+}
+[data-design='fluent'] .checkbox {
+  border-width: 1px;
+  border-radius: 4px;
+  background: var(--control-alt);
+}
+[data-design='fluent'] .checkbox.is-checked {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+/* --- Segmented controls: raised selected segment with an accent pill --------- */
+[data-design='fluent'] .seg,
+[data-design='fluent'] .lang-switch {
+  background: var(--control-alt);
+  box-shadow: inset 0 0 0 1px var(--control-stroke);
+  border-radius: 6px;
+  padding: 2px;
+}
+[data-design='fluent'] .seg button,
+[data-design='fluent'] .lang-switch button,
+[data-design='fluent'] .md-tabs button {
+  position: relative;
+  border-radius: 4px;
+}
+[data-design='fluent'] .seg button {
+  font-weight: 400;
+}
+[data-design='fluent'] .seg button:not(.is-active):hover,
+[data-design='fluent'] .lang-switch button:not(.is-active):hover {
+  background: var(--bg-hover);
+}
+[data-design='fluent'] .seg button.is-active,
+[data-design='fluent'] .lang-switch button.is-active {
+  background: var(--seg-active);
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 1px var(--control-stroke),
+    inset 0 var(--edge-y) 0 var(--control-edge);
+}
+/* The Markdown Write / Preview tabs are a selector bar: no fill, just the pill. */
+[data-design='fluent'] .md-tabs button.is-active {
+  background: none;
+  color: var(--text);
+  box-shadow: none;
+}
+[data-design='fluent'] .md-tabs button.is-active:hover {
+  background: var(--bg-hover);
+}
+[data-design='fluent'] .seg button.is-active::after,
+[data-design='fluent'] .lang-switch button.is-active::after,
+[data-design='fluent'] .md-tabs button.is-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 14px;
+  height: 3px;
+  margin-left: -7px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+/* --- Badges and tags: Fluent "tint" badges with a hairline of their own colour -- */
+[data-design='fluent'] .lozenge,
+[data-design='fluent'] .epic-tag {
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+}
+[data-design='fluent'] .section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+[data-design='fluent'] .alert {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* --- App shell: top bar and sidebar on Mica, content on a layer ------------------ */
+[data-design='fluent'] .topbar {
+  height: 48px;
+  border-bottom: 0;
+}
+[data-design='fluent'] .brand {
+  font-weight: 600;
+}
+[data-design='fluent'] .app-content {
+  background: var(--bg);
+  border-top: 1px solid var(--layer-stroke);
+}
+[data-design='fluent'] .app-content:has(> .board-layout) {
+  background: none;
+  border-top: 0;
+}
+[data-design='fluent'] .board-main {
+  background: var(--bg);
+  border: 1px solid var(--layer-stroke);
+  border-width: 1px 0 0 1px;
+  border-top-left-radius: 8px;
+}
+[data-design='fluent'] .login {
+  background: none;
+}
+[data-design='fluent'] .login-card {
+  border-radius: 8px;
+  background: var(--overlay);
+  box-shadow:
+    var(--shadow-drag),
+    0 0 0 1px var(--flyout-stroke);
+}
+
+/* --- Sidebar: navigation view with the selection pill --------------------------- */
+[data-design='fluent'] .sidebar {
+  background: none;
+  border-right: 0;
+}
+[data-design='fluent'] .sidebar-link {
+  font-weight: 400;
+  color: var(--text) !important;
+}
+[data-design='fluent'] .sidebar-link.is-active {
+  background: var(--bg-hover);
+  color: var(--text) !important;
+}
+[data-design='fluent'] .sidebar-link.is-active:hover {
+  background: var(--bg-pressed);
+}
+[data-design='fluent'] .sidebar-link.is-active::before {
+  top: 50%;
+  bottom: auto;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 2px;
+}
+
+/* --- Boards page ------------------------------------------------------------------ */
+[data-design='fluent'] .board-card {
+  border-top: 0;
+  transition:
+    box-shadow 0.167s,
+    background-color 0.167s;
+}
+[data-design='fluent'] .board-card:hover {
+  background: var(--card-hover);
+  box-shadow: var(--shadow-hover);
+  transform: none;
+}
+
+/* --- Kanban ------------------------------------------------------------------------ */
+[data-design='fluent'] .kanban-header-row,
+[data-design='fluent'] .lane-row {
+  gap: 12px;
+}
+[data-design='fluent'] .column-head {
+  padding: 12px 12px 6px 14px;
+  font-size: 14px;
+  color: var(--text);
+}
+[data-design='fluent'] .column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+[data-design='fluent'] .column {
+  padding: 6px 6px 10px;
+}
+[data-design='fluent'] .card-wrap {
+  padding: 3px 0;
+}
+[data-design='fluent'] .card {
+  border-radius: 6px;
+  padding: 12px 12px 10px;
+  transition:
+    box-shadow 0.167s,
+    background-color 0.167s;
+}
+[data-design='fluent'] .card:hover {
+  background: var(--card-hover);
+  box-shadow: var(--shadow-hover);
+}
+[data-design='fluent'] .card.is-dragging {
+  box-shadow: var(--shadow-drag);
+  transform: rotate(1deg) scale(1.02);
+}
+[data-design='fluent'] .quick-create {
+  border-radius: 6px;
+}
+
+/* --- Lists and tables ---------------------------------------------------------------- */
+[data-design='fluent'] .issue-table th {
+  border-bottom-width: 1px;
+}
+[data-design='fluent'] .progress {
+  height: 6px;
+  border-radius: 3px;
+}
+[data-design='fluent'] .issue-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* --- Menus and popovers: Acrylic flyouts, selection pill ----------------------------- */
+[data-design='fluent'] .popover {
+  border-radius: 8px;
+  background: var(--acrylic);
+  box-shadow:
+    var(--shadow-raised),
+    0 0 0 1px var(--flyout-stroke);
+  -webkit-backdrop-filter: blur(30px) saturate(125%);
+  backdrop-filter: blur(30px) saturate(125%);
+  animation: fluent-flyout 0.25s cubic-bezier(0, 0, 0, 1);
+}
+[data-design='fluent'] .popover-search {
+  background: inherit;
+}
+[data-design='fluent'] .menu {
+  padding: 4px;
+}
+[data-design='fluent'] .menu-item {
+  position: relative;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-left: 0;
+  border-radius: 4px;
+}
+[data-design='fluent'] .menu-item.is-selected {
+  background: var(--bg-hover);
+}
+[data-design='fluent'] .menu-item.is-selected:hover:not(:disabled),
+[data-design='fluent'] .menu-item.is-selected.is-active {
+  background: var(--bg-pressed);
+}
+[data-design='fluent'] .menu-item.is-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+@keyframes fluent-flyout {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* --- Dialogs: shaded button bar --------------------------------------------------------- */
+[data-design='fluent'] .modal {
+  border-radius: 8px;
+  box-shadow:
+    var(--shadow-modal),
+    0 0 0 1px var(--flyout-stroke);
+  animation: fluent-dialog 0.25s cubic-bezier(0, 0, 0, 1);
+}
+[data-design='fluent'] .modal-foot {
+  margin-top: 4px;
+  padding: 20px 24px;
+  background: var(--dialog-foot);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+}
+@keyframes fluent-dialog {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+/* --- Toasts: Acrylic, with an info bar status icon -------------------------------------- */
+[data-design='fluent'] .toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 0;
+  border-radius: 8px;
+  background: var(--acrylic);
+  box-shadow:
+    var(--shadow-drag),
+    0 0 0 1px var(--flyout-stroke);
+  -webkit-backdrop-filter: blur(30px) saturate(125%);
+  backdrop-filter: blur(30px) saturate(125%);
+  animation: fluent-toast 0.367s cubic-bezier(0, 0, 0, 1);
+}
+[data-design='fluent'] .toast::before {
+  content: 'i';
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+[data-design='fluent'] .toast-error::before {
+  content: '\2715';
+  background: var(--danger);
+  font-size: 9px;
+}
+[data-design='fluent'] .toast-success::before {
+  content: '\2713';
+  background: var(--success);
+  font-size: 10px;
+}
+@keyframes fluent-toast {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+/* --- Responsive and motion ----------------------------------------------------------------- */
+@media (max-width: 760px) {
+  /* The sidebar becomes an overlay pane: Acrylic, like a collapsed Windows navigation view. */
+  [data-design='fluent'] .sidebar {
+    background: var(--acrylic);
+    -webkit-backdrop-filter: blur(30px) saturate(125%);
+    backdrop-filter: blur(30px) saturate(125%);
+    box-shadow: var(--shadow-modal);
+  }
+  [data-design='fluent'] .board-main {
+    border-left-width: 0;
+    border-top-left-radius: 0;
+  }
+  [data-design='fluent'] .modal,
+  [data-design='fluent'] .modal-foot {
+    border-radius: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-design='fluent'] .popover,
+  [data-design='fluent'] .modal,
+  [data-design='fluent'] .toast {
+    animation: none;
+  }
+  [data-design='fluent'] .card.is-dragging {
+    transform: none;
+  }
+}

@@ -1,7 +1,7 @@
 /* ==========================================================================
    Design tokens — "Classic" design (inspired by the Atlassian Design System).
-   The "Apple" design (styles-apple.css) redefines these tokens under
-   :root[data-design='apple'] and restyles a few components on top.
+   The "Apple" (styles-apple.css) and "Fluent" (styles-fluent.css) designs redefine
+   these tokens under :root[data-design='…'] and restyle a few components on top.
    ========================================================================== */
 :root {
   --bg: #ffffff;
@@ -53,7 +53,7 @@
   /* Kanban columns, status lozenges / chips / tags. */
   --radius-col: 6px;
   --radius-tag: 3px;
-  /* Small headings and status lozenges are upper case in this design (the Apple design overrides it). */
+  /* Small headings and status lozenges are upper case in this design (the other designs override it). */
   --caps: uppercase;
   --caps-spacing: 0.02em;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Noto Sans', 'Ubuntu', 'Helvetica Neue', sans-serif;
@@ -687,7 +687,7 @@ textarea.input {
 }
 .design-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 4px;
 }
@@ -713,7 +713,7 @@ textarea.input {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  height: 60px;
+  height: 56px;
   padding-bottom: 5px;
   border-radius: 4px;
   overflow: hidden;
@@ -789,12 +789,33 @@ textarea.input {
   --pv-r: 5px;
 }
 .preview-apple.is-dark {
-  --pv-bg: #000000;
-  --pv-bar: #161617;
+  --pv-bg: #1e1e20;
+  --pv-bar: #252528;
   --pv-line: rgba(255, 255, 255, 0.12);
-  --pv-col: #1c1c1e;
-  --pv-card: #3a3a3c;
+  --pv-col: #2a2a2d;
+  --pv-card: #3e3e42;
   --pv-accent: #0a84ff;
+}
+/* Fluent: the top bar sits on the Mica backdrop, so it has no divider. */
+.preview-fluent {
+  --pv-bg: #f3f3f3;
+  --pv-bar: #f3f3f3;
+  --pv-line: rgba(0, 0, 0, 0.07);
+  --pv-col: #e8e8e8;
+  --pv-card: #ffffff;
+  --pv-accent: #005fb8;
+  --pv-r: 3px;
+}
+.preview-fluent.is-dark {
+  --pv-bg: #202020;
+  --pv-bar: #202020;
+  --pv-line: rgba(255, 255, 255, 0.07);
+  --pv-col: #2c2c2c;
+  --pv-card: #3b3b3b;
+  --pv-accent: #60cdff;
+}
+.preview-fluent .pv-bar {
+  border-bottom-color: transparent;
 }
 .design-name {
   font-size: 13px;
@@ -1984,6 +2005,10 @@ td.due-soon {
   padding: 48px 16px;
   overflow: auto;
   animation: fade-in 0.12s ease-out;
+}
+/* A confirmation asked from inside a dialog must stay above it (popovers and toasts stay on top). */
+.confirm-backdrop {
+  z-index: 110;
 }
 @keyframes fade-in {
   from {
