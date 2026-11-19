@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useId, type CSSProperties, type ReactNode } from 'react';
 import type { IssueType, Priority } from '../types';
 import { PRIORITIES, priorityName } from '../lib/utils';
 
@@ -108,6 +108,19 @@ const UI: Record<string, ReactNode> = {
     </>
   ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  monitor: (
+    <>
+      <rect x="3" y="4.5" width="18" height="12" rx="2" />
+      <path d="M8.5 20h7M12 16.5V20" />
+    </>
+  ),
+  // Half-filled circle: "follow the system light / dark setting".
+  appearance: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" />
+    </>
+  ),
   user: (
     <>
       <circle cx="12" cy="8.5" r="4" />
@@ -142,6 +155,26 @@ export function GitHubMark({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  );
+}
+
+/** App logo. Its colours come from the --brand-from / --brand-to tokens of the active design. */
+export function AppLogo({ size }: { size: number }) {
+  // useId() may contain characters that are not valid in url(#…) references.
+  const id = `logo${useId().replace(/[^\w-]/g, '')}`;
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="logo-from" />
+          <stop offset="1" className="logo-to" />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="7" fill={`url(#${id})`} />
+      <rect x="6" y="7" width="5" height="18" rx="1.5" fill="#fff" />
+      <rect x="13.5" y="7" width="5" height="12" rx="1.5" fill="#fff" opacity=".85" />
+      <rect x="21" y="7" width="5" height="8" rx="1.5" fill="#fff" opacity=".7" />
     </svg>
   );
 }

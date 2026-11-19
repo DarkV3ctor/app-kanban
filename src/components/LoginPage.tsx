@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Store } from '../store';
 import { t } from '../i18n';
-import { GitHubMark, Icon } from './Icons';
+import { AppLogo, GitHubMark, Icon } from './Icons';
 import { LangSwitch } from './LangSwitch';
+import { AppearanceMenu } from './AppearanceMenu';
 
 export function LoginPage({ store }: { store: Store }) {
   const [busy, setBusy] = useState(false);
@@ -32,15 +33,13 @@ export function LoginPage({ store }: { store: Store }) {
 
   return (
     <div className="login">
-      <LangSwitch className="login-lang" />
+      <div className="login-tools">
+        <LangSwitch />
+        <AppearanceMenu />
+      </div>
       <div className="login-card">
         <div className="login-logo">
-          <svg width="48" height="48" viewBox="0 0 32 32" aria-hidden="true">
-            <rect width="32" height="32" rx="7" fill="#0C66E4" />
-            <rect x="6" y="7" width="5" height="18" rx="1.5" fill="#fff" />
-            <rect x="13.5" y="7" width="5" height="12" rx="1.5" fill="#fff" opacity=".85" />
-            <rect x="21" y="7" width="5" height="8" rx="1.5" fill="#fff" opacity=".7" />
-          </svg>
+          <AppLogo size={48} />
         </div>
         <h1>Kanban</h1>
         <p className="muted">{t('Jira-style boards: epics, versions, priorities, Markdown descriptions, checklists, comments and team permissions.')}</p>

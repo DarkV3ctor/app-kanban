@@ -38,9 +38,14 @@ export const UK: Record<string, string> = {
 
   // --- Top bar, login, demo ----------------------------------------------
   Boards: 'Дошки',
-  'Light theme': 'Світла тема',
-  'Dark theme': 'Темна тема',
-  'Toggle theme': 'Змінити тему',
+  Appearance: 'Вигляд',
+  Style: 'Стиль',
+  Theme: 'Тема',
+  Classic: 'Класичний',
+  Light: 'Світла',
+  Dark: 'Темна',
+  Auto: 'Авто',
+  'Follow the system setting': 'Як у системі',
   'User menu': 'Меню користувача',
   'Local demo profile': 'Локальний демо-профіль',
   'GitHub profile': 'Профіль GitHub',

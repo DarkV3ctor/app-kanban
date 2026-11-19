@@ -5,13 +5,14 @@ import { AppProvider, useApp } from './app-context';
 import { navigate, useRoute } from './router';
 import { config, isDemo } from './config';
 import { t } from './i18n';
-import { Icon, GitHubMark } from './components/Icons';
+import { AppLogo, Icon, GitHubMark } from './components/Icons';
 import { Avatar, ErrorBoundary, Popover, Spinner } from './components/ui';
 import { LoginPage } from './components/LoginPage';
 import { BoardsPage } from './components/BoardsPage';
 import { BoardPage } from './components/BoardPage';
 import { AdminDialog } from './components/AdminDialog';
 import { LangSwitch } from './components/LangSwitch';
+import { AppearanceMenu } from './components/AppearanceMenu';
 
 export function Root({ store }: { store: Store }) {
   const [user, setUser] = useState<AppUser | null | undefined>(undefined);
@@ -24,21 +25,6 @@ export function Root({ store }: { store: Store }) {
       <Shell />
     </AppProvider>
   );
-}
-
-function useTheme(): [string, () => void] {
-  const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try {
-      localStorage.setItem('kb-theme', next);
-    } catch {
-      /* ignore */
-    }
-    setTheme(next);
-  };
-  return [theme, toggle];
 }
 
 function Shell() {
@@ -70,7 +56,6 @@ function Shell() {
 
 function TopBar() {
   const { user, store } = useApp();
-  const [theme, toggleTheme] = useTheme();
   const [menu, setMenu] = useState(false);
   const [admin, setAdmin] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
@@ -79,12 +64,7 @@ function TopBar() {
   return (
     <header className="topbar">
       <a className="brand" href="#/" onClick={(e) => (e.preventDefault(), navigate('/'))}>
-        <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
-          <rect width="32" height="32" rx="7" fill="#0C66E4" />
-          <rect x="6" y="7" width="5" height="18" rx="1.5" fill="#fff" />
-          <rect x="13.5" y="7" width="5" height="12" rx="1.5" fill="#fff" opacity=".85" />
-          <rect x="21" y="7" width="5" height="8" rx="1.5" fill="#fff" opacity=".7" />
-        </svg>
+        <AppLogo size={24} />
         <span>Kanban</span>
       </a>
       <nav className="topnav">
@@ -94,9 +74,7 @@ function TopBar() {
       </nav>
       <div className="topbar-spacer" />
       <LangSwitch />
-      <button className="icon-btn topbar-btn" onClick={toggleTheme} title={theme === 'dark' ? t('Light theme') : t('Dark theme')} aria-label={t('Toggle theme')}>
-        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-      </button>
+      <AppearanceMenu className="topbar-btn" />
       <button ref={btn} className="user-btn" onClick={() => setMenu((m) => !m)} aria-label={t('User menu')}>
         <Avatar info={user} size={28} />
       </button>

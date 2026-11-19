@@ -1,5 +1,7 @@
 /* ==========================================================================
-   Design tokens (inspired by the Atlassian Design System)
+   Design tokens — "Classic" design (inspired by the Atlassian Design System).
+   The "Apple" design (styles-apple.css) redefines these tokens under
+   :root[data-design='apple'] and restyles a few components on top.
    ========================================================================== */
 :root {
   --bg: #ffffff;
@@ -41,8 +43,19 @@
   --epic-text: #5e4db2;
   --info-bg: #e9f2ff;
   --topbar: #ffffff;
+  --success: #22a06b;
+  --epic-accent: #904ee2;
+  --backdrop: #091e427a;
+  --brand-from: #0c66e4;
+  --brand-to: #0c66e4;
   --radius: 4px;
   --radius-lg: 8px;
+  /* Kanban columns, status lozenges / chips / tags. */
+  --radius-col: 6px;
+  --radius-tag: 3px;
+  /* Small headings and status lozenges are upper case in this design (the Apple design overrides it). */
+  --caps: uppercase;
+  --caps-spacing: 0.02em;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Noto Sans', 'Ubuntu', 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
   color-scheme: light;
@@ -131,6 +144,12 @@
   --info-bg: #1c2b41;
   --topbar: #1d2125;
   color-scheme: dark;
+}
+
+/* Cross-fade when the design or the mode changes (see src/appearance.ts). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
 }
 
 /* ==========================================================================
@@ -421,11 +440,11 @@ textarea.input {
   align-items: center;
   height: 20px;
   padding: 0 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-tag);
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  text-transform: var(--caps);
+  letter-spacing: var(--caps-spacing);
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
@@ -464,7 +483,7 @@ textarea.input {
   background: var(--primary);
 }
 .dot-done {
-  background: #22a06b;
+  background: var(--success);
 }
 .chips {
   display: flex;
@@ -479,7 +498,7 @@ textarea.input {
   gap: 4px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-tag);
   font-size: 12px;
   background: color-mix(in srgb, var(--chip) 16%, transparent);
   color: color-mix(in srgb, var(--chip) 75%, var(--text));
@@ -637,13 +656,155 @@ textarea.input {
   box-shadow: var(--shadow-card);
   cursor: default;
 }
-.login-lang {
+.login-tools {
   position: absolute;
   top: 16px;
   right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .table-scroll {
   overflow-x: auto;
+}
+.logo-from {
+  stop-color: var(--brand-from);
+}
+.logo-to {
+  stop-color: var(--brand-to);
+}
+
+/* Appearance popover: design cards and the light / dark / auto switch. */
+.appearance {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+.appearance-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+.design-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.design-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 6px 4px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: none;
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+}
+.design-option:hover {
+  background: var(--bg-hover);
+}
+.design-option.is-selected {
+  border-color: var(--primary);
+}
+.design-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 60px;
+  padding-bottom: 5px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--pv-bg);
+  box-shadow: inset 0 0 0 1px var(--pv-line);
+}
+.pv-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 11px;
+  padding: 0 5px;
+  background: var(--pv-bar);
+  border-bottom: 1px solid var(--pv-line);
+}
+.pv-logo {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--pv-accent);
+}
+.pv-btn {
+  width: 14px;
+  height: 5px;
+  border-radius: var(--pv-r);
+  background: var(--pv-accent);
+}
+.pv-cols {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  padding: 0 5px;
+}
+.pv-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--pv-r);
+  background: var(--pv-col);
+}
+.pv-card {
+  height: 9px;
+  border-radius: calc(var(--pv-r) - 1px);
+  background: var(--pv-card);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+}
+.preview-classic {
+  --pv-bg: #ffffff;
+  --pv-bar: #ffffff;
+  --pv-line: #091e4224;
+  --pv-col: #f1f2f4;
+  --pv-card: #ffffff;
+  --pv-accent: #0c66e4;
+  --pv-r: 2px;
+}
+.preview-classic.is-dark {
+  --pv-bg: #1d2125;
+  --pv-bar: #1d2125;
+  --pv-line: #a6c5e229;
+  --pv-col: #161a1d;
+  --pv-card: #2c333a;
+  --pv-accent: #579dff;
+}
+.preview-apple {
+  --pv-bg: #ffffff;
+  --pv-bar: #fbfbfd;
+  --pv-line: rgba(0, 0, 0, 0.08);
+  --pv-col: #f2f2f7;
+  --pv-card: #ffffff;
+  --pv-accent: #0071e3;
+  --pv-r: 5px;
+}
+.preview-apple.is-dark {
+  --pv-bg: #000000;
+  --pv-bar: #161617;
+  --pv-line: rgba(255, 255, 255, 0.12);
+  --pv-col: #1c1c1e;
+  --pv-card: #3a3a3c;
+  --pv-accent: #0a84ff;
+}
+.design-name {
+  font-size: 13px;
+}
+.seg-full {
+  display: flex;
+}
+.seg-full button {
+  flex: 1;
+  justify-content: center;
 }
 .user-btn {
   border: 0;
@@ -813,7 +974,7 @@ textarea.input {
 .section-title {
   font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: var(--caps);
   color: var(--text-subtlest);
   letter-spacing: 0.03em;
   margin: 8px 0 8px;
@@ -1112,12 +1273,12 @@ textarea.input {
   gap: 8px;
   padding: 10px 10px 6px;
   background: var(--bg-column);
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--radius-col) var(--radius-col) 0 0;
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: var(--caps);
   color: var(--text-subtle);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--caps-spacing);
 }
 .column-name {
   white-space: nowrap;
@@ -1136,7 +1297,7 @@ textarea.input {
   font-weight: 700;
 }
 .column-done-icon {
-  color: #22a06b;
+  color: var(--success);
   margin-left: auto;
 }
 .column-add {
@@ -1144,7 +1305,7 @@ textarea.input {
   height: 36px;
   flex: none;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-col);
   background: var(--bg-column);
   color: var(--text-subtle);
   cursor: pointer;
@@ -1184,11 +1345,11 @@ textarea.input {
   text-overflow: ellipsis;
 }
 .lane + .lane .lane-row .column {
-  border-radius: 6px;
+  border-radius: var(--radius-col);
 }
 .lane:first-of-type .lane-row .column,
 .kanban-header-row + .lane .lane-row .column {
-  border-radius: 0 0 6px 6px;
+  border-radius: 0 0 var(--radius-col) var(--radius-col);
 }
 .column {
   flex: 1 0 var(--col-w);
@@ -1233,7 +1394,7 @@ textarea.input {
   transform: rotate(2deg);
 }
 .card-epic {
-  border-left: 3px solid #904ee2;
+  border-left: 3px solid var(--epic-accent);
 }
 .card-title {
   font-size: 14px;
@@ -1257,10 +1418,10 @@ textarea.input {
   height: 20px;
   line-height: 20px;
   padding: 0 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-tag);
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: var(--caps);
   background: var(--epic-bg);
   color: var(--epic-text);
   white-space: nowrap;
@@ -1273,7 +1434,7 @@ textarea.input {
   gap: 3px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-tag);
   font-size: 11px;
   border: 1px solid var(--border);
   color: var(--text-subtle);
@@ -1512,7 +1673,7 @@ td.due-soon {
   min-width: 60px;
 }
 .progress-done {
-  background: #22a06b;
+  background: var(--success);
 }
 .progress-progress {
   background: var(--primary);
@@ -1702,7 +1863,7 @@ td.due-soon {
   text-align: center;
 }
 .perm-yes {
-  color: #22a06b;
+  color: var(--success);
 }
 .perm-no {
   color: var(--text-subtlest);
@@ -1800,7 +1961,7 @@ td.due-soon {
   border-left-color: var(--danger);
 }
 .toast-success {
-  border-left-color: #22a06b;
+  border-left-color: var(--success);
 }
 @keyframes toast-in {
   from {
@@ -1816,7 +1977,7 @@ td.due-soon {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #091e427a;
+  background: var(--backdrop);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -2059,9 +2220,9 @@ td.due-soon {
 }
 .status-trigger {
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: var(--caps);
   font-size: 12px;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--caps-spacing);
   width: auto;
 }
 .status-trigger.status-todo {
@@ -2725,7 +2886,7 @@ textarea.inline-input.issue-title {
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: #091e427a;
+    background: var(--backdrop);
   }
   .sidebar-toggle {
     display: inline-flex;

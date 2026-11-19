@@ -17,7 +17,8 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 - **Releases:** versions and milestones with dates, progress, release and archive.
 - **Board settings:** columns and their categories, issue types (icon, color, description template, default checklist), labels, components.
 - **Members and permissions:** add people by GitHub username and pick one of 5 roles.
-- Board export/import as JSON, light and dark themes, mobile layout.
+- Board export/import as JSON, mobile layout.
+- **Appearance:** two designs — *Classic* (Atlassian-like) and *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
 - Keyboard shortcuts: `C` creates an issue, `/` focuses search.
 
 ## Templates

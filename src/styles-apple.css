@@ -1,0 +1,613 @@
+/* ==========================================================================
+   "Apple" design — enabled by <html data-design="apple"> (see src/appearance.ts).
+   Follows Apple's Human Interface Guidelines: system colours, SF Pro (Inter as a
+   stand-in on other systems), frosted-glass bars and menus, segmented controls,
+   rounded cards and soft shadows. It redefines the design tokens of styles.css
+   and restyles a few components on top; everything else follows the tokens.
+   ========================================================================== */
+
+/* Inter with optical sizes. Only downloaded when the Apple design is on and SF Pro is not available. */
+@import '@fontsource-variable/inter/opsz.css';
+
+/* --- Tokens: light ------------------------------------------------------ */
+:root[data-design='apple'] {
+  --bg: #ffffff;
+  --bg-sunken: #f5f5f7;
+  --bg-column: #f2f2f7;
+  --bg-hover: rgba(118, 118, 128, 0.12);
+  --bg-pressed: rgba(118, 118, 128, 0.2);
+  --bg-selected: rgba(0, 113, 227, 0.1);
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --overlay: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: #8e8e93;
+  --text: #1d1d1f;
+  --text-subtle: #424245;
+  --text-subtlest: #636366;
+  --text-inverse: #ffffff;
+  --link: #0066cc;
+  --primary: #0071e3;
+  --primary-hover: #0077ed;
+  --primary-pressed: #006edb;
+  --danger: #e0281e;
+  --danger-hover: #c9241b;
+  --focus: rgba(0, 113, 227, 0.6);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-drag: 0 22px 44px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --todo-bg: rgba(118, 118, 128, 0.12);
+  --todo-text: #424245;
+  --progress-bg: rgba(0, 122, 255, 0.12);
+  --progress-text: #0062cc;
+  --done-bg: rgba(52, 199, 89, 0.16);
+  --done-text: #1a7431;
+  --danger-bg: rgba(255, 59, 48, 0.12);
+  --danger-text: #c4150c;
+  --warn-bg: rgba(255, 149, 0, 0.14);
+  --warn-text: #a14a00;
+  --epic-bg: rgba(175, 82, 222, 0.13);
+  --epic-text: #8030a8;
+  --info-bg: rgba(0, 122, 255, 0.08);
+  --topbar: rgba(255, 255, 255, 0.8);
+  --success: #28a745;
+  --epic-accent: #af52de;
+  --backdrop: rgba(0, 0, 0, 0.28);
+  --brand-from: #47a3ff;
+  --brand-to: #0066e0;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-col: 14px;
+  --radius-tag: 980px;
+  --caps: none;
+  --caps-spacing: 0;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', 'Inter Variable', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, 'Cascadia Code', Consolas, monospace;
+
+  /* Tokens used only by this design. */
+  --accent-fill: #0071e3; /* filled buttons and highlights with white text */
+  --danger-fill: #e0281e;
+  --focus-ring: rgba(0, 113, 227, 0.28);
+  --material: rgba(255, 255, 255, 0.8); /* frosted glass: menus, toasts, login card */
+  --sidebar: #f5f5f7;
+  --tile: #f5f5f7;
+  --seg-active: #ffffff;
+  --card-hover: #ffffff;
+  --github-bg: #1d1d1f;
+  --github-hover: #3a3a3c;
+  --github-text: #ffffff;
+  --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --glow-1: rgba(0, 113, 227, 0.16);
+  --glow-2: rgba(175, 82, 222, 0.14);
+  --scrollbar: rgba(0, 0, 0, 0.28);
+  color-scheme: light;
+}
+
+/* --- Tokens: dark (system setting and explicit choice) -------------------- */
+@media (prefers-color-scheme: dark) {
+  :root[data-design='apple']:not([data-theme='light']) {
+    --bg: #000000;
+    --bg-sunken: #161618;
+    --bg-column: #1c1c1e;
+    --bg-hover: rgba(118, 118, 128, 0.24);
+    --bg-pressed: rgba(118, 118, 128, 0.36);
+    --bg-selected: rgba(10, 132, 255, 0.22);
+    --surface: #1c1c1e;
+    --surface-raised: #2c2c2e;
+    --overlay: #1c1c1e;
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: #7c7c80;
+    --text: #f5f5f7;
+    --text-subtle: #b8b8bd;
+    --text-subtlest: #98989d;
+    --link: #2997ff;
+    --primary: #0a84ff;
+    --danger: #ff453a;
+    --focus: rgba(10, 132, 255, 0.7);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --shadow-raised: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-drag: 0 24px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    --todo-bg: rgba(118, 118, 128, 0.24);
+    --todo-text: #c7c7cc;
+    --progress-bg: rgba(10, 132, 255, 0.22);
+    --progress-text: #64b0ff;
+    --done-bg: rgba(48, 209, 88, 0.2);
+    --done-text: #4cd471;
+    --danger-bg: rgba(255, 69, 58, 0.22);
+    --danger-text: #ff7a70;
+    --warn-bg: rgba(255, 159, 10, 0.2);
+    --warn-text: #ffb340;
+    --epic-bg: rgba(191, 90, 242, 0.22);
+    --epic-text: #d68cff;
+    --info-bg: rgba(10, 132, 255, 0.14);
+    --topbar: rgba(22, 22, 23, 0.8);
+    --success: #30d158;
+    --epic-accent: #bf5af2;
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --brand-from: #4aa8ff;
+    --brand-to: #0a6cff;
+    --focus-ring: rgba(10, 132, 255, 0.4);
+    --material: rgba(44, 44, 46, 0.8);
+    --sidebar: #111112;
+    --tile: #1c1c1e;
+    --seg-active: #636366;
+    --card-hover: #333336;
+    --github-bg: #f5f5f7;
+    --github-hover: #ffffff;
+    --github-text: #1d1d1f;
+    --shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    --glow-1: rgba(10, 132, 255, 0.22);
+    --glow-2: rgba(191, 90, 242, 0.18);
+    --scrollbar: rgba(255, 255, 255, 0.28);
+    color-scheme: dark;
+  }
+}
+:root[data-design='apple'][data-theme='dark'] {
+  --bg: #000000;
+  --bg-sunken: #161618;
+  --bg-column: #1c1c1e;
+  --bg-hover: rgba(118, 118, 128, 0.24);
+  --bg-pressed: rgba(118, 118, 128, 0.36);
+  --bg-selected: rgba(10, 132, 255, 0.22);
+  --surface: #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --overlay: #1c1c1e;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: #7c7c80;
+  --text: #f5f5f7;
+  --text-subtle: #b8b8bd;
+  --text-subtlest: #98989d;
+  --link: #2997ff;
+  --primary: #0a84ff;
+  --danger: #ff453a;
+  --focus: rgba(10, 132, 255, 0.7);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-raised: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-drag: 0 24px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --todo-bg: rgba(118, 118, 128, 0.24);
+  --todo-text: #c7c7cc;
+  --progress-bg: rgba(10, 132, 255, 0.22);
+  --progress-text: #64b0ff;
+  --done-bg: rgba(48, 209, 88, 0.2);
+  --done-text: #4cd471;
+  --danger-bg: rgba(255, 69, 58, 0.22);
+  --danger-text: #ff7a70;
+  --warn-bg: rgba(255, 159, 10, 0.2);
+  --warn-text: #ffb340;
+  --epic-bg: rgba(191, 90, 242, 0.22);
+  --epic-text: #d68cff;
+  --info-bg: rgba(10, 132, 255, 0.14);
+  --topbar: rgba(22, 22, 23, 0.8);
+  --success: #30d158;
+  --epic-accent: #bf5af2;
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --brand-from: #4aa8ff;
+  --brand-to: #0a6cff;
+  --focus-ring: rgba(10, 132, 255, 0.4);
+  --material: rgba(44, 44, 46, 0.8);
+  --sidebar: #111112;
+  --tile: #1c1c1e;
+  --seg-active: #636366;
+  --card-hover: #333336;
+  --github-bg: #f5f5f7;
+  --github-hover: #ffffff;
+  --github-text: #1d1d1f;
+  --shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --glow-1: rgba(10, 132, 255, 0.22);
+  --glow-2: rgba(191, 90, 242, 0.18);
+  --scrollbar: rgba(255, 255, 255, 0.28);
+  color-scheme: dark;
+}
+
+/* --- Base ------------------------------------------------------------------ */
+[data-design='apple'] body {
+  letter-spacing: -0.006em;
+}
+[data-design='apple'] h1 {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+[data-design='apple'] h2 {
+  letter-spacing: -0.016em;
+}
+[data-design='apple'] ::selection {
+  background: color-mix(in srgb, var(--primary) 28%, transparent);
+}
+[data-design='apple'] :focus-visible {
+  outline-width: 3px;
+}
+[data-design='apple'],
+[data-design='apple'] * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+[data-design='apple'] code,
+[data-design='apple'] kbd {
+  border-radius: 5px;
+}
+
+/* --- Buttons and fields ---------------------------------------------------- */
+[data-design='apple'] .btn {
+  transition:
+    background-color 0.15s,
+    transform 0.12s,
+    box-shadow 0.15s;
+}
+[data-design='apple'] .btn:active:not(:disabled),
+[data-design='apple'] .icon-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+[data-design='apple'] .btn-primary {
+  background: var(--accent-fill);
+  color: #fff;
+}
+[data-design='apple'] .btn-danger {
+  background: var(--danger-fill);
+  color: #fff;
+}
+[data-design='apple'] .btn-subtle {
+  color: var(--text);
+}
+/* Like "Sign in with Apple": black in light mode, white in dark mode. */
+[data-design='apple'] .btn-github {
+  background: var(--github-bg);
+  color: var(--github-text);
+}
+[data-design='apple'] .btn-github:hover:not(:disabled) {
+  background: var(--github-hover);
+}
+[data-design='apple'] .btn-lg {
+  border-radius: 12px;
+  font-weight: 600;
+}
+[data-design='apple'] .input,
+[data-design='apple'] .inline-input,
+[data-design='apple'] .filter-search,
+[data-design='apple'] .popover-search input,
+[data-design='apple'] .md-editor {
+  border-width: 1px;
+}
+[data-design='apple'] .filter-search {
+  background: var(--bg-hover);
+  border-color: transparent;
+}
+[data-design='apple'] .input:focus,
+[data-design='apple'] .inline-input,
+[data-design='apple'] .popover-search input:focus,
+[data-design='apple'] .filter-search:focus-within,
+[data-design='apple'] .md-editor:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+[data-design='apple'] .filter-search:focus-within {
+  background: var(--surface);
+}
+[data-design='apple'] .select-trigger.is-open {
+  box-shadow:
+    0 0 0 3px var(--focus-ring),
+    inset 0 0 0 1px var(--primary);
+}
+[data-design='apple'] .status-trigger {
+  border-radius: var(--radius-tag);
+  font-size: 13px;
+  padding-left: 12px;
+}
+[data-design='apple'] .checkbox {
+  border-width: 1.5px;
+  border-radius: 4px;
+}
+
+/* --- Segmented controls ------------------------------------------------------ */
+[data-design='apple'] .lang-switch,
+[data-design='apple'] .seg,
+[data-design='apple'] .md-tabs {
+  background: var(--bg-hover);
+  border-radius: 9px;
+  padding: 2px;
+}
+[data-design='apple'] .lang-switch button,
+[data-design='apple'] .seg button,
+[data-design='apple'] .md-tabs button {
+  border-radius: 7px;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s,
+    color 0.2s;
+}
+[data-design='apple'] .md-tabs button:hover {
+  background: none;
+  color: var(--text);
+}
+[data-design='apple'] .lang-switch button.is-active,
+[data-design='apple'] .seg button.is-active,
+[data-design='apple'] .md-tabs button.is-active {
+  background: var(--seg-active);
+  color: var(--text);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 3px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* --- Lozenges, chips, tags -------------------------------------------------- */
+[data-design='apple'] .lozenge,
+[data-design='apple'] .epic-tag {
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+[data-design='apple'] .chip,
+[data-design='apple'] .version-tag {
+  padding: 0 8px;
+}
+[data-design='apple'] .chip-x {
+  border-radius: 50%;
+}
+[data-design='apple'] .card-badge {
+  border-radius: 6px;
+}
+[data-design='apple'] .section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* --- App shell -------------------------------------------------------------- */
+[data-design='apple'] .topbar {
+  height: 52px;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+[data-design='apple'] .brand {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* --- Boards page and login ---------------------------------------------------- */
+[data-design='apple'] .board-card {
+  border-top: 0;
+  border-radius: 18px;
+  padding: 18px;
+  background: var(--tile);
+  box-shadow: none;
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.25s,
+    background-color 0.25s;
+}
+[data-design='apple'] .board-card:hover {
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-2px);
+}
+[data-design='apple'] .board-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+[data-design='apple'] .login {
+  background:
+    radial-gradient(60% 50% at 15% 0%, var(--glow-1), transparent 70%),
+    radial-gradient(50% 50% at 100% 100%, var(--glow-2), transparent 70%),
+    var(--bg-sunken);
+}
+[data-design='apple'] .login-card {
+  padding: 40px 36px;
+  border-radius: 22px;
+  background: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+}
+
+/* --- Board: sidebar ------------------------------------------------------------ */
+[data-design='apple'] .sidebar {
+  background: var(--sidebar);
+  padding: 14px 10px;
+}
+[data-design='apple'] .sidebar-link {
+  height: 32px;
+  color: var(--text) !important;
+}
+[data-design='apple'] .sidebar-link svg {
+  color: var(--primary);
+}
+[data-design='apple'] .sidebar-link.is-active {
+  background: var(--accent-fill);
+  color: #fff !important;
+}
+[data-design='apple'] .sidebar-link.is-active svg {
+  color: inherit;
+}
+[data-design='apple'] .sidebar-link.is-active::before {
+  display: none;
+}
+
+/* --- Kanban ------------------------------------------------------------------- */
+[data-design='apple'] .kanban-header-row,
+[data-design='apple'] .lane-row {
+  gap: 12px;
+}
+[data-design='apple'] .column-head {
+  padding: 12px 12px 6px 14px;
+  font-size: 13px;
+  color: var(--text);
+}
+[data-design='apple'] .column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+[data-design='apple'] .column {
+  padding: 6px 6px 10px;
+}
+[data-design='apple'] .card-wrap {
+  padding: 3px 0;
+}
+[data-design='apple'] .card {
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s,
+    background-color 0.2s;
+}
+[data-design='apple'] .card:hover {
+  background: var(--card-hover);
+  box-shadow: var(--shadow-hover);
+}
+[data-design='apple'] .card.is-dragging {
+  box-shadow: var(--shadow-drag);
+  transform: scale(1.03) rotate(1.5deg);
+}
+[data-design='apple'] .quick-create {
+  border-radius: 12px;
+}
+
+/* --- Lists, panels, tables ---------------------------------------------------- */
+[data-design='apple'] .issue-table th {
+  border-bottom-width: 1px;
+}
+[data-design='apple'] .panel {
+  border-radius: 14px;
+}
+[data-design='apple'] .progress {
+  border-radius: 980px;
+}
+[data-design='apple'] .alert {
+  border-radius: 10px;
+}
+[data-design='apple'] .emoji-btn {
+  border-radius: 10px;
+}
+[data-design='apple'] .issue-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-design='apple'] .markdown pre {
+  border-radius: 10px;
+}
+
+/* --- Menus and popovers: frosted glass, accent highlight ----------------------- */
+[data-design='apple'] .popover {
+  border-radius: 12px;
+  background: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  animation: apple-pop 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+[data-design='apple'] .popover-search {
+  background: inherit;
+}
+[data-design='apple'] .menu {
+  padding: 5px;
+}
+[data-design='apple'] .menu-item {
+  border-left: 0;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+[data-design='apple'] .menu-item.is-selected {
+  background: none;
+}
+[data-design='apple'] .menu-item:hover:not(:disabled),
+[data-design='apple'] .menu-item.is-active {
+  background: var(--accent-fill);
+  color: #fff;
+}
+[data-design='apple'] .menu-item-danger:hover:not(:disabled) {
+  background: var(--danger-fill);
+}
+[data-design='apple'] .menu-item:hover:not(:disabled) :is(.menu-label, .menu-hint, .menu-check, .muted),
+[data-design='apple'] .menu-item.is-active :is(.menu-label, .menu-hint, .menu-check, .muted) {
+  color: inherit;
+}
+[data-design='apple'] .menu-item:hover:not(:disabled) .dot,
+[data-design='apple'] .menu-item.is-active .dot {
+  box-shadow: 0 0 0 1.5px #fff;
+}
+[data-design='apple'] .menu-item:hover:not(:disabled) .checkbox,
+[data-design='apple'] .menu-item.is-active .checkbox {
+  border-color: #fff;
+}
+[data-design='apple'] .menu-item:hover:not(:disabled) .checkbox.is-checked,
+[data-design='apple'] .menu-item.is-active .checkbox.is-checked {
+  background: #fff;
+  color: var(--accent-fill);
+}
+@keyframes apple-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+/* --- Modals and toasts ---------------------------------------------------------- */
+[data-design='apple'] .modal {
+  border-radius: 16px;
+  box-shadow: var(--shadow-modal);
+  animation: apple-modal-in 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes apple-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+[data-design='apple'] .toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 0;
+  border-radius: 14px;
+  background: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+}
+[data-design='apple'] .toast::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+[data-design='apple'] .toast-error::before {
+  background: var(--danger);
+}
+[data-design='apple'] .toast-success::before {
+  background: var(--success);
+}
+[data-design='apple'] .design-option.is-selected {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* --- Responsive and motion ------------------------------------------------------- */
+@media (max-width: 760px) {
+  [data-design='apple'] .modal {
+    border-radius: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-design='apple'] .popover,
+  [data-design='apple'] .modal {
+    animation: none;
+  }
+  [data-design='apple'] .board-card:hover,
+  [data-design='apple'] .card.is-dragging,
+  [data-design='apple'] .btn:active:not(:disabled),
+  [data-design='apple'] .icon-btn:active:not(:disabled) {
+    transform: none;
+  }
+}

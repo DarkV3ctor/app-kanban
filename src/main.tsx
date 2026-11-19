@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { t } from './i18n';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import './styles-apple.css';
 import { initStore } from './store';
 import { Root } from './App';
 
