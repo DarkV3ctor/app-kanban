@@ -1,0 +1,155 @@
+rules_version = '2';
+
+// Правила доступа для Kanban-доски.
+// Права выдаются по числовому GitHub ID (не по логину — логин можно сменить).
+// Роли: owner (5) > admin (4) > editor (3) > commenter (2) > viewer (1).
+//
+// Деплой: Firebase Console → Firestore Database → Rules → вставить этот файл → Publish
+// или:    npx firebase-tools deploy --only firestore:rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Пользователь ------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'github.com';
+    }
+
+    // Числовой GitHub ID вошедшего пользователя (строкой).
+    function ghId() {
+      return request.auth.token.firebase.identities['github.com'][0];
+    }
+
+    // Администраторы приложения: могут создавать доски и выдавать это право другим.
+    // Должен совпадать с appAdmins в public/config.js.
+    function isAppAdmin() {
+      return signedIn() && ghId() in ['78609208'];
+    }
+
+    function canCreateBoards() {
+      return isAppAdmin() || exists(/databases/$(database)/documents/creators/$(ghId()));
+    }
+
+    // ---- Роли на доске -----------------------------------------------------
+
+    function roleRank(role) {
+      return {'admin': 4, 'editor': 3, 'commenter': 2, 'viewer': 1}.get(role, 0);
+    }
+
+    function rankIn(data) {
+      return !signedIn() ? 0
+        : data.ownerId == ghId() ? 5
+        : roleRank(data.members.get(ghId(), ''));
+    }
+
+    function boardPath(boardId) {
+      return /databases/$(database)/documents/boards/$(boardId);
+    }
+
+    function rankOn(boardId) {
+      return rankIn(get(boardPath(boardId)).data);
+    }
+
+    // Структура доски корректна: memberIds совпадает с ключами members, владелец на месте.
+    function validBoard(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.key is string && d.key.size() > 0 && d.key.size() <= 10
+        && d.members is map && d.memberIds is list
+        && d.memberIds.size() <= 200
+        && d.memberIds.hasAll(d.members.keys())
+        && d.members.keys().hasAll(d.memberIds)
+        && d.members.get(d.ownerId, '') == 'owner'
+        && d.issueCounter is int
+        && d.columns is list && d.columns.size() > 0;
+    }
+
+    // ---- Кто может создавать доски ----------------------------------------
+
+    match /creators/{id} {
+      allow read: if signedIn();
+      allow write: if isAppAdmin();
+    }
+
+    // ---- Доски -------------------------------------------------------------
+
+    match /boards/{boardId} {
+      allow get: if rankIn(resource.data) >= 1;
+      // Список досок: запрос where('memberIds', 'array-contains', ghId)
+      allow list: if signedIn() && ghId() in resource.data.memberIds;
+
+      allow create: if canCreateBoards()
+        && request.resource.data.ownerId == ghId()
+        && validBoard(request.resource.data);
+
+      allow update: if validBoard(request.resource.data) && (
+        // Владелец: всё, включая передачу владения существующему участнику.
+        (rankIn(resource.data) == 5
+          && request.resource.data.ownerId in resource.data.memberIds)
+        ||
+        // Администратор: всё, кроме смены владельца и его роли.
+        (rankIn(resource.data) == 4
+          && request.resource.data.ownerId == resource.data.ownerId)
+        ||
+        // Редактор: только счётчик задач (при создании задачи).
+        (rankIn(resource.data) >= 3
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['issueCounter', 'updatedAt'])
+          && request.resource.data.issueCounter == resource.data.issueCounter + 1)
+        ||
+        // Любой участник (кроме владельца) может покинуть доску.
+        (rankIn(resource.data) >= 1 && resource.data.ownerId != ghId()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds', 'updatedAt'])
+          && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([ghId()])
+          && !(ghId() in request.resource.data.members))
+      );
+
+      allow delete: if rankIn(resource.data) == 5;
+
+      // ---- Задачи ----------------------------------------------------------
+
+      match /issues/{issueId} {
+        allow read: if rankOn(boardId) >= 1;
+        allow create: if rankOn(boardId) >= 3
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 500
+          && request.resource.data.createdBy == ghId();
+        allow update: if rankOn(boardId) >= 3
+          && request.resource.data.number == resource.data.number
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0;
+        // Удалять: администраторы — любые, редакторы — только свои.
+        allow delete: if rankOn(boardId) >= 4
+          || (rankOn(boardId) >= 3 && resource.data.createdBy == ghId());
+
+        // ---- Комментарии ---------------------------------------------------
+
+        match /comments/{commentId} {
+          allow read: if rankOn(boardId) >= 1;
+          allow create: if rankOn(boardId) >= 2
+            && request.resource.data.authorId == ghId()
+            && request.resource.data.body is string
+            && request.resource.data.body.size() <= 20000;
+          allow update: if rankOn(boardId) >= 2
+            && resource.data.authorId == ghId()
+            && request.resource.data.authorId == ghId();
+          // Свой комментарий, любой — админ, или все комментарии удаляемой задачи.
+          allow delete: if rankOn(boardId) >= 4
+            || (rankOn(boardId) >= 2 && resource.data.authorId == ghId())
+            || (rankOn(boardId) >= 3 && !existsAfter(/databases/$(database)/documents/boards/$(boardId)/issues/$(issueId)));
+        }
+
+        // ---- История изменений ---------------------------------------------
+
+        match /history/{entryId} {
+          allow read: if rankOn(boardId) >= 1;
+          allow create: if rankOn(boardId) >= 3 && request.resource.data.actorId == ghId();
+          allow delete: if rankOn(boardId) >= 4
+            || (rankOn(boardId) >= 3 && !existsAfter(/databases/$(database)/documents/boards/$(boardId)/issues/$(issueId)));
+        }
+      }
+    }
+  }
+}
