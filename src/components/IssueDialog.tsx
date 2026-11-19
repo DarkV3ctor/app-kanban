@@ -189,7 +189,8 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
                   <PriorityPicker value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
                 </Detail>
                 <Detail label={f('type')}>
-                  <TypePicker board={board} value={issue.type} onChange={(v) => set({ type: v })} disabled={!canEdit} />
+                  {/* An epic is not part of another epic (as when an epic is created). */}
+                  <TypePicker board={board} value={issue.type} onChange={(v) => set(isEpic(board, { type: v }) ? { type: v, epicId: null } : { type: v })} disabled={!canEdit} />
                 </Detail>
                 <Detail label={f('labels')}>
                   <LabelsPicker board={board} issues={issues} value={issue.labels} onChange={(l) => set({ labels: l })} disabled={!canEdit} />
@@ -301,17 +302,23 @@ function DateInput({ value, onSave, disabled }: { value: string | null; onSave: 
 
 // ---------------------------------------------------------------------------
 
-function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolean; onSave: (v: string) => void }) {
+function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolean; onSave: (v: string) => Promise<boolean> }) {
   const [edit, setEdit] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(issue.description);
   useEffect(() => {
     if (!edit) setDraft(issue.description);
   }, [issue.description, edit]);
   useDraft('description', edit && draft !== issue.description);
 
-  const save = () => {
-    onSave(draft);
-    setEdit(false);
+  // The editor stays open until the text is saved, so a rejected save (for example, the device
+  // clock is far off and the history entry is refused) does not lose it.
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    const ok = await onSave(draft);
+    setSaving(false);
+    if (ok) setEdit(false);
   };
 
   return (
@@ -337,7 +344,7 @@ function Description({ issue, canEdit, onSave }: { issue: Issue; canEdit: boolea
             }}
           />
           <div className="form-actions">
-            <button className="btn btn-primary" onClick={save}>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>
               {t('Save')}
             </button>
             <button

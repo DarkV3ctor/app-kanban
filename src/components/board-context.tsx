@@ -12,7 +12,8 @@ export interface BoardCtx {
   setFilters: (f: Filters) => void;
   openIssue: (issue: Issue) => void;
   newIssue: (defaults?: Partial<IssueDraft>) => void;
-  updateIssue: (issue: Issue, patch: Partial<Issue>) => Promise<void>;
+  /** Resolves to whether the change was saved (errors are shown as a toast). */
+  updateIssue: (issue: Issue, patch: Partial<Issue>) => Promise<boolean>;
   updateBoard: (patch: Partial<Board>) => Promise<void>;
 }
 

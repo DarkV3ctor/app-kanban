@@ -60,7 +60,12 @@ export const KanbanView = memo(function KanbanView() {
     };
     for (const i of visible) {
       if (groupBy === 'assignee') push(i.assigneeId ?? 'none', i);
-      else if (groupBy === 'epic') push(i.epicId && byId.has(i.epicId) ? i.epicId : 'none', i);
+      else if (groupBy === 'epic') {
+        // Only epics have lanes: an issue whose epic was changed to another type goes to "No epic"
+        // instead of disappearing from the board.
+        const epic = i.epicId ? byId.get(i.epicId) : undefined;
+        push(epic && isEpic(board, epic) ? epic.id : 'none', i);
+      }
       else push(i.priority, i);
     }
     const res: Lane[] = [];

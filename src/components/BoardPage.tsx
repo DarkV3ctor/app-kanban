@@ -86,12 +86,12 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
 
   const updateIssue = useCallback(
     async (issue: Issue, patch: Partial<Issue>) => {
-      if (!board) return;
+      if (!board) return false;
       const full = { ...patch, ...(patch.status && patch.status !== issue.status ? statusSideEffects(board, issue, patch.status) : {}) };
       const changes = diffIssue(board, issue, full, issues ?? []);
       // optimistic update
       setIssues((list) => list?.map((i) => (i.id === issue.id ? { ...i, ...full, updatedAt: Date.now() } : i)) ?? list);
-      await run(store.updateIssue(board.id, issue.id, full, user, changes));
+      return (await run(store.updateIssue(board.id, issue.id, full, user, changes).then(() => true))) ?? false;
     },
     [board, issues, run, store, user],
   );
