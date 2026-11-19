@@ -894,6 +894,11 @@ textarea.input {
   background: var(--pv-done);
 }
 .design-name {
+  /* Flex centring keeps a name that is wider than the card (Translucent in the Linux design's
+     monospace font) centred: it spills evenly into both side paddings, not only to the right. */
+  display: flex;
+  justify-content: center;
+  white-space: nowrap;
   font-size: 13px;
 }
 .seg-full {
