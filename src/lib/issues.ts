@@ -283,7 +283,7 @@ export function applyFilters(board: Board, issues: Issue[], f: Filters, me: AppU
   });
 }
 
-export type SortKey = 'key' | 'title' | 'status' | 'priority' | 'assignee' | 'version' | 'points' | 'due' | 'updated' | 'type';
+export type SortKey = 'key' | 'title' | 'status' | 'priority' | 'assignee' | 'version' | 'build' | 'points' | 'due' | 'updated' | 'type';
 
 export function sortIssues(board: Board, issues: Issue[], key: SortKey, dir: 1 | -1): Issue[] {
   const colIdx = new Map(board.columns.map((c, i) => [c.id, i]));
@@ -303,6 +303,9 @@ export function sortIssues(board: Board, issues: Issue[], key: SortKey, dir: 1 |
         return i.assigneeId ? board.memberInfo[i.assigneeId]?.login?.toLowerCase() ?? 'zzz' : '~';
       case 'version':
         return i.fixVersionId ? verIdx.get(i.fixVersionId) ?? 99 : 999;
+      case 'build':
+        // Numbers compare as numbers ("0.10" after "0.9"); issues without a build go last.
+        return i.build ? i.build.toLowerCase().replace(/\d+/g, (d) => d.padStart(12, '0')) : '￿';
       case 'points':
         return i.storyPoints ?? -1;
       case 'due':

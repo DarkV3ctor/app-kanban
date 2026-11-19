@@ -14,7 +14,6 @@ const BUG = `### Steps to reproduce
 
 
 ### Environment
-- **Build / version:**
 - **Platform:** PC / Console / Mobile
 - **Frequency:** always / sometimes / once
 

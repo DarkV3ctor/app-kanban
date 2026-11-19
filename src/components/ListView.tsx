@@ -20,6 +20,7 @@ const COLS: { key: SortKey; label: string; field?: FieldKey; className?: string 
   { key: 'assignee', label: tk('Assignee'), field: 'assigneeId' },
   { key: 'priority', label: tk('Priority'), field: 'priority' },
   { key: 'version', label: tk('Version'), field: 'fixVersionId' },
+  { key: 'build', label: tk('Build'), field: 'build' },
   { key: 'points', label: tk('SP'), field: 'storyPoints', className: 'col-num' },
   { key: 'due', label: tk('Due'), field: 'dueDate' },
   { key: 'updated', label: tk('Updated') },
@@ -42,6 +43,9 @@ export const ListView = memo(function ListView() {
 
   const rows = useMemo(() => sortIssues(board, applyFilters(board, issues, filters, user), sort.key, sort.dir), [board, issues, filters, user, sort]);
   const points = rows.reduce((s, i) => s + (i.storyPoints ?? 0), 0);
+  // The build column (table and CSV) only on boards that have the field (game dev).
+  const withBuild = hasField(board, 'build');
+  const cols = COLS.filter((c) => !c.field || hasField(board, c.field));
 
   const exportCsv = () => {
     // Every cell is quoted; text that a spreadsheet would run as a formula (=, +, -, @, tab, CR at the
@@ -50,9 +54,7 @@ export const ListView = memo(function ListView() {
       const cell = /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s) ? `'${s}` : s;
       return `"${cell.replace(/"/g, '""')}"`;
     };
-    // The build column only on boards that have the field (game dev).
-    const withBuild = hasField(board, 'build');
-    const head = CSV_HEAD.filter((h) => withBuild || h !== 'Build');
+    const head =CSV_HEAD.filter((h) => withBuild || h !== 'Build');
     const lines = rows.map((i) => {
       const epic = epicOf(board, byId, i);
       return [
@@ -104,7 +106,7 @@ export const ListView = memo(function ListView() {
           <table className="issue-table">
             <thead>
               <tr>
-                {COLS.map((c) => (
+                {cols.map((c) => (
                   <th key={c.key} className={c.className}>
                     <button onClick={() => setSort((s) => ({ key: c.key, dir: s.key === c.key ? (s.dir === 1 ? -1 : 1) : 1 }))}>
                       {colLabel(board, c)}
@@ -147,6 +149,7 @@ export const ListView = memo(function ListView() {
                       </span>
                     </td>
                     <td>{board.versions.find((v) => v.id === i.fixVersionId)?.name ?? <span className="muted">—</span>}</td>
+                    {withBuild && <td>{i.build || <span className="muted">—</span>}</td>}
                     <td className="col-num">{i.storyPoints ?? ''}</td>
                     <td className={cls(due && `due-${due}`)}>{formatDate(i.dueDate)}</td>
                     <td className="muted small">{timeAgo(i.updatedAt)}</td>
