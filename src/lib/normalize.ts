@@ -53,7 +53,7 @@ const LINK_TYPES: readonly LinkType[] = ['blocks', 'blocked_by', 'relates', 'dup
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 /** Renamable issue fields and the longest name (see lib/fields.ts; keep in sync with validFieldNames() in firestore.rules). */
-export const FIELD_NAME_KEYS: readonly FieldKey[] = ['details', 'assigneeId', 'reporterId', 'priority', 'type', 'labels', 'components', 'fixVersionId', 'epicId', 'storyPoints', 'estimate', 'dueDate'];
+export const FIELD_NAME_KEYS: readonly FieldKey[] = ['details', 'assigneeId', 'reporterId', 'priority', 'type', 'labels', 'components', 'fixVersionId', 'build', 'epicId', 'storyPoints', 'estimate', 'dueDate'];
 export const MAX_FIELD_NAME = 40;
 
 /** A color that is safe to put into CSS: only #rrggbb is accepted. */
@@ -171,6 +171,7 @@ export function normalizeIssue(raw: unknown, id: string): Issue {
     labels: strList(o.labels),
     components: strList(o.components),
     fixVersionId: strOrNull(o.fixVersionId),
+    build: str(o.build),
     epicId: strOrNull(o.epicId),
     storyPoints: numOrNull(o.storyPoints),
     estimate: str(o.estimate),

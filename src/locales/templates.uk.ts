@@ -155,6 +155,7 @@ export const UK_TEMPLATES: TemplateTexts = {
         version: 'v-slice',
         components: ['Фізика'],
         labels: ['crash', 'blocker'],
+        build: '0.3.1 (1187)',
         description: BUG.replace('1. \n2. \n3. ', '1. Завантажити рівень 2\n2. Підійти до мосту\n3. Зробити ривок униз'),
         storyPoints: 2,
       },

@@ -4,7 +4,7 @@ import { useApp, useDiscardGuard } from '../app-context';
 import { navigate } from '../router';
 import { count, t } from '../i18n';
 import { categorySideEffects, exportBoard, statusSideEffects } from '../lib/issues';
-import { FIELDS, MAX_FIELD_NAME, defaultFieldName, genericFieldName } from '../lib/fields';
+import { FIELDS, MAX_FIELD_NAME, defaultFieldName, genericFieldName, hasField } from '../lib/fields';
 import { downloadJSON, sanitizeKey, uid, cls } from '../lib/utils';
 import { newColumnId } from '../templates';
 import { useBoard } from './board-context';
@@ -395,7 +395,7 @@ function FieldNamesPanel() {
           <span>{t('Name on this board')}</span>
           <span />
         </div>
-        {FIELDS.map(({ key }) => {
+        {FIELDS.filter(({ key }) => hasField(board, key)).map(({ key }) => {
           const value = names[key] ?? '';
           return (
             <div key={key} className="field-names-row">

@@ -6,7 +6,7 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 
 ## Features
 
-- **Jira-like issues:** key (`GAME-12`), type, status, priority, assignee, reporter, labels, components, fix version, epic, story points, time estimate, due date.
+- **Jira-like issues:** key (`GAME-12`), type, status, priority, assignee, reporter, labels, components, fix version, epic, story points, time estimate, due date; game dev boards also have a build field (the build a bug was found in).
 - **Markdown descriptions:** headings, lists, tables, code, links and clickable `- [ ]` checkboxes. Raw HTML is shown as text, and external images load only when clicked (see [Security](#security)).
 - **Checklist** (sub-tasks) with progress shown on the card.
 - **Issue links:** blocks / is blocked by / relates to / duplicates.

@@ -155,6 +155,7 @@ export const EN_TEMPLATES: TemplateTexts = {
         version: 'v-slice',
         components: ['Physics'],
         labels: ['crash', 'blocker'],
+        build: '0.3.1 (1187)',
         description: BUG.replace('1. \n2. \n3. ', '1. Load level 2\n2. Walk to the bridge\n3. Dash downwards'),
         storyPoints: 2,
       },

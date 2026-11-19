@@ -273,6 +273,7 @@ describe('boards', () => {
   test('field names: known fields only, short text; admins set them, editors cannot', async () => {
     const db = as(BOARD_ADMIN);
     await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: { details: 'About', fixVersionId: 'Month', assigneeId: 'Who does it' } }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: { build: 'Found in build' } }));
     await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: {} }));
     await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { title: 'Name' } }));
     await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { epicId: 'x'.repeat(41) } }));
@@ -320,6 +321,15 @@ describe('issues', () => {
     await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { checklist: 'x' }));
     await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { title: '' }));
     await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { title: 'x'.repeat(501) }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { build: 7 }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { build: 'x'.repeat(101) }));
+  });
+
+  test('the build is optional: older issues have none, game dev issues keep it as text', async () => {
+    const db = as(EDITOR);
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { title: 'No build yet', updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { build: '0.4.2 (1234)', updatedAt: 3 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { build: '', updatedAt: 4 }));
   });
 
   test('editors update issues, but not the number, creator or creation time', async () => {

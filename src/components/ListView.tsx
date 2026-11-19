@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import type { Board, FieldKey } from '../types';
 import { useApp } from '../app-context';
-import { fieldName, genericFieldName } from '../lib/fields';
+import { fieldName, genericFieldName, hasField } from '../lib/fields';
 import { t, tk } from '../i18n';
 import { applyFilters, epicOf, sortIssues, type SortKey } from '../lib/issues';
 import { downloadFile, dueState, formatDate, isDone, priorityName, timeAgo, cls } from '../lib/utils';
@@ -32,7 +32,7 @@ function colLabel(board: Board, c: (typeof COLS)[number]): string {
   return name === genericFieldName(c.field) ? t(c.label) : name;
 }
 
-const CSV_HEAD = [tk('Key'), tk('Type'), tk('Summary'), tk('Status'), tk('Assignee'), tk('Priority'), tk('Labels'), tk('Version'), tk('Epic'), tk('SP'), tk('Due'), tk('Created'), tk('Updated')];
+const CSV_HEAD = [tk('Key'), tk('Type'), tk('Summary'), tk('Status'), tk('Assignee'), tk('Priority'), tk('Labels'), tk('Version'), tk('Build'), tk('Epic'), tk('SP'), tk('Due'), tk('Created'), tk('Updated')];
 
 // Memoized: re-renders only when the board context changes, not on every BoardPage render.
 export const ListView = memo(function ListView() {
@@ -50,6 +50,9 @@ export const ListView = memo(function ListView() {
       const cell = /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s) ? `'${s}` : s;
       return `"${cell.replace(/"/g, '""')}"`;
     };
+    // The build column only on boards that have the field (game dev).
+    const withBuild = hasField(board, 'build');
+    const head = CSV_HEAD.filter((h) => withBuild || h !== 'Build');
     const lines = rows.map((i) => {
       const epic = epicOf(board, byId, i);
       return [
@@ -61,6 +64,7 @@ export const ListView = memo(function ListView() {
         priorityName(i.priority),
         i.labels.join(' '),
         board.versions.find((v) => v.id === i.fixVersionId)?.name ?? '',
+        ...(withBuild ? [i.build] : []),
         epic ? `${board.key}-${epic.number}` : '',
         i.storyPoints ?? '',
         i.dueDate ?? '',
@@ -71,7 +75,7 @@ export const ListView = memo(function ListView() {
         .join(',');
     });
     // BOM so Excel detects UTF-8.
-    downloadFile(`${board.key}-issues.csv`, '﻿' + [CSV_HEAD.map((h) => esc(t(h))).join(','), ...lines].join('\n'), 'text/csv;charset=utf-8');
+    downloadFile(`${board.key}-issues.csv`, '﻿' + [head.map((h) => esc(t(h))).join(','), ...lines].join('\n'), 'text/csv;charset=utf-8');
   };
 
   return (

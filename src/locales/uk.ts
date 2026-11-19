@@ -186,6 +186,7 @@ export const UK: Record<string, string> = {
   Components: 'Компоненти',
   Version: 'Версія',
   'Fix version': 'Версія',
+  Build: 'Білд',
   Epic: 'Епік',
   'Story points': 'Story points',
   SP: 'SP',
@@ -213,6 +214,7 @@ export const UK: Record<string, string> = {
   'Checklist from the issue type template': 'Чек-лист із шаблону типу задачі',
   'e.g. 2d 4h': 'напр. 2d 4h',
   'e.g. 3d 4h': 'напр. 3d 4h',
+  'e.g. 0.4.2 (1234)': 'напр. 0.4.2 (1234)',
   'Created {key}': 'Створено {key}',
 
   // --- Issue dialog -------------------------------------------------------

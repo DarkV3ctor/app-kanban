@@ -3,7 +3,7 @@ import type { IssueDraft } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { isEpic, newIssueDraft } from '../lib/issues';
-import { fieldName } from '../lib/fields';
+import { MAX_BUILD, fieldName, hasField } from '../lib/fields';
 import { columnCategory, uid } from '../lib/utils';
 import { useBoard } from './board-context';
 import { Field, Modal } from './ui';
@@ -136,6 +136,11 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
         <Field label={fieldName(board, 'fixVersionId')}>
           <VersionPicker board={board} value={d.fixVersionId} onChange={(v) => set({ fixVersionId: v })} />
         </Field>
+        {hasField(board, 'build') && (
+          <Field label={fieldName(board, 'build')}>
+            <input className="input" value={d.build} onChange={(e) => set({ build: e.target.value })} placeholder={t('e.g. 0.4.2 (1234)')} maxLength={MAX_BUILD} />
+          </Field>
+        )}
         {!typeIsEpic && (
           <Field label={fieldName(board, 'epicId')}>
             <EpicPicker board={board} issues={issues} value={d.epicId} onChange={(v) => set({ epicId: v })} />

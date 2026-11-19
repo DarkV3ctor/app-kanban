@@ -3,7 +3,7 @@ import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
 import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
 import { normalizeBoardSetup, normalizeIssue } from './normalize';
-import { fieldName, isFieldKey } from './fields';
+import { MAX_BUILD, fieldName, isFieldKey } from './fields';
 
 export const LINK_TYPES: { id: LinkType; name: string; inverse: LinkType }[] = [
   { id: 'blocks', name: tk('blocks'), inverse: 'blocked_by' },
@@ -53,6 +53,7 @@ export function newIssueDraft(board: Board, me: AppUser, over: Partial<IssueDraf
     labels: [],
     components: [],
     fixVersionId: null,
+    build: '',
     epicId: null,
     storyPoints: null,
     estimate: '',
@@ -86,6 +87,7 @@ export function buildSampleIssues(setup: BoardSetup, samples: SampleIssue[], use
       labels: s.labels ?? [],
       components: s.components ?? [],
       fixVersionId: s.version ?? null,
+      build: s.build ?? '',
       epicId: null,
       storyPoints: s.storyPoints ?? null,
       estimate: s.estimate ?? '',
@@ -163,6 +165,7 @@ export function diffIssue(board: Board, before: Issue, patch: Partial<Issue>, al
     labels: (v: string[]) => list(v),
     components: (v: string[]) => list(v),
     fixVersionId: (v: string | null) => version(v),
+    build: (v: string) => v,
     epicId: (v: string | null) => epic(v),
     storyPoints: (v: number | null) => (v === null ? '' : String(v)),
     estimate: (v: string) => v,
@@ -264,7 +267,7 @@ export function applyFilters(board: Board, issues: Issue[], f: Filters, me: AppU
   return issues.filter((i) => {
     if (text) {
       const key = `${board.key}-${i.number}`.toLowerCase();
-      if (!i.title.toLowerCase().includes(text) && !key.includes(text) && !i.description.toLowerCase().includes(text)) return false;
+      if (!i.title.toLowerCase().includes(text) && !key.includes(text) && !i.description.toLowerCase().includes(text) && !i.build.toLowerCase().includes(text)) return false;
     }
     if (f.assignees.length && !f.assignees.includes(i.assigneeId ?? 'none')) return false;
     if (f.types.length && !f.types.includes(i.type)) return false;
@@ -393,6 +396,7 @@ export function prepareImport(data: unknown, me: AppUser): { draft: BoardSetup; 
       description: i.description.slice(0, 100_000),
       status: columnIds.has(i.status) ? i.status : draft.columns[0].id,
       estimate: i.estimate.slice(0, 50),
+      build: i.build.slice(0, MAX_BUILD),
       labels: i.labels.slice(0, 50),
       components: i.components.slice(0, 50),
       checklist: i.checklist.slice(0, 200),

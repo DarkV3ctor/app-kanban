@@ -1,4 +1,4 @@
-import type { BoardSetup, Column, FieldNames, IssueType, Priority, Version } from './types';
+import type { BoardSetup, Column, FieldKey, FieldNames, IssueType, Priority, Version } from './types';
 import { lang } from './i18n';
 import { addDays, monthName, todayISO, toISODate, uid } from './lib/utils';
 import { EN_TEMPLATES } from './locales/templates.en';
@@ -18,6 +18,7 @@ export interface SampleIssue {
   labels?: string[];
   components?: string[];
   version?: string; // version id ('$m0', '$m1'… = generated months)
+  build?: string;
   epic?: string; // title of an epic from the same list
   storyPoints?: number;
   estimate?: string;
@@ -61,6 +62,8 @@ export interface BoardTemplate {
   defaultKey: string;
   /** Field names of boards made from this template, in the UI language (see fieldName()). */
   fields: FieldNames;
+  /** Fields that only boards of this kind have (see OPTIONAL_FIELDS in lib/fields.ts). */
+  extraFields?: FieldKey[];
   build: () => { draft: BoardSetup; samples: SampleIssue[] };
 }
 
@@ -89,6 +92,7 @@ const gameDev: BoardTemplate = {
   name: TEXT.gamedev.name,
   description: TEXT.gamedev.description,
   fields: TEXT.gamedev.fields ?? {},
+  extraFields: ['build'],
   icon: '🎮',
   color: '#6E5DC6',
   defaultKey: 'GAME',

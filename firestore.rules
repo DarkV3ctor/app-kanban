@@ -137,10 +137,11 @@ service cloud.firestore {
     function validFieldNames(m) {
       return m is map
         && m.keys().hasOnly(['details', 'assigneeId', 'reporterId', 'priority', 'type', 'labels',
-            'components', 'fixVersionId', 'epicId', 'storyPoints', 'estimate', 'dueDate'])
+            'components', 'fixVersionId', 'build', 'epicId', 'storyPoints', 'estimate', 'dueDate'])
         && fieldNameOk(m, 'details') && fieldNameOk(m, 'assigneeId') && fieldNameOk(m, 'reporterId')
         && fieldNameOk(m, 'priority') && fieldNameOk(m, 'type') && fieldNameOk(m, 'labels')
-        && fieldNameOk(m, 'components') && fieldNameOk(m, 'fixVersionId') && fieldNameOk(m, 'epicId')
+        && fieldNameOk(m, 'components') && fieldNameOk(m, 'fixVersionId') && fieldNameOk(m, 'build')
+        && fieldNameOk(m, 'epicId')
         && fieldNameOk(m, 'storyPoints') && fieldNameOk(m, 'estimate') && fieldNameOk(m, 'dueDate');
     }
 
@@ -164,6 +165,8 @@ service cloud.firestore {
         && optString(d.fixVersionId) && optString(d.epicId)
         && (d.storyPoints == null || d.storyPoints is number)
         && d.estimate is string && d.estimate.size() <= 50
+        // Build (game dev boards; older issues have none). Keep the length in sync with MAX_BUILD in src/lib/fields.ts.
+        && (!('build' in d) || (d.build is string && d.build.size() <= 100))
         && optString(d.dueDate)
         && d.checklist is list && d.checklist.size() <= 200
         && d.links is list && d.links.size() <= 200

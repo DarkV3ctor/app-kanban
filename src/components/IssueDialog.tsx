@@ -3,7 +3,7 @@ import type { Comment, FieldKey, HistoryEntry, Issue, LinkType } from '../types'
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { LINK_TYPES, epicOf, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
-import { fieldName } from '../lib/fields';
+import { MAX_BUILD, fieldName, hasField } from '../lib/fields';
 import { columnCategory, formatDateTime, rankBetween, timeAgo, uid, cls, isDone } from '../lib/utils';
 import { BoardContext, useBoard } from './board-context';
 import { Icon, TypeIcon } from './Icons';
@@ -201,6 +201,11 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
                 <Detail label={f('fixVersionId')}>
                   <VersionPicker board={board} value={issue.fixVersionId} onChange={(v) => set({ fixVersionId: v })} disabled={!canEdit} />
                 </Detail>
+                {hasField(board, 'build') && (
+                  <Detail label={f('build')}>
+                    <TextInput value={issue.build} onSave={(v) => set({ build: v })} disabled={!canEdit} placeholder={t('e.g. 0.4.2 (1234)')} maxLength={MAX_BUILD} />
+                  </Detail>
+                )}
                 {!isEpic(board, issue) && (
                   <Detail label={f('epicId')}>
                     <EpicPicker board={board} issues={issues} value={issue.epicId} onChange={(v) => set({ epicId: v })} disabled={!canEdit} selfId={issue.id} />
@@ -260,7 +265,7 @@ function NumberInput({ value, onSave, disabled }: { value: number | null; onSave
   );
 }
 
-function TextInput({ value, onSave, disabled, placeholder }: { value: string; onSave: (v: string) => void; disabled?: boolean; placeholder?: string }) {
+function TextInput({ value, onSave, disabled, placeholder, maxLength = 50 }: { value: string; onSave: (v: string) => void; disabled?: boolean; placeholder?: string; maxLength?: number }) {
   const [v, setV] = useState(value);
   useEffect(() => setV(value), [value]);
   return (
@@ -268,7 +273,7 @@ function TextInput({ value, onSave, disabled, placeholder }: { value: string; on
       className="input input-compact"
       value={v}
       onChange={(e) => setV(e.target.value)}
-      maxLength={50}
+      maxLength={maxLength}
       onBlur={() => v.trim() !== value && onSave(v.trim())}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       disabled={disabled}

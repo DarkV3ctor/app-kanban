@@ -53,9 +53,10 @@ export interface Version {
 
 /**
  * Issue fields a board can rename, plus "details" — the title of the fields panel in the issue dialog.
- * The keys match the Issue properties (and the field keys of history entries).
+ * The keys match the Issue properties (and the field keys of history entries). Some fields exist only
+ * on some kinds of boards (see OPTIONAL_FIELDS in lib/fields.ts).
  */
-export type FieldKey = 'details' | 'assigneeId' | 'reporterId' | 'priority' | 'type' | 'labels' | 'components' | 'fixVersionId' | 'epicId' | 'storyPoints' | 'estimate' | 'dueDate';
+export type FieldKey = 'details' | 'assigneeId' | 'reporterId' | 'priority' | 'type' | 'labels' | 'components' | 'fixVersionId' | 'build' | 'epicId' | 'storyPoints' | 'estimate' | 'dueDate';
 
 /** Custom field names of a board (only the renamed ones; the rest use the template's names). */
 export type FieldNames = Partial<Record<FieldKey, string>>;
@@ -109,6 +110,8 @@ export interface Issue {
   labels: string[];
   components: string[];
   fixVersionId: string | null;
+  /** Game build the issue was found in or is checked on, as typed (game dev boards). */
+  build: string;
   epicId: string | null;
   storyPoints: number | null;
   estimate: string;
