@@ -680,7 +680,7 @@
   border-color: transparent;
   background: var(--primary-container);
 }
-[data-design='material'] .stat-tile.is-hero .stat-value {
+[data-design='material'] .stat-tile.is-hero :is(.stat-value, .stat-label, .stat-delta) {
   color: var(--on-primary-container);
 }
 [data-design='material'] .chart-tooltip {

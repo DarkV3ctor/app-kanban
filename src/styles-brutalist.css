@@ -170,10 +170,15 @@
 }
 
 /* --- Base: dot grid, type, selection, focus ----------------------------------- */
-[data-design='brutalist'] body {
+/* The sticky header row and lane titles cover the page with their own background: they repeat the
+   grid, pinned to the window like the page's, so the dots line up instead of leaving blank strips. */
+[data-design='brutalist'] body,
+[data-design='brutalist'] .kanban-header-row,
+[data-design='brutalist'] .lane-head {
   background-color: var(--bg);
   background-image: radial-gradient(var(--dot) 1px, transparent 1.4px);
   background-size: 22px 22px;
+  background-attachment: fixed;
 }
 [data-design='brutalist'] h1 {
   font-size: 30px;
@@ -536,9 +541,14 @@
   padding: 6px 8px 10px;
   border: 2px solid var(--ink);
 }
-/* Columns right under the header row continue it; swimlanes (with a lane title) are boxed on their own. */
+/* Columns right under the header row continue it. With swimlanes a lane title sits in between, so the
+   headers and the first lane's columns are boxed on their own, rounded on all corners like later lanes. */
 [data-design='brutalist'] .kanban-header-row + .lane:not(:has(.lane-head)) .lane-row .column {
   border-top: 0;
+}
+[data-design='brutalist'] .kanban-header-row:has(+ .lane .lane-head) .column-head,
+[data-design='brutalist'] .kanban-header-row + .lane:has(.lane-head) .lane-row .column {
+  border-radius: var(--radius-col);
 }
 [data-design='brutalist'] .column.is-over {
   background: var(--bg-selected);
@@ -601,6 +611,13 @@
 }
 
 /* --- Lists --------------------------------------------------------------------------------------------- */
+/* Lists on the page get a surface of their own, so the dot grid stays out of the rows. */
+[data-design='brutalist'] .table-wrap,
+[data-design='brutalist'] .release-list {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  box-shadow: 4px 4px 0 var(--ink);
+}
 [data-design='brutalist'] .issue-table th {
   font-weight: 800;
   text-transform: uppercase;
