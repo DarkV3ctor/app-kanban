@@ -1190,12 +1190,14 @@ textarea.input {
    Board: sidebar and main area
    ========================================================================== */
 .board-layout {
+  /* The menu width; BoardPage sets the user's choice inline. */
+  --sidebar-w: 240px;
   display: flex;
   height: 100%;
   min-height: 0;
 }
 .sidebar {
-  width: 240px;
+  width: var(--sidebar-w);
   flex: none;
   border-right: 1px solid var(--border);
   background: var(--bg);
@@ -1203,12 +1205,75 @@ textarea.input {
   flex-direction: column;
   padding: 16px 8px;
   gap: 8px;
+  /* Shown at once (so it can take focus), hidden only once it has slid away. */
+  transition:
+    margin-left 0.2s ease,
+    visibility 0s;
 }
 .sidebar-project {
   display: flex;
   gap: 10px;
   align-items: center;
-  padding: 4px 8px 12px;
+  padding: 4px 0 12px 8px;
+}
+.sidebar-hide {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+}
+/* The draggable right edge of the menu: an 8 px grip centred on its border. */
+.sidebar-resizer {
+  flex: none;
+  position: relative;
+  z-index: 4;
+  width: 8px;
+  margin: 0 -4px;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.sidebar-resizer:hover::after {
+  opacity: 1;
+  transition-delay: 0.15s;
+}
+.sidebar-resizer:focus-visible::after,
+.is-resizing-sidebar .sidebar-resizer::after {
+  opacity: 1;
+  transition-delay: 0s;
+}
+.is-resizing-sidebar,
+.is-resizing-sidebar * {
+  cursor: col-resize !important;
+  user-select: none;
+}
+@media (min-width: 761px) {
+  .sidebar-hidden .sidebar,
+  .board-layout[data-drag-hidden] .sidebar {
+    margin-left: calc(-1 * var(--sidebar-w));
+    visibility: hidden;
+    transition:
+      margin-left 0.2s ease,
+      visibility 0s 0.2s;
+  }
+  .sidebar-hidden .sidebar-resizer {
+    display: none;
+  }
+  /* Negative margins: the button must not make the breadcrumbs taller and shift the page. */
+  .sidebar-hidden .sidebar-toggle {
+    display: inline-flex;
+    margin: -4px 0 -4px -8px;
+  }
 }
 .sidebar-project-text {
   min-width: 0;
@@ -3074,15 +3139,20 @@ textarea.inline-input.issue-title {
   }
 }
 @media (max-width: 760px) {
+  /* The menu becomes a drawer: the width and hidden state chosen on wide screens do not apply. */
   .sidebar {
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
     z-index: 60;
+    width: 240px;
     transform: translateX(-100%);
     transition: transform 0.2s;
     box-shadow: var(--shadow-raised);
+  }
+  .sidebar-resizer {
+    display: none;
   }
   .sidebar-open .sidebar {
     transform: none;
@@ -3695,6 +3765,11 @@ textarea.inline-input.issue-title {
 }
 @media (prefers-reduced-motion: reduce) {
   .chart-cols {
+    transition: none;
+  }
+  .sidebar,
+  .sidebar-hidden .sidebar,
+  .board-layout[data-drag-hidden] .sidebar {
     transition: none;
   }
 }

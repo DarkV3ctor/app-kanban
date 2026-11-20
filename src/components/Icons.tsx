@@ -120,6 +120,13 @@ const UI: Record<string, ReactNode> = {
     </>
   ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  // A side panel folding to the left: "hide the menu".
+  sidebarHide: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <path d="M9.5 4.5v15M16 9.5L13.5 12l2.5 2.5" />
+    </>
+  ),
   monitor: (
     <>
       <rect x="3" y="4.5" width="18" height="12" rx="2" />

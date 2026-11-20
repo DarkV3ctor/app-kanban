@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { Board, Issue, IssueDraft } from '../types';
 import { useApp } from '../app-context';
 import { navigate, setQueryParam, type Route } from '../router';
@@ -16,6 +16,7 @@ import { SettingsView } from './SettingsView';
 import { MembersView } from './MembersView';
 import { IssueDialog } from './IssueDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
+import { SidebarResizer, isNarrow, useSidebarPrefs } from './SidebarResizer';
 
 const VIEWS = [
   { id: 'board', name: tk('Board'), icon: 'board' },
@@ -45,7 +46,14 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
   const [error, setError] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<Filters>(() => loadFilters(boardId));
   const [creating, setCreating] = useState<Partial<IssueDraft> | null>(null);
+  // The menu is a drawer on narrow screens (sidebarOpen) and a column that can be hidden or
+  // resized on wide ones (sidebarHidden / sidebarWidth).
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { width: sidebarWidth, setWidth: setSidebarWidth, hidden: sidebarHidden, setHidden: setSidebarHidden } = useSidebarPrefs();
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const showMenuRef = useRef<HTMLButtonElement>(null);
+  const hideMenuRef = useRef<HTMLButtonElement>(null);
+  const focusNext = useRef<RefObject<HTMLButtonElement | null> | null>(null);
   // An issue opened right after it was created may not have arrived in the snapshot yet.
   const [pendingIssue, setPendingIssue] = useState<Issue | null>(null);
 
@@ -129,7 +137,23 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     [board, issues, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard],
   );
 
-  // Keyboard shortcuts: C — create issue, / — search
+  const setMenu = useCallback(
+    (show: boolean) => {
+      // Focus inside the part that disappears would be lost: move it to the button that brings it back.
+      const active = document.activeElement;
+      if (active?.closest(show ? '.sidebar-toggle' : '.sidebar, .sidebar-resizer')) focusNext.current = show ? hideMenuRef : showMenuRef;
+      if (isNarrow()) setSidebarOpen(show);
+      else setSidebarHidden(!show);
+    },
+    [setSidebarHidden],
+  );
+  useEffect(() => {
+    const target = focusNext.current;
+    focusNext.current = null;
+    target?.current?.focus();
+  }, [sidebarOpen, sidebarHidden]);
+
+  // Keyboard shortcuts: C — create issue, / — search, [ — show / hide the menu
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -146,11 +170,15 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
           e.preventDefault();
           s.focus();
         }
+      } else if (e.key === '[' || (e.code === 'BracketLeft' && !e.shiftKey)) {
+        // Also by key position, so it works in the Ukrainian layout (where this key is "х").
+        e.preventDefault();
+        setMenu(isNarrow() ? !sidebarOpen : sidebarHidden);
       }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [perms.edit]);
+  }, [perms.edit, setMenu, sidebarOpen, sidebarHidden]);
 
   // A failed listener does not recover (e.g. after being removed from the board), so the
   // last known copy of the board must not stay on screen.
@@ -182,8 +210,12 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
 
   return (
     <BoardContext.Provider value={ctx}>
-      <div className={cls('board-layout', sidebarOpen && 'sidebar-open')}>
-        <aside className="sidebar">
+      <div
+        ref={layoutRef}
+        className={cls('board-layout', sidebarOpen && 'sidebar-open', sidebarHidden && 'sidebar-hidden')}
+        style={{ ['--sidebar-w' as string]: `${sidebarWidth}px` }}
+      >
+        <aside className="sidebar" id="board-sidebar">
           <div className="sidebar-project" style={{ ['--board-color' as string]: board.color }}>
             <span className="board-icon">{board.icon}</span>
             <div className="sidebar-project-text">
@@ -194,6 +226,9 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
                 {board.key} · {roleName(myRole)}
               </div>
             </div>
+            <button ref={hideMenuRef} className="icon-btn sidebar-hide" onClick={() => setMenu(false)} aria-label={t('Hide menu')} title={t('Hide menu')}>
+              <Icon name="sidebarHide" size={18} />
+            </button>
           </div>
           <nav className="sidebar-nav">
             {VIEWS.map((v) => (
@@ -209,13 +244,21 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
             ))}
           </nav>
           <div className="sidebar-foot muted small">
-            {t('Shortcuts:')} <kbd>C</kbd> — {t('create issue')}, <kbd>/</kbd> — {t('search')}
+            {t('Shortcuts:')} <kbd>C</kbd> — {t('create issue')}, <kbd>/</kbd> — {t('search')}, <kbd>[</kbd> — {t('hide menu')}
           </div>
         </aside>
+        <SidebarResizer layoutRef={layoutRef} width={sidebarWidth} onResize={setSidebarWidth} onHide={() => setMenu(false)} />
         <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />
         <main className="board-main">
           <div className="breadcrumbs">
-            <button className="icon-btn sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label={t('Board menu')}>
+            <button
+              ref={showMenuRef}
+              className="icon-btn sidebar-toggle"
+              onClick={() => setMenu(true)}
+              aria-label={t('Show menu')}
+              aria-controls="board-sidebar"
+              title={t('Show menu')}
+            >
               <Icon name="menu" size={18} />
             </button>
             <a href="#/">{t('Boards')}</a>
