@@ -716,3 +716,18 @@
     animation: none;
   }
 }
+
+/* --- Quick delete on cards: a small tonal FAB (secondary container, elevation 1) -------------- */
+[data-design='material'] .card-delete {
+  --cd-bg: var(--secondary-container);
+  --cd-fg: var(--on-secondary-container);
+  --cd-line-width: 0px;
+  --cd-radius: 10px;
+  --cd-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --cd-hover-bg: var(--danger-bg);
+  --cd-hover-fg: var(--danger-text);
+  top: 6px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+}

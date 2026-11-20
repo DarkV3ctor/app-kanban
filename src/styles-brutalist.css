@@ -724,3 +724,27 @@
     transform: none;
   }
 }
+
+/* --- Quick delete on cards: a chunky yellow key with an ink outline and a hard shadow --------- */
+[data-design='brutalist'] .card-delete {
+  --cd-bg: var(--yellow);
+  --cd-fg: #000000;
+  --cd-line: var(--ink);
+  --cd-line-width: 2px;
+  --cd-radius: 8px;
+  --cd-shadow: 2px 2px 0 var(--ink);
+  --cd-hover-bg: #ff8f8f;
+  --cd-hover-fg: #000000;
+  --cd-hover-line: var(--ink);
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s;
+}
+[data-design='brutalist'] .card-delete:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+[data-design='brutalist'] .card-delete:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}

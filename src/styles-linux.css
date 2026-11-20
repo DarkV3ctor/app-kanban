@@ -640,3 +640,18 @@
   content: ' ]' / '';
   color: var(--text-subtlest);
 }
+
+/* --- Quick delete on cards: a terminal key; it glows in the danger colour when pointed at ----- */
+[data-design='linux'] .card-delete {
+  --cd-bg: var(--bg-sunken);
+  --cd-fg: var(--link);
+  --cd-line: var(--border-strong);
+  --cd-radius: 2px;
+  --cd-shadow: none;
+  --cd-hover-bg: var(--bg-sunken);
+  --cd-hover-fg: var(--danger);
+  --cd-hover-line: var(--danger);
+}
+[data-design='linux'] .card-delete:hover {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--danger) 55%, transparent);
+}

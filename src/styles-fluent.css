@@ -1008,3 +1008,15 @@
     transition: none;
   }
 }
+
+/* --- Quick delete on cards: a Fluent secondary button (accessible stroke, shadow8) ------------ */
+[data-design='fluent'] .card-delete {
+  --cd-bg: var(--surface);
+  --cd-fg: var(--text);
+  --cd-line: var(--border-strong);
+  --cd-radius: 4px;
+  --cd-shadow: var(--shadow8);
+  --cd-hover-bg: var(--danger-bg);
+  --cd-hover-fg: var(--danger-text);
+  --cd-hover-line: var(--danger-text);
+}

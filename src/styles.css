@@ -1612,10 +1612,20 @@ textarea.input {
 }
 /*
  * Quick delete: a button in the card's corner, shown on hover or focus (always on touch screens).
- * Fixed, opaque colours rather than design tokens: card surfaces are the same colour as the
- * tokens (and translucent in some designs), and the button must stand out on any card or cover.
+ * Every design styles it its own way through the --cd-* variables (see styles-<design>.css); these
+ * are Classic's: a neutral Atlassian-style square that turns into a danger button when pointed at.
+ * The colours are mixed from opaque tokens, so the button never lets the card show through.
  */
 .card-delete {
+  --cd-bg: color-mix(in srgb, var(--text) 13%, var(--surface-raised));
+  --cd-fg: var(--text);
+  --cd-line: color-mix(in srgb, var(--text) 30%, var(--surface-raised));
+  --cd-line-width: 1px;
+  --cd-radius: 3px;
+  --cd-shadow: var(--shadow-raised);
+  --cd-hover-bg: var(--danger-bg);
+  --cd-hover-fg: var(--danger-text);
+  --cd-hover-line: var(--danger-text);
   position: absolute;
   top: 7px;
   right: 5px;
@@ -1625,11 +1635,11 @@ textarea.input {
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  background: #c9372c;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(9, 30, 66, 0.45);
+  border: var(--cd-line-width) solid var(--cd-line);
+  border-radius: var(--cd-radius);
+  background: var(--cd-bg);
+  color: var(--cd-fg);
+  box-shadow: var(--cd-shadow);
   cursor: pointer;
   visibility: hidden;
 }
@@ -1638,7 +1648,9 @@ textarea.input {
   visibility: visible;
 }
 .card-delete:hover {
-  background: #ae2e24;
+  background: var(--cd-hover-bg);
+  color: var(--cd-hover-fg);
+  border-color: var(--cd-hover-line);
 }
 .card-delete:focus-visible {
   outline: 2px solid var(--focus);

@@ -769,3 +769,18 @@
     transform: none;
   }
 }
+
+/* --- Quick delete on cards: a glowing pill in the accent gradient (opaque, so it reads on glass) - */
+[data-design='translucent'] .card-delete {
+  --cd-bg: var(--accent-grad);
+  --cd-fg: #ffffff;
+  --cd-line: #ffffff;
+  --cd-radius: 50%;
+  --cd-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+  --cd-hover-bg: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+  --cd-hover-fg: #ffffff;
+  --cd-hover-line: #ffffff;
+}
+[data-design='translucent'] .card-delete:hover {
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.45);
+}

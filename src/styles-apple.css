@@ -612,3 +612,14 @@
     transform: none;
   }
 }
+
+/* --- Quick delete on cards: a round grey control in the system-gray style --------------------- */
+[data-design='apple'] .card-delete {
+  --cd-bg: color-mix(in srgb, var(--text) 12%, var(--surface-raised));
+  --cd-fg: var(--text);
+  --cd-line-width: 0px;
+  --cd-radius: 50%;
+  --cd-shadow: 0 1px 3px rgba(0, 0, 0, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  --cd-hover-bg: color-mix(in srgb, var(--danger) 18%, var(--surface-raised));
+  --cd-hover-fg: var(--danger);
+}
