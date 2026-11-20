@@ -1,8 +1,8 @@
 /* ==========================================================================
    Design tokens — "Classic" design (inspired by the Atlassian Design System).
-   The other designs (styles-apple.css, styles-fluent.css, styles-linux.css,
-   styles-translucent.css) redefine these tokens under :root[data-design='…'] and
-   restyle a few components on top.
+   The other designs (styles-apple.css, styles-fluent.css, styles-material.css,
+   styles-linux.css, styles-translucent.css, styles-brutalist.css) redefine these
+   tokens under :root[data-design='…'] and restyle a few components on top.
    ========================================================================== */
 :root {
   --bg: #ffffff;
@@ -892,6 +892,74 @@ textarea.input {
 .preview-linux .pv-logo {
   border-radius: 0;
   background: var(--pv-done);
+}
+/* Material: one tonal surface for the bar and the page, a pill button, rounded containers with raised cards. */
+.preview-material {
+  --pv-bg: #fef7ff;
+  --pv-bar: #fef7ff;
+  --pv-line: transparent;
+  --pv-col: #f3edf7;
+  --pv-card: #ffffff;
+  --pv-accent: #6750a4;
+  --pv-r: 5px;
+}
+.preview-material.is-dark {
+  --pv-bg: #141218;
+  --pv-bar: #141218;
+  --pv-col: #211f26;
+  --pv-card: #2b2930;
+  --pv-accent: #d0bcff;
+}
+.preview-material .pv-logo {
+  border-radius: 50%;
+}
+.preview-material .pv-btn {
+  border-radius: 999px;
+}
+.preview-material .pv-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+/* Brutalist: a yellow bar over a black rule, outlined columns with coloured tops, cards with hard shadows. */
+.preview-brutalist {
+  --pv-bg: #fff8e8;
+  --pv-bar: #ffd23f;
+  --pv-line: #000000;
+  --pv-col: #f3ead3;
+  --pv-card: #ffffff;
+  --pv-accent: #ff90e8;
+  --pv-r: 2px;
+}
+.preview-brutalist.is-dark {
+  --pv-bg: #18181b;
+  --pv-bar: #26262b;
+  --pv-line: #ececec;
+  --pv-col: #202024;
+  --pv-card: #2e2e34;
+}
+.preview-brutalist .pv-bar {
+  border-bottom-width: 2px;
+}
+.preview-brutalist .pv-logo {
+  background: #111111;
+  box-shadow: 0 0 0 1px var(--pv-line);
+}
+.preview-brutalist .pv-btn {
+  box-shadow: 0 0 0 1px var(--pv-line);
+}
+.preview-brutalist .pv-col {
+  border-top: 3px solid #c9b8ff;
+  box-shadow: inset 0 0 0 1px var(--pv-line);
+}
+.preview-brutalist .pv-col:nth-child(2) {
+  border-top-color: #ffd23f;
+}
+.preview-brutalist .pv-col:nth-child(3) {
+  border-top-color: #7be495;
+}
+.preview-brutalist .pv-card {
+  box-shadow:
+    inset 0 0 0 1px var(--pv-line),
+    1.5px 1.5px 0 var(--pv-line);
 }
 .design-name {
   /* Flex centring keeps a name that is wider than the card (Translucent in the Linux design's
@@ -3179,6 +3247,34 @@ textarea.inline-input.issue-title {
 :root[data-design='linux'][data-theme='dark'] {
   --chart-created: #367bf0;
   --chart-done: #18ad6c;
+}
+:root[data-design='material'] {
+  --chart-created: #6750a4;
+  --chart-done: #2f7d3a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design='material']:not([data-theme='light']) {
+    --chart-created: #b69df8;
+    --chart-done: #6cc47c;
+  }
+}
+:root[data-design='material'][data-theme='dark'] {
+  --chart-created: #b69df8;
+  --chart-done: #6cc47c;
+}
+:root[data-design='brutalist'] {
+  --chart-created: #2340d9;
+  --chart-done: #0e8040;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-design='brutalist']:not([data-theme='light']) {
+    --chart-created: #7a9bff;
+    --chart-done: #33b96a;
+  }
+}
+:root[data-design='brutalist'][data-theme='dark'] {
+  --chart-created: #7a9bff;
+  --chart-done: #33b96a;
 }
 /* The unfilled part of a meter and empty heatmap days: a light step of the "done" hue. */
 .progress-view {

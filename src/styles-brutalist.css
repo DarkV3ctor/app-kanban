@@ -1,0 +1,709 @@
+/* ==========================================================================
+   "Brutalist" design — enabled by <html data-design="brutalist"> (see src/appearance.ts).
+   Neo-brutalism, the loud web style of Gumroad and friends:
+   - thick black outlines on everything and hard offset shadows with no blur;
+     buttons and cards lift on hover and press down flat when clicked;
+   - flat, saturated colours with black text: a pink primary, a yellow top bar
+     and active states, and column headers coloured by category (lavender
+     "to do", yellow "in progress", green "done");
+   - a cream page with a dot grid, chunky Rubik (bundled) with heavy uppercase
+     labels, small 6 px radii;
+   - in dark mode the ink turns off-white: light outlines and shadows on near-black.
+   Like the other designs, it redefines the tokens of styles.css and restyles a few
+   components on top; everything else follows the tokens.
+   ========================================================================== */
+
+@import '@fontsource-variable/rubik/wght.css';
+
+/* --- Tokens: light ------------------------------------------------------ */
+:root[data-design='brutalist'] {
+  --bg: #fff8e8;
+  --bg-sunken: #f6edd8;
+  --bg-column: #f3ead3;
+  --bg-hover: rgba(0, 0, 0, 0.06);
+  --bg-pressed: rgba(0, 0, 0, 0.12);
+  --bg-selected: #ffe9a3;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --overlay: #ffffff;
+  --border: #000000;
+  --border-strong: #000000;
+  --text: #000000;
+  --text-subtle: #2e2e2e;
+  --text-subtlest: #575757;
+  --text-inverse: #000000;
+  --link: #2340d9;
+  --primary: #ff90e8;
+  --primary-hover: #ff90e8;
+  --primary-pressed: #ff7ae2;
+  --danger: #d0152e;
+  --danger-hover: #ff5c5c;
+  --focus: #2340d9;
+  --shadow-card: 3px 3px 0 var(--ink);
+  --shadow-raised: 6px 6px 0 var(--ink);
+  --shadow-drag: 8px 8px 0 var(--ink);
+  --todo-bg: #e4e4e7;
+  --todo-text: #18181b;
+  --progress-bg: #a6d4ff;
+  --progress-text: #002f6c;
+  --done-bg: #9ef0b0;
+  --done-text: #0a5c2b;
+  --danger-bg: #ffb3b3;
+  --danger-text: #8f0014;
+  --warn-bg: #ffe066;
+  --warn-text: #4d3800;
+  --epic-bg: #dcc6ff;
+  --epic-text: #4b1d99;
+  --info-bg: #cfe6ff;
+  --topbar: #ffd23f;
+  --success: #22b35e;
+  --epic-accent: #9b5cff;
+  --backdrop: rgba(0, 0, 0, 0.45);
+  --brand-from: #111111;
+  --brand-to: #111111;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-col: 10px;
+  --radius-tag: 6px;
+  --caps: uppercase;
+  --caps-spacing: 0.04em;
+  --font: 'Rubik Variable', Rubik, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  /* Tokens used only by this design. */
+  --ink: #000000;
+  --dot: rgba(0, 0, 0, 0.13);
+  --yellow: #ffd23f;
+  --pink: #ff90e8;
+  --red: #ff6b6b;
+  --green: #7be495;
+  --cat-todo: #c9b8ff;
+  --cat-progress: #ffd23f;
+  --cat-done: #7be495;
+  color-scheme: light;
+}
+
+/* --- Tokens: dark (system setting and explicit choice) -------------------- */
+@media (prefers-color-scheme: dark) {
+  :root[data-design='brutalist']:not([data-theme='light']) {
+    --bg: #18181b;
+    --bg-sunken: #111113;
+    --bg-column: #202024;
+    --bg-hover: rgba(255, 255, 255, 0.08);
+    --bg-pressed: rgba(255, 255, 255, 0.14);
+    --bg-selected: #4a3f14;
+    --surface: #26262b;
+    --surface-raised: #2e2e34;
+    --overlay: #26262b;
+    --border: #ececec;
+    --border-strong: #ececec;
+    --text: #f7f7f7;
+    --text-subtle: #d4d4d4;
+    --text-subtlest: #a8a8a8;
+    --link: #93b2ff;
+    --danger: #ff7a7a;
+    --focus: #93b2ff;
+    --todo-bg: #3f3f46;
+    --todo-text: #f4f4f5;
+    --progress-bg: #123a6b;
+    --progress-text: #b8dcff;
+    --done-bg: #0f4d2a;
+    --done-text: #a7f3c0;
+    --danger-bg: #5c1219;
+    --danger-text: #ffb3b8;
+    --warn-bg: #4d3b00;
+    --warn-text: #ffe27a;
+    --epic-bg: #3b2470;
+    --epic-text: #dcc6ff;
+    --info-bg: #1d3557;
+    --topbar: #26262b;
+    --success: #4ade80;
+    --epic-accent: #c4a1ff;
+    --backdrop: rgba(0, 0, 0, 0.6);
+    --brand-from: #ff5fa2;
+    --brand-to: #8b5cf6;
+    --ink: #ececec;
+    --dot: rgba(255, 255, 255, 0.1);
+    color-scheme: dark;
+  }
+}
+:root[data-design='brutalist'][data-theme='dark'] {
+  --bg: #18181b;
+  --bg-sunken: #111113;
+  --bg-column: #202024;
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-pressed: rgba(255, 255, 255, 0.14);
+  --bg-selected: #4a3f14;
+  --surface: #26262b;
+  --surface-raised: #2e2e34;
+  --overlay: #26262b;
+  --border: #ececec;
+  --border-strong: #ececec;
+  --text: #f7f7f7;
+  --text-subtle: #d4d4d4;
+  --text-subtlest: #a8a8a8;
+  --link: #93b2ff;
+  --danger: #ff7a7a;
+  --focus: #93b2ff;
+  --todo-bg: #3f3f46;
+  --todo-text: #f4f4f5;
+  --progress-bg: #123a6b;
+  --progress-text: #b8dcff;
+  --done-bg: #0f4d2a;
+  --done-text: #a7f3c0;
+  --danger-bg: #5c1219;
+  --danger-text: #ffb3b8;
+  --warn-bg: #4d3b00;
+  --warn-text: #ffe27a;
+  --epic-bg: #3b2470;
+  --epic-text: #dcc6ff;
+  --info-bg: #1d3557;
+  --topbar: #26262b;
+  --success: #4ade80;
+  --epic-accent: #c4a1ff;
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --brand-from: #ff5fa2;
+  --brand-to: #8b5cf6;
+  --ink: #ececec;
+  --dot: rgba(255, 255, 255, 0.1);
+  color-scheme: dark;
+}
+
+/* --- Base: dot grid, type, selection, focus ----------------------------------- */
+[data-design='brutalist'] body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+[data-design='brutalist'] h1 {
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+[data-design='brutalist'] h1:not(.markdown h1) {
+  text-shadow: 2px 2px 0 var(--pink);
+}
+[data-design='brutalist'] h2 {
+  font-weight: 800;
+}
+[data-design='brutalist'] h3 {
+  font-weight: 700;
+}
+[data-design='brutalist'] ::selection {
+  background: var(--yellow);
+  color: #000000;
+}
+[data-design='brutalist'] :focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+[data-design='brutalist'],
+[data-design='brutalist'] * {
+  scrollbar-color: var(--ink) transparent;
+}
+
+/* --- App shell ------------------------------------------------------------------ */
+[data-design='brutalist'] .topbar {
+  border-bottom: 3px solid var(--ink);
+}
+[data-design='brutalist'] .brand {
+  font-size: 18px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+[data-design='brutalist'] .topnav a {
+  border: 2px solid transparent;
+  font-weight: 700;
+}
+[data-design='brutalist'] .topnav a:hover {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+[data-design='brutalist'] .demo-banner {
+  border-bottom: 2px solid var(--ink);
+  font-weight: 600;
+}
+[data-design='brutalist'] .sidebar {
+  background: var(--surface);
+  border-right: 3px solid var(--ink);
+}
+[data-design='brutalist'] .sidebar-link {
+  border: 2px solid transparent;
+  font-weight: 600;
+}
+[data-design='brutalist'] .sidebar-link:hover {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+[data-design='brutalist'] .sidebar-link.is-active {
+  border-color: var(--ink);
+  background: var(--yellow);
+  color: #000000 !important;
+  font-weight: 800;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+[data-design='brutalist'] .sidebar-link.is-active::before {
+  display: none;
+}
+[data-design='brutalist'] .login {
+  background: none;
+}
+[data-design='brutalist'] .login-card {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+/* --- Buttons: outlined slabs that lift on hover and press flat ------------------------ */
+[data-design='brutalist'] .btn {
+  height: 36px;
+  padding: 0 16px;
+  border: 2px solid var(--ink);
+  font-weight: 700;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s,
+    background-color 0.1s;
+}
+[data-design='brutalist'] .btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+[data-design='brutalist'] .btn:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--ink);
+}
+[data-design='brutalist'] .btn:disabled {
+  box-shadow: none;
+}
+[data-design='brutalist'] .btn-sm {
+  height: 28px;
+  padding: 0 10px;
+}
+[data-design='brutalist'] .btn-lg {
+  height: 48px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+[data-design='brutalist'] .btn-primary,
+[data-design='brutalist'] .btn-primary:hover:not(:disabled) {
+  background: var(--primary);
+  color: #000000;
+}
+[data-design='brutalist'] .btn-subtle,
+[data-design='brutalist'] .btn-subtle:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text);
+}
+[data-design='brutalist'] .btn-danger,
+[data-design='brutalist'] .btn-danger:hover:not(:disabled) {
+  background: var(--red);
+  color: #000000;
+}
+[data-design='brutalist'] .btn-link,
+[data-design='brutalist'] .btn-link:hover:not(:disabled),
+[data-design='brutalist'] .btn-link:active:not(:disabled) {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px;
+}
+[data-design='brutalist'] .icon-btn {
+  border: 2px solid transparent;
+}
+[data-design='brutalist'] .icon-btn:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+
+/* --- Fields: outlined boxes with a pink offset shadow on focus ---------------------------- */
+[data-design='brutalist'] .input,
+[data-design='brutalist'] .filter-search,
+[data-design='brutalist'] .popover-search input,
+[data-design='brutalist'] .md-editor {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  transition: box-shadow 0.1s;
+}
+[data-design='brutalist'] .input:hover:not(:disabled) {
+  background: var(--surface);
+}
+[data-design='brutalist'] .input:focus,
+[data-design='brutalist'] .filter-search:focus-within,
+[data-design='brutalist'] .popover-search input:focus,
+[data-design='brutalist'] .md-editor:focus-within {
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--pink);
+  outline: none;
+}
+[data-design='brutalist'] .detail-value .input:not(:focus) {
+  border-color: transparent;
+  background: transparent;
+}
+[data-design='brutalist'] .detail-value .input:hover:not(:disabled):not(:focus) {
+  border-color: var(--ink);
+  border-style: dashed;
+}
+[data-design='brutalist'] .inline-input {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--pink);
+}
+[data-design='brutalist'] .md-toolbar {
+  border-bottom: 2px solid var(--ink);
+}
+[data-design='brutalist'] .md-tabs button.is-active {
+  background: var(--yellow);
+  color: #000000;
+  box-shadow: inset 0 0 0 2px var(--ink);
+  font-weight: 700;
+}
+
+/* --- Pickers and chips ---------------------------------------------------------------------- */
+[data-design='brutalist'] :is(.select-trigger, .filter-btn):not(.status-trigger) {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+[data-design='brutalist'] :is(.select-trigger, .filter-btn):not(.status-trigger):hover:not(:disabled) {
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+[data-design='brutalist'] .select-trigger.is-open {
+  box-shadow: 3px 3px 0 var(--ink);
+}
+[data-design='brutalist'] .detail-value .select-trigger:not(.status-trigger) {
+  border-color: transparent;
+  background: none;
+}
+[data-design='brutalist'] .detail-value .select-trigger:not(.status-trigger):hover:not(:disabled) {
+  border-color: var(--ink);
+  border-style: dashed;
+  box-shadow: none;
+}
+[data-design='brutalist'] .filter-btn.is-active:not(.status-trigger) {
+  background: var(--yellow);
+  color: #000000;
+}
+[data-design='brutalist'] .status-trigger {
+  border: 2px solid var(--ink);
+  font-weight: 800;
+}
+[data-design='brutalist'] .checkbox {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--surface);
+}
+[data-design='brutalist'] .checkbox.is-checked {
+  background: var(--yellow);
+  border-color: var(--ink);
+  color: #000000;
+}
+[data-design='brutalist'] .menu-check {
+  color: var(--text);
+}
+
+/* --- Segmented controls: a boxed strip, the active part in yellow ------------------------------ */
+[data-design='brutalist'] .seg,
+[data-design='brutalist'] .lang-switch {
+  padding: 0;
+  gap: 0;
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--ink);
+  overflow: hidden;
+}
+[data-design='brutalist'] .seg button,
+[data-design='brutalist'] .lang-switch button {
+  border-radius: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+[data-design='brutalist'] .seg button + button,
+[data-design='brutalist'] .lang-switch button + button {
+  border-left: 2px solid var(--ink);
+}
+[data-design='brutalist'] .seg button.is-active,
+[data-design='brutalist'] .lang-switch button.is-active {
+  background: var(--yellow);
+  color: #000000;
+  box-shadow: none;
+}
+
+/* --- Badges, alerts, panels ---------------------------------------------------------------------- */
+[data-design='brutalist'] .lozenge {
+  height: 22px;
+  padding: 0 7px;
+  border: 2px solid var(--ink);
+  font-weight: 800;
+}
+[data-design='brutalist'] .alert {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-weight: 500;
+}
+[data-design='brutalist'] :is(.panel, .chart-card, .stat-tile, .details) {
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+[data-design='brutalist'] .panel-danger {
+  box-shadow: 4px 4px 0 var(--red);
+}
+[data-design='brutalist'] .panel-title {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+[data-design='brutalist'] .details-title {
+  border-bottom: 2px solid var(--ink);
+  font-weight: 800;
+}
+[data-design='brutalist'] .design-option {
+  border-color: var(--ink);
+}
+[data-design='brutalist'] .design-option.is-selected {
+  border-color: var(--ink);
+  background: var(--bg-selected);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* --- Boards page: a coloured band over a black rule -------------------------------------------- */
+[data-design='brutalist'] .board-card {
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 8px 0 var(--board-color),
+    inset 0 10px 0 var(--ink),
+    5px 5px 0 var(--ink);
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+[data-design='brutalist'] .board-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    inset 0 8px 0 var(--board-color),
+    inset 0 10px 0 var(--ink),
+    7px 7px 0 var(--ink);
+}
+
+/* --- Kanban: boxed columns with coloured headers, slab cards --------------------------------------- */
+[data-design='brutalist'] .kanban-header-row,
+[data-design='brutalist'] .lane-row {
+  gap: 12px;
+}
+[data-design='brutalist'] .column-head {
+  padding: 10px 12px;
+  border: 2px solid var(--ink);
+  background: var(--cat-progress);
+  color: #000000;
+  font-weight: 800;
+}
+[data-design='brutalist'] .column-head.cat-todo {
+  background: var(--cat-todo);
+}
+[data-design='brutalist'] .column-head.cat-done {
+  background: var(--cat-done);
+}
+[data-design='brutalist'] .column-head.is-over {
+  background: var(--red);
+}
+[data-design='brutalist'] .column-count,
+[data-design='brutalist'] .column-head.is-over .column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  border: 2px solid #000000;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #000000;
+  font-size: 11px;
+  font-weight: 800;
+}
+[data-design='brutalist'] .column-done-icon {
+  color: #000000;
+}
+[data-design='brutalist'] .column {
+  padding: 6px 8px 10px;
+  border: 2px solid var(--ink);
+}
+/* Columns right under the header row continue it; swimlanes (with a lane title) are boxed on their own. */
+[data-design='brutalist'] .kanban-header-row + .lane:not(:has(.lane-head)) .lane-row .column {
+  border-top: 0;
+}
+[data-design='brutalist'] .column.is-over {
+  background: var(--bg-selected);
+}
+[data-design='brutalist'] .column-add {
+  border: 2px dashed var(--ink);
+  background: var(--surface);
+  color: var(--text);
+}
+[data-design='brutalist'] .lane-head {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+[data-design='brutalist'] .card-wrap {
+  padding: 4px 0;
+}
+[data-design='brutalist'] .card {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+[data-design='brutalist'] .card:hover {
+  background: var(--surface-raised);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+[data-design='brutalist'] .card.is-dragging {
+  transform: rotate(3deg);
+  box-shadow: var(--shadow-drag);
+}
+[data-design='brutalist'] .card-epic {
+  box-shadow:
+    inset 6px 0 0 var(--epic-accent),
+    3px 3px 0 var(--ink);
+}
+[data-design='brutalist'] .card-epic:hover {
+  box-shadow:
+    inset 6px 0 0 var(--epic-accent),
+    4px 4px 0 var(--ink);
+}
+[data-design='brutalist'] .quick-create {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+[data-design='brutalist'] .progress {
+  height: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+}
+[data-design='brutalist'] .progress-done {
+  background: var(--green);
+}
+[data-design='brutalist'] .progress-progress {
+  background: var(--yellow);
+}
+
+/* --- Lists --------------------------------------------------------------------------------------------- */
+[data-design='brutalist'] .issue-table th {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+[data-design='brutalist'] .issue-row {
+  border: 2px solid var(--ink);
+}
+[data-design='brutalist'] .issue-row:hover {
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+[data-design='brutalist'] .issue-title {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* --- Menus, dialogs and toasts ------------------------------------------------------------------------------ */
+[data-design='brutalist'] .popover {
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+[data-design='brutalist'] .popover-search {
+  border-bottom: 2px solid var(--ink);
+}
+[data-design='brutalist'] .menu-item {
+  border-left: 0;
+  font-weight: 500;
+}
+[data-design='brutalist'] .menu-item:hover:not(:disabled),
+[data-design='brutalist'] .menu-item.is-active,
+[data-design='brutalist'] .menu-item.is-selected {
+  background: var(--bg-selected);
+}
+[data-design='brutalist'] .menu-item.is-selected {
+  font-weight: 700;
+}
+[data-design='brutalist'] .modal {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 8px 8px 0 var(--ink);
+}
+[data-design='brutalist'] .modal-head {
+  border-bottom: 3px solid var(--ink);
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+}
+[data-design='brutalist'] .modal-head h2 {
+  font-weight: 900;
+}
+[data-design='brutalist'] .modal-foot {
+  border-top: 2px solid var(--ink);
+  padding-top: 14px;
+}
+[data-design='brutalist'] .toast {
+  border: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-radius: var(--radius);
+  background: var(--yellow);
+  color: #000000;
+  font-weight: 600;
+  box-shadow: 4px 4px 0 #000000;
+}
+[data-design='brutalist'] .toast-success {
+  background: var(--green);
+}
+[data-design='brutalist'] .toast-error {
+  background: var(--red);
+}
+
+/* --- Progress view ------------------------------------------------------------------------------------------- */
+[data-design='brutalist'] .stat-tile.is-hero {
+  box-shadow: 6px 6px 0 var(--green);
+}
+[data-design='brutalist'] .stat-label,
+[data-design='brutalist'] .chart-table th {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+[data-design='brutalist'] .stat-value {
+  font-weight: 900;
+}
+[data-design='brutalist'] .chart-tooltip {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* --- Responsive and motion ------------------------------------------------------------------------------------ */
+@media (max-width: 760px) {
+  /* Dialogs fill the screen on phones: no frame around them. */
+  [data-design='brutalist'] .modal {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-design='brutalist'] .btn:hover:not(:disabled),
+  [data-design='brutalist'] .btn:active:not(:disabled),
+  [data-design='brutalist'] .card:hover,
+  [data-design='brutalist'] .card.is-dragging,
+  [data-design='brutalist'] .board-card:hover {
+    transform: none;
+  }
+}

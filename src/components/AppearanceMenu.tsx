@@ -9,8 +9,10 @@ const DESIGNS: { id: Design; label: () => string }[] = [
   { id: 'classic', label: () => t('Classic') },
   { id: 'apple', label: () => 'Apple' },
   { id: 'fluent', label: () => 'Fluent' },
+  { id: 'material', label: () => 'Material' },
   { id: 'linux', label: () => 'Linux' },
   { id: 'translucent', label: () => 'Translucent' },
+  { id: 'brutalist', label: () => 'Brutalist' },
 ];
 
 const MODES: { id: Mode; icon: string; label: () => string; title?: () => string }[] = [
@@ -21,7 +23,7 @@ const MODES: { id: Mode; icon: string; label: () => string; title?: () => string
 
 const MODE_ICON: Record<Mode, string> = { light: 'sun', dark: 'moon', system: 'appearance' };
 
-/** Top bar button with a popover to pick the design (Classic / Apple / Fluent / Linux / Translucent) and the light / dark / auto mode. */
+/** Top bar button with a popover to pick the design (Classic / Apple / Fluent / Material / Linux / Translucent / Brutalist) and the light / dark / auto mode. */
 export function AppearanceMenu({ className }: { className?: string }) {
   const { design, mode } = useAppearance();
   const dark = useIsDark();
