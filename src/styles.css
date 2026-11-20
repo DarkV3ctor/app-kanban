@@ -1610,37 +1610,43 @@ textarea.input {
   position: relative;
   padding: 2px 0;
 }
-/* Quick delete: a small button in the card's corner, shown on hover or focus (always on touch screens). */
+/*
+ * Quick delete: a button in the card's corner, shown on hover or focus (always on touch screens).
+ * Fixed, opaque colours rather than design tokens: card surfaces are the same colour as the
+ * tokens (and translucent in some designs), and the button must stand out on any card or cover.
+ */
 .card-delete {
   position: absolute;
-  top: 8px;
-  right: 6px;
+  top: 7px;
+  right: 5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-raised);
-  color: var(--text-subtle);
+  background: #c9372c;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(9, 30, 66, 0.45);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s;
+  visibility: hidden;
 }
 .card-wrap:hover .card-delete,
 .card-wrap:focus-within .card-delete {
-  opacity: 1;
+  visibility: visible;
 }
-.card-delete:hover,
+.card-delete:hover {
+  background: #ae2e24;
+}
 .card-delete:focus-visible {
-  background: var(--danger-bg);
-  color: var(--danger-text);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 @media (hover: none) {
   .card-delete {
-    opacity: 0.8;
+    visibility: visible;
   }
 }
 .card {

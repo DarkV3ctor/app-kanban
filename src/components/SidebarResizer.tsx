@@ -1,4 +1,4 @@
-import { useCallback, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { t } from '../i18n';
 
 /*
@@ -70,6 +70,10 @@ export function SidebarResizer({
   onResize: (width: number) => void;
   onHide: () => void;
 }) {
+  // If the handle goes away mid-drag (navigating to another page), its pointer events stop coming:
+  // drop the page-wide resize cursor and text-selection lock with it.
+  useEffect(() => () => document.documentElement.classList.remove('is-resizing-sidebar'), []);
+
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const layout = layoutRef.current;
     if (e.button !== 0 || !layout) return;

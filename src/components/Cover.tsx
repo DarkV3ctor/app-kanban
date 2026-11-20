@@ -80,6 +80,8 @@ export function CoverEditor({ value, onChange, disabled }: { value: string; onCh
 
   /** A dropped or pasted image file is uploaded; a dropped or pasted image link is used as is. */
   const take = (data: DataTransfer): boolean => {
+    // One image at a time: a second paste or drop while the first is being prepared is ignored.
+    if (busy) return true;
     const file = [...data.files].find((f) => f.type.startsWith('image/'));
     if (file) {
       upload(file);
@@ -105,7 +107,8 @@ export function CoverEditor({ value, onChange, disabled }: { value: string; onCh
           e.dataTransfer.dropEffect = 'copy';
           setOver(true);
         },
-        onDragLeave: () => setOver(false),
+        // Leaving for a child of the zone (the picture, the hint) is not leaving the zone.
+        onDragLeave: (e: React.DragEvent) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false),
         onDrop: (e: React.DragEvent) => {
           e.preventDefault();
           setOver(false);

@@ -83,6 +83,14 @@ export const CalendarView = memo(function CalendarView() {
   const [month, setMonthState] = useState(() => readMonth(board.id));
   const [mode, setModeState] = useState<Mode>(readMode);
   const pickerRef = useRef<HTMLInputElement>(null);
+  // showPicker() throws where the browser will not open one (a cross-origin frame, for example).
+  const openPicker = () => {
+    try {
+      pickerRef.current?.showPicker();
+    } catch {
+      /* the arrows still work */
+    }
+  };
 
   const setMonth = (m: string) => {
     setMonthState(m);
@@ -156,7 +164,7 @@ export const CalendarView = memo(function CalendarView() {
         {CAN_PICK_MONTH && (
           // The browser's own month picker, opened from a button (the field itself stays out of sight).
           <span className="cal-pick">
-            <button type="button" className="icon-btn" onClick={() => pickerRef.current?.showPicker()} aria-label={t('Go to month')} title={t('Go to month')}>
+            <button type="button" className="icon-btn" onClick={openPicker} aria-label={t('Go to month')} title={t('Go to month')}>
               <Icon name="calendar" size={18} />
             </button>
             <input ref={pickerRef} type="month" tabIndex={-1} aria-hidden="true" value={month} onChange={(e) => isMonth(e.target.value) && setMonth(e.target.value)} />

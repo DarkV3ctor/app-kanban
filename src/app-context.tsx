@@ -49,7 +49,7 @@ export function useDiscardGuard(): (dirty: boolean) => Promise<boolean> {
 
 export function AppProvider({ store, user, children }: { store: Store; user: AppUser; children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [confirmState, setConfirmState] = useState<(ConfirmOptions & { resolve: (v: boolean) => void }) | null>(null);
+  const [confirmState, setConfirmState] = useState<(ConfirmOptions & { resolve: (v: boolean) => void; returnFocus: Element | null }) | null>(null);
   const seq = useRef(0);
 
   const toast = useCallback((text: string, kind: ToastItem['kind'] = 'info') => {
@@ -58,7 +58,9 @@ export function AppProvider({ store, user, children }: { store: Store; user: App
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === 'error' ? 6000 : 3000);
   }, []);
 
-  const confirm = useCallback((o: ConfirmOptions) => new Promise<boolean>((resolve) => setConfirmState({ ...o, resolve })), []);
+  // The focus at the time of asking is given back when the dialog closes: Delete -> Escape on a
+  // board card leaves you on that card, not at the top of the page.
+  const confirm = useCallback((o: ConfirmOptions) => new Promise<boolean>((resolve) => setConfirmState({ ...o, resolve, returnFocus: document.activeElement })), []);
 
   const run = useCallback(
     async <T,>(p: Promise<T> | (() => Promise<T>), okText?: string): Promise<T | undefined> => {
@@ -78,8 +80,11 @@ export function AppProvider({ store, user, children }: { store: Store; user: App
   const value = useMemo(() => ({ store, user, toast, confirm, run }), [store, user, toast, confirm, run]);
 
   const close = (v: boolean) => {
-    confirmState?.resolve(v);
+    const asked = confirmState;
     setConfirmState(null);
+    asked?.resolve(v);
+    const el = asked?.returnFocus;
+    if (el instanceof HTMLElement && el.isConnected) el.focus({ preventScroll: true });
   };
 
   return (

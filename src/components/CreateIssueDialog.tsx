@@ -60,7 +60,7 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
   // Escape, the backdrop and the close button ask before a typed title or description is lost.
   const canDiscard = useDiscardGuard();
   const template = board.issueTypes.find((x) => x.id === d.type)?.template ?? '';
-  const dirty = d.title.trim() !== '' || d.description.trim() !== template.trim();
+  const dirty = d.title.trim() !== '' || d.description.trim() !== template.trim() || d.cover !== '';
   const requestClose = async () => {
     if (await canDiscard(dirty)) onClose();
   };
