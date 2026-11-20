@@ -178,6 +178,10 @@ export const UK: Record<string, string> = {
   'Nothing comes out this month.': 'Цього місяця нічого не виходить.',
   'Nothing is due this month.': 'Цього місяця немає термінів.',
 
+  // --- Quick delete on the board -------------------------------------------
+  'Delete {key}': 'Видалити {key}',
+  'Delete (or press Delete on a card)': 'Видалити (або натисніть Delete на картці)',
+
   // --- Filters ------------------------------------------------------------
   'Search issues': 'Пошук задач',
   'Clear search': 'Очистити пошук',

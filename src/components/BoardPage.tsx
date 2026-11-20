@@ -42,7 +42,7 @@ function loadFilters(boardId: string): Filters {
 }
 
 export function BoardPage({ boardId, view, route }: { boardId: string; view: string; route: Route }) {
-  const { store, user, toast, run } = useApp();
+  const { store, user, toast, run, confirm } = useApp();
   const [board, setBoard] = useState<Board | null | undefined>(undefined);
   const [issues, setIssues] = useState<Issue[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +115,35 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     [board, run, store],
   );
 
+  const canDelete = useCallback((i: Issue) => perms.admin || (perms.edit && i.createdBy === user.ghId), [perms, user.ghId]);
+
+  const deleteIssue = useCallback(
+    async (issue: Issue, onConfirmed?: () => void) => {
+      if (!board) return false;
+      const key = `${board.key}-${issue.number}`;
+      const ok = await confirm({
+        title: t('Delete {key}?', { key }),
+        text: t('The issue, its comments and history will be deleted permanently.'),
+        confirmText: t('Delete'),
+        danger: true,
+      });
+      if (!ok) return false;
+      onConfirmed?.();
+      // Remove references to this issue from other issues.
+      const refs = (issues ?? []).filter((i) => i.id !== issue.id && (i.epicId === issue.id || i.links?.some((l) => l.issueId === issue.id)));
+      await run(async () => {
+        await store.updateIssues(
+          board.id,
+          user,
+          refs.map((r) => ({ id: r.id, patch: { epicId: r.epicId === issue.id ? null : r.epicId, links: (r.links ?? []).filter((l) => l.issueId !== issue.id) }, changes: [] })),
+        );
+        await store.deleteIssue(board.id, issue.id);
+      }, t('{key} deleted', { key }));
+      return true;
+    },
+    [board, issues, confirm, run, store, user],
+  );
+
   const openIssue = useCallback((i: Issue) => {
     setPendingIssue(i);
     setQueryParam('i', String(i.number));
@@ -135,8 +164,8 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
   // Stable while nothing in it changes, so the (memoized) views skip re-rendering when, for
   // example, an issue dialog opens or the sidebar toggles.
   const ctx = useMemo<BoardCtx | null>(
-    () => (board ? { board, issues: issues ?? NO_ISSUES, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard } : null),
-    [board, issues, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard],
+    () => (board ? { board, issues: issues ?? NO_ISSUES, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard, canDelete, deleteIssue } : null),
+    [board, issues, byId, perms, filters, setFilters, openIssue, newIssue, updateIssue, updateBoard, canDelete, deleteIssue],
   );
 
   const setMenu = useCallback(

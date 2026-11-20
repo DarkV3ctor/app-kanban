@@ -1607,7 +1607,41 @@ textarea.input {
   background: color-mix(in srgb, var(--primary) 10%, var(--bg-column));
 }
 .card-wrap {
+  position: relative;
   padding: 2px 0;
+}
+/* Quick delete: a small button in the card's corner, shown on hover or focus (always on touch screens). */
+.card-delete {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-raised);
+  color: var(--text-subtle);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.card-wrap:hover .card-delete,
+.card-wrap:focus-within .card-delete {
+  opacity: 1;
+}
+.card-delete:hover,
+.card-delete:focus-visible {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+@media (hover: none) {
+  .card-delete {
+    opacity: 0.8;
+  }
 }
 .card {
   background: var(--surface-raised);

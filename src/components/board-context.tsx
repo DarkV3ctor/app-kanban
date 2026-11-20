@@ -15,6 +15,14 @@ export interface BoardCtx {
   /** Resolves to whether the change was saved (errors are shown as a toast). */
   updateIssue: (issue: Issue, patch: Partial<Issue>) => Promise<boolean>;
   updateBoard: (patch: Partial<Board>) => Promise<void>;
+  /** Whether you may delete the issue: admins any, editors the ones they created. */
+  canDelete: (issue: Issue) => boolean;
+  /**
+   * Asks, then deletes the issue (with its comments and history) and drops references to it from
+   * other issues. `onConfirmed` runs once the deletion is confirmed, before it is done.
+   * Resolves to whether it was confirmed.
+   */
+  deleteIssue: (issue: Issue, onConfirmed?: () => void) => Promise<boolean>;
 }
 
 export const BoardContext = createContext<BoardCtx | null>(null);

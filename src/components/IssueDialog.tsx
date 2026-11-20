@@ -30,14 +30,14 @@ function useDraft(key: string, dirty: boolean) {
 }
 
 export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => void }) {
-  const { store, user, run, confirm, toast } = useApp();
+  const { store, user, run, toast } = useApp();
   const boardCtx = useBoard();
-  const { board, issues, byId, perms, updateIssue, openIssue, newIssue } = boardCtx;
+  const { board, issues, byId, perms, updateIssue, openIssue, newIssue, deleteIssue } = boardCtx;
   const key = `${board.key}-${issue.number}`;
   const type = board.issueTypes.find((x) => x.id === issue.type);
   const epic = epicOf(board, byId, issue);
   const canEdit = perms.edit;
-  const canDelete = perms.admin || (perms.edit && issue.createdBy === user.ghId);
+  const canDelete = boardCtx.canDelete(issue);
   const set = (patch: Partial<Issue>) => updateIssue(issue, patch);
   const f = (k: FieldKey) => fieldName(board, k);
 
@@ -67,26 +67,8 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
     );
   };
 
-  const remove = async () => {
-    const ok = await confirm({
-      title: t('Delete {key}?', { key }),
-      text: t('The issue, its comments and history will be deleted permanently.'),
-      confirmText: t('Delete'),
-      danger: true,
-    });
-    if (!ok) return;
-    // Remove references to this issue from other issues.
-    const refs = issues.filter((i) => i.id !== issue.id && (i.epicId === issue.id || i.links?.some((l) => l.issueId === issue.id)));
-    onClose();
-    await run(async () => {
-      await store.updateIssues(
-        board.id,
-        user,
-        refs.map((r) => ({ id: r.id, patch: { epicId: r.epicId === issue.id ? null : r.epicId, links: (r.links ?? []).filter((l) => l.issueId !== issue.id) }, changes: [] })),
-      );
-      await store.deleteIssue(board.id, issue.id);
-    }, t('{key} deleted', { key }));
-  };
+  // The dialog closes as soon as the deletion is confirmed.
+  const remove = () => deleteIssue(issue, onClose);
 
   const clone = async () => {
     const { id: _id, number: _n, createdAt: _c, updatedAt: _u, createdBy: _cb, ...rest } = issue;

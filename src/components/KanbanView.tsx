@@ -40,7 +40,7 @@ function writePref(k: string, v: string) {
 // Memoized: re-renders only when the board context changes, not on every BoardPage render.
 export const KanbanView = memo(function KanbanView() {
   const { user, store, run } = useApp();
-  const { board, issues, byId, perms, filters, openIssue, newIssue, updateIssue, updateBoard } = useBoard();
+  const { board, issues, byId, perms, filters, openIssue, newIssue, updateIssue, updateBoard, canDelete, deleteIssue } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupBy>(() => readPref('kb-group-' + board.id, 'none'));
   const [showEpics, setShowEpics] = useState(() => readPref('kb-epics-' + board.id, 'show') === 'show');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -253,8 +253,32 @@ export const KanbanView = memo(function KanbanView() {
                                 {list.map((i, idx) => (
                                   <Draggable key={i.id} draggableId={i.id} index={idx} isDragDisabled={!perms.edit}>
                                     {(dp, ds) => (
-                                      <div ref={dp.innerRef} {...dp.draggableProps} {...dp.dragHandleProps} className="card-wrap" style={dp.draggableProps.style}>
+                                      <div
+                                        ref={dp.innerRef}
+                                        {...dp.draggableProps}
+                                        {...dp.dragHandleProps}
+                                        className="card-wrap"
+                                        style={dp.draggableProps.style}
+                                        // Quick delete: Delete (or Backspace) on a focused card asks, then deletes it.
+                                        onKeyDown={(e) => {
+                                          if ((e.key === 'Delete' || e.key === 'Backspace') && !ds.isDragging && canDelete(i)) {
+                                            e.preventDefault();
+                                            deleteIssue(i);
+                                          }
+                                        }}
+                                      >
                                         <IssueCard board={board} issue={i} epic={epicOf(board, byId, i)} onOpen={openIssue} dragging={ds.isDragging} />
+                                        {!ds.isDragging && canDelete(i) && (
+                                          <button
+                                            type="button"
+                                            className="card-delete"
+                                            onClick={() => deleteIssue(i)}
+                                            aria-label={t('Delete {key}', { key: `${board.key}-${i.number}` })}
+                                            title={t('Delete (or press Delete on a card)')}
+                                          >
+                                            <Icon name="trash" size={14} />
+                                          </button>
+                                        )}
                                       </div>
                                     )}
                                   </Draggable>

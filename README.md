@@ -12,7 +12,7 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 - **Issue links:** blocks / is blocked by / relates to / duplicates.
 - **Covers and release dates** (movies, series & games boards): upload a picture, paste or drop one (also straight from another web page), or link to one. Uploads are shrunk in the browser to a small WebP and kept in the issue itself, so no file storage is needed. Cards show the cover, the release year (or the date, highlighted, while it is still ahead) and the rating with a star; the issue list has a sortable release date column.
 - **Comments** (Markdown, edit, delete) and a **change history** of every field.
-- **Board:** drag & drop (mouse, touch, keyboard), WIP limits, quick create inside a column, swimlanes by assignee, epic or priority.
+- **Board:** drag & drop (mouse, touch, keyboard), WIP limits, quick create inside a column, quick delete (the trash button in a card's corner, or `Delete` on a focused card; it asks first), swimlanes by assignee, epic or priority.
 - **Filters:** text search, assignees, type, priority, labels, components, version, epic, "My issues", "Updated this week".
 - **Issue list** with sorting and CSV export (opens in Excel).
 - **Calendar:** a month grid (or a list of the month's days, the default on phones) of what comes out on which day: release dates on movies, series & games boards, due dates on other boards. The board's filters apply; "+" on a day creates an issue for that date.
@@ -24,7 +24,7 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 - Board export/import as JSON, mobile layout.
 - **Appearance:** seven designs — *Classic* (Atlassian-like), *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors), *Fluent* (Microsoft Fluent 2 as in Microsoft 365, built on the official Fluent UI tokens: Segoe UI, the brand-blue header, NavDrawer with the selection indicator, shadow-based elevation, stroke buttons, inputs with the focus underline, TabList tabs, tint badges), *Material* (Google's Material Design 3 / Material You with the baseline purple scheme: Roboto, tonal surfaces instead of lines, pill buttons and a pill-shaped navigation indicator, outlined text fields, filter chips, segmented buttons, 28 px dialogs, inverse snackbars), *Translucent* (frosted glass over a soft aurora backdrop: blurred translucent panels, pill buttons with a gradient glow; turns opaque when the system asks for reduced transparency), *Linux* (inspired by Kali Linux: a monospaced UI in JetBrains Mono, near-black navy with the Kali blue and terminal green, `$` prompts with a blinking cursor, `[ DONE ]` status tags, glowing focus) and *Brutalist* (neo-brutalism: thick black outlines and hard offset shadows, buttons and cards that lift on hover and press flat, a pink primary and a yellow top bar, column headers coloured by category, a cream dot-grid page, chunky Rubik with uppercase labels; off-white ink in dark mode) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
 - The board menu on the left can be resized (drag its edge) and hidden.
-- Keyboard shortcuts: `C` creates an issue, `/` focuses search, `[` hides or shows the board menu.
+- Keyboard shortcuts: `C` creates an issue, `/` focuses search, `[` hides or shows the board menu, `Delete` deletes the focused card (after asking).
 
 ## Templates
 
