@@ -10,6 +10,7 @@ import { EmptyState, ErrorBoundary, ErrorPanel, Modal, Spinner } from './ui';
 import { Icon } from './Icons';
 import { KanbanView } from './KanbanView';
 import { ListView } from './ListView';
+import { CalendarView } from './CalendarView';
 import { ReleasesView } from './ReleasesView';
 import { ProgressView } from './ProgressView';
 import { SettingsView } from './SettingsView';
@@ -21,6 +22,7 @@ import { SidebarResizer, isNarrow, useSidebarPrefs } from './SidebarResizer';
 const VIEWS = [
   { id: 'board', name: tk('Board'), icon: 'board' },
   { id: 'list', name: tk('Issue list'), icon: 'list' },
+  { id: 'calendar', name: tk('Calendar'), icon: 'calendar' },
   { id: 'progress', name: tk('Progress'), icon: 'chart' },
   { id: 'releases', name: tk('Releases'), icon: 'release' },
   { id: 'members', name: tk('Members'), icon: 'users' },
@@ -273,6 +275,8 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
             <KanbanView />
           ) : current.id === 'list' ? (
             <ListView />
+          ) : current.id === 'calendar' ? (
+            <CalendarView />
           ) : current.id === 'progress' ? (
             <ProgressView />
           ) : current.id === 'releases' ? (

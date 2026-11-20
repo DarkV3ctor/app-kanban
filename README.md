@@ -10,18 +10,21 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 - **Markdown descriptions:** headings, lists, tables, code, links and clickable `- [ ]` checkboxes. Raw HTML is shown as text, and external images load only when clicked (see [Security](#security)).
 - **Checklist** (sub-tasks) with progress shown on the card.
 - **Issue links:** blocks / is blocked by / relates to / duplicates.
+- **Covers and release dates** (movies, series & games boards): upload a picture, paste or drop one (also straight from another web page), or link to one. Uploads are shrunk in the browser to a small WebP and kept in the issue itself, so no file storage is needed. Cards show the cover, the release year (or the date, highlighted, while it is still ahead) and the rating with a star; the issue list has a sortable release date column.
 - **Comments** (Markdown, edit, delete) and a **change history** of every field.
 - **Board:** drag & drop (mouse, touch, keyboard), WIP limits, quick create inside a column, swimlanes by assignee, epic or priority.
 - **Filters:** text search, assignees, type, priority, labels, components, version, epic, "My issues", "Updated this week".
 - **Issue list** with sorting and CSV export (opens in Excel).
+- **Calendar:** a month grid (or a list of the month's days, the default on phones) of what comes out on which day: release dates on movies, series & games boards, due dates on other boards. The board's filters apply; "+" on a day creates an issue for that date.
 - **Releases:** versions and milestones with dates, progress, release and archive.
 - **Progress charts** for a day, week, month or year (browse back through earlier periods): completed and created issues with the change against the previous period, median lead time, story points, the share of the board that is done, a created-vs-completed column chart, a burn-up chart, a GitHub-style activity heatmap for the year, breakdowns by type and assignee and the latest completed issues. Every chart has hover / keyboard tooltips and a table view.
-- **Field names per kind of board:** the issue fields are called the way the board's template suggests ("Milestone" and "Discipline" in game dev; "Who does it", "Room / area", "Month", "Goal", "Effort" at home; "Release" in software), and admins can rename any of them in the board settings.
+- **Field names per kind of board:** the issue fields are called the way the board's template suggests ("Milestone" and "Discipline" in game dev; "Who does it", "Room / area", "Month", "Goal", "Effort" at home; "Release" in software; "Format", "Genres", "Platform", "Franchise", "My rating", "Length" for movies and games), and admins can rename any of them in the board settings.
 - **Board settings:** columns and their categories, issue types (icon, color, description template, default checklist), field names, labels, components.
 - **Members and permissions:** add people by GitHub username and pick one of 5 roles.
 - Board export/import as JSON, mobile layout.
 - **Appearance:** seven designs — *Classic* (Atlassian-like), *Apple* (SF Pro / Inter, frosted-glass bars and menus, iOS system colors), *Fluent* (Microsoft Fluent 2 as in Microsoft 365, built on the official Fluent UI tokens: Segoe UI, the brand-blue header, NavDrawer with the selection indicator, shadow-based elevation, stroke buttons, inputs with the focus underline, TabList tabs, tint badges), *Material* (Google's Material Design 3 / Material You with the baseline purple scheme: Roboto, tonal surfaces instead of lines, pill buttons and a pill-shaped navigation indicator, outlined text fields, filter chips, segmented buttons, 28 px dialogs, inverse snackbars), *Translucent* (frosted glass over a soft aurora backdrop: blurred translucent panels, pill buttons with a gradient glow; turns opaque when the system asks for reduced transparency), *Linux* (inspired by Kali Linux: a monospaced UI in JetBrains Mono, near-black navy with the Kali blue and terminal green, `$` prompts with a blinking cursor, `[ DONE ]` status tags, glowing focus) and *Brutalist* (neo-brutalism: thick black outlines and hard offset shadows, buttons and cards that lift on hover and press flat, a pink primary and a yellow top bar, column headers coloured by category, a cream dot-grid page, chunky Rubik with uppercase labels; off-white ink in dark mode) — each in light, dark or auto (follows the system) mode. Switch them from the top-bar button; the choice is remembered in the browser.
-- Keyboard shortcuts: `C` creates an issue, `/` focuses search.
+- The board menu on the left can be resized (drag its edge) and hidden.
+- Keyboard shortcuts: `C` creates an issue, `/` focuses search, `[` hides or shows the board menu.
 
 ## Templates
 
@@ -30,9 +33,10 @@ A static web app for GitHub Pages: Kanban boards with Jira-like issues, GitHub s
 | 🎮 **Game development** | Backlog → To do → In progress → Review → QA / Playtest → Done | Epic, Feature, Bug, Task, Art, Audio, Level design, Game design, Tech debt |
 | 🏠 **Home & life** | Ideas → Planned → This week → In progress → Waiting → Done | Goal, Chore, Shopping, Repair, Finance, Health, Event, Learning / hobby |
 | 💻 **Software development** | To do → In progress → In review → Done | Epic, Story, Task, Bug |
+| 🍿 **Movies, series & games** | Wishlist → Coming soon → Up next → Watching / playing → Finished → Dropped | Franchise, Movie, Series, Game |
 | 📋 **Blank board** | To do → In progress → Done | Epic, Task, Bug |
 
-The game dev template comes with components (Gameplay, Graphics, Audio, UI/UX, AI, Networking…), milestones (Prototype → Vertical Slice → Alpha → Beta → Release 1.0) and description templates: steps to reproduce and environment for bugs, a definition of done for features, asset requirements for art and audio. The home template has rooms and areas of life, monthly versions and templates for repairs, payments, doctor visits and events. Everything can be changed in the board settings.
+The game dev template comes with components (Gameplay, Graphics, Audio, UI/UX, AI, Networking…), milestones (Prototype → Vertical Slice → Alpha → Beta → Release 1.0) and description templates: steps to reproduce and environment for bugs, a definition of done for features, asset requirements for art and audio. The home template has rooms and areas of life, monthly versions and templates for repairs, payments, doctor visits and events. The movies, series & games template adds covers and release dates to its issues, uses genres as labels and platforms (cinema, streaming, PC, consoles) as components, plans by month, groups a franchise as an epic and keeps a 1–10 rating in the story points (which are then not added up). Everything can be changed in the board settings.
 
 A board's template text (column names, types, sample issues) is created in the interface language that is active when you create the board. Field names are not stored: each viewer sees the template's field names in their own language, until an admin renames a field (custom names are shown as typed).
 
@@ -132,7 +136,7 @@ Regular board members don't need this — a board owner or admin adds them on th
 What the app does:
 
 - **Server-side rules** check permissions and validate every write ([`firestore.rules`](firestore.rules)); the client also normalizes everything it reads, so one malformed document cannot break the board for others, and rendering errors are contained by error boundaries.
-- **Markdown** (written by anyone with the commenter role) is rendered without raw HTML and sanitized with a strict allowlist; external images are shown as placeholders and load only when clicked, so they cannot be used as tracking pixels. Avatars load only from `avatars.githubusercontent.com`.
+- **Markdown** (written by anyone with the commenter role) is rendered without raw HTML and sanitized with a strict allowlist; external images are shown as placeholders and load only when clicked, so they cannot be used as tracking pixels. Issue covers are the exception: a linked cover (https only) loads directly, with no referrer, because only editors can set it; an uploaded cover is re-encoded in the browser, and firestore.rules accept only WebP, JPEG or PNG data of limited size. Avatars load only from `avatars.githubusercontent.com`.
 - **Content Security Policy:** the production build adds a CSP `<meta>` tag (GitHub Pages cannot send headers), built from `public/config.js` in [`vite.config.ts`](vite.config.ts).
 - **Nothing is cached on disk:** boards are cached in memory only (an older on-disk copy is deleted on start), and signing out clears the app's local data (profiles, filters, per-board view settings — only the language and appearance stay) and reloads the page.
 - **No framing:** the app refuses to run inside another site's frame, so its buttons cannot be overlaid by a hostile page (GitHub Pages cannot send `frame-ancestors` / `X-Frame-Options`, so this is checked in the app).
@@ -185,7 +189,7 @@ public/config.js              runtime settings (Firebase, app admins, App Check)
 firestore.rules               server-side access rules and data validation
 src/i18n.ts                   translation helpers and language switch
 src/locales/                  Ukrainian UI strings and template text (EN / UK)
-src/templates.ts              board templates (game dev, home, software, blank)
+src/templates.ts              board templates (game dev, home, software, movies & games, blank)
 src/store/                    storage: firebaseStore (cloud) and localStore (demo)
 src/lib/normalize.ts          coerces data read from the database into valid shapes
 src/lib/markdown.ts           safe Markdown rendering

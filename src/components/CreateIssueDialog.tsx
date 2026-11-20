@@ -3,11 +3,12 @@ import type { IssueDraft } from '../types';
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { isEpic, newIssueDraft } from '../lib/issues';
-import { MAX_BUILD, fieldName, hasField } from '../lib/fields';
+import { MAX_BUILD, fieldHint, fieldName, hasField } from '../lib/fields';
 import { columnCategory, uid } from '../lib/utils';
 import { useBoard } from './board-context';
 import { Field, Modal } from './ui';
 import { MarkdownEditor } from './markdown';
+import { CoverEditor } from './Cover';
 import { AssigneePicker, ComponentsPicker, EpicPicker, LabelsPicker, PriorityPicker, StatusPicker, TypePicker, VersionPicker } from './IssueFields';
 
 export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<IssueDraft>; onClose: () => void }) {
@@ -102,9 +103,22 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), submit())}
         />
       </Field>
-      <Field label={t('Description')}>
-        <MarkdownEditor value={d.description} onChange={(v) => set({ description: v })} minRows={5} />
-      </Field>
+      {hasField(board, 'cover') ? (
+        // Media boards: the cover next to the description, like a poster.
+        <div className="create-with-cover">
+          <Field label={t('Description')}>
+            <MarkdownEditor value={d.description} onChange={(v) => set({ description: v })} minRows={5} />
+          </Field>
+          <div className="field">
+            <span className="field-label">{fieldName(board, 'cover')}</span>
+            <CoverEditor value={d.cover} onChange={(cover) => set({ cover: cover as string })} />
+          </div>
+        </div>
+      ) : (
+        <Field label={t('Description')}>
+          <MarkdownEditor value={d.description} onChange={(v) => set({ description: v })} minRows={5} />
+        </Field>
+      )}
       {d.checklist.length > 0 && (
         <div className="field">
           <span className="field-label">{t('Checklist from the issue type template')}</span>
@@ -127,6 +141,11 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
         <Field label={fieldName(board, 'priority')}>
           <PriorityPicker value={d.priority} onChange={(p) => set({ priority: p })} />
         </Field>
+        {hasField(board, 'releaseDate') && (
+          <Field label={fieldName(board, 'releaseDate')}>
+            <input className="input" type="date" value={d.releaseDate ?? ''} onChange={(e) => set({ releaseDate: e.target.value || null })} />
+          </Field>
+        )}
         <Field label={fieldName(board, 'labels')}>
           <LabelsPicker board={board} issues={issues} value={d.labels} onChange={(l) => set({ labels: l })} />
         </Field>
@@ -152,14 +171,14 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
             inputMode="decimal"
             value={d.storyPoints ?? ''}
             onChange={(e) => set({ storyPoints: e.target.value === '' ? null : Number(e.target.value.replace(',', '.')) || 0 })}
-            placeholder="—"
+            placeholder={fieldHint(board, 'storyPoints', '—')}
           />
         </Field>
         <Field label={fieldName(board, 'dueDate')}>
           <input className="input" type="date" value={d.dueDate ?? ''} onChange={(e) => set({ dueDate: e.target.value || null })} />
         </Field>
         <Field label={fieldName(board, 'estimate')}>
-          <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder={t('e.g. 2d 4h')} maxLength={50} />
+          <input className="input" value={d.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder={fieldHint(board, 'estimate', t('e.g. 2d 4h'))} maxLength={50} />
         </Field>
       </div>
     </Modal>

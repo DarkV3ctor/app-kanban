@@ -120,6 +120,14 @@ const UI: Record<string, ReactNode> = {
     </>
   ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  star: <path d="M12 3.8l2.5 5.1 5.6.8-4 4 .9 5.6-5-2.6-5 2.6.9-5.6-4-4 5.6-.8z" />,
+  image: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <circle cx="9" cy="10" r="1.8" />
+      <path d="M20.5 16l-5-5-9 8.5" />
+    </>
+  ),
   // A side panel folding to the left: "hide the menu".
   sidebarHide: (
     <>
@@ -268,6 +276,22 @@ export const TYPE_GLYPHS: Record<string, ReactNode> = {
     </>
   ),
   rocket: <path d="M10.8 3.2c1.4 0 2 .6 2 2 0 2.3-2.1 4.6-4.4 5.9L6.9 9.6l-.5-.5-1-1.5C6.7 5.3 8.5 3.2 10.8 3.2zM5.3 9.2l1.5 1.5-1.9 1.9H3.4v-1.5z" {...F} />,
+  // Clapperboard.
+  film: <path d="M3.4 6.9h9.2v5a.9.9 0 0 1-.9.9H4.3a.9.9 0 0 1-.9-.9zM3.2 5.3l8.7-1.9.4 1.7-8.7 1.9z" {...F} />,
+  tv: (
+    <>
+      <rect x="3" y="5.6" width="10" height="7" rx="1.2" {...S} strokeWidth={1.3} />
+      <path d="M6 3.2l2 2.2 2-2.2" {...S} strokeWidth={1.2} />
+    </>
+  ),
+  // Game controller: the d-pad and the buttons are holes (even-odd fill).
+  gamepad: (
+    <path
+      fillRule="evenodd"
+      d="M5.2 4.8h5.6a2.6 2.6 0 0 1 2.5 1.9l.8 3.3a1.5 1.5 0 0 1-2.6 1.3L10.3 10H5.7l-1.2 1.3A1.5 1.5 0 0 1 1.9 10l.8-3.3A2.6 2.6 0 0 1 5.2 4.8zM5 6.3v.9h-.9v1h.9v.9h1v-.9h.9v-1H6v-.9zM10.9 6.4a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2zM9.8 7.7a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2z"
+      {...F}
+    />
+  ),
 };
 
 export const TYPE_ICON_KEYS = Object.keys(TYPE_GLYPHS);

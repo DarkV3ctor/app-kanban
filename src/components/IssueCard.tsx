@@ -1,10 +1,22 @@
 import { memo } from 'react';
 import type { Board, Issue } from '../types';
-import { dueState, formatDate, hashColor, isDone, cls } from '../lib/utils';
-import { fieldName } from '../lib/fields';
+import { dueState, formatDate, hashColor, isDone, cls, todayISO } from '../lib/utils';
+import { fieldName, hasField, pointsAreRating } from '../lib/fields';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
 import { t } from '../i18n';
 import { Avatar, LabelChip, memberOf } from './ui';
+import { CoverImage } from './Cover';
+
+/** A release date on a card: the full date while it is ahead, just the year once it is out. */
+function ReleaseBadge({ board, date }: { board: Board; date: string }) {
+  const upcoming = date > todayISO();
+  return (
+    <span className={cls('card-badge', upcoming && 'release-upcoming')} title={`${fieldName(board, 'releaseDate')}: ${formatDate(date)}`}>
+      {upcoming && <Icon name="clock" size={12} />}
+      {upcoming ? formatDate(date) : date.slice(0, 4)}
+    </span>
+  );
+}
 
 interface Props {
   board: Board;
@@ -33,6 +45,7 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
       tabIndex={0}
       aria-label={`${key} ${issue.title}`}
     >
+      {issue.cover && hasField(board, 'cover') && <CoverImage src={issue.cover} className="card-cover" />}
       <div className="card-title">{issue.title}</div>
       {(epic || issue.labels.length > 0 || version) && (
         <div className="card-tags">
@@ -75,11 +88,19 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
               {formatDate(issue.dueDate)}
             </span>
           )}
-          {issue.storyPoints !== null && issue.storyPoints !== undefined && (
-            <span className="points" title={fieldName(board, 'storyPoints')}>
-              {issue.storyPoints}
-            </span>
-          )}
+          {issue.releaseDate && hasField(board, 'releaseDate') && <ReleaseBadge board={board} date={issue.releaseDate} />}
+          {issue.storyPoints !== null &&
+            issue.storyPoints !== undefined &&
+            (pointsAreRating(board) ? (
+              <span className="card-badge card-rating" title={fieldName(board, 'storyPoints')}>
+                <Icon name="star" size={12} />
+                {issue.storyPoints}
+              </span>
+            ) : (
+              <span className="points" title={fieldName(board, 'storyPoints')}>
+                {issue.storyPoints}
+              </span>
+            ))}
           <PriorityIcon priority={issue.priority} />
           <Avatar info={assignee} size={24} />
         </span>

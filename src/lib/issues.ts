@@ -3,7 +3,8 @@ import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
 import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
 import { normalizeBoardSetup, normalizeIssue } from './normalize';
-import { MAX_BUILD, fieldName, isFieldKey } from './fields';
+import { MAX_BUILD, fieldName, hasField, isFieldKey } from './fields';
+import { coverHost, coverKind, generateCover } from './cover';
 
 export const LINK_TYPES: { id: LinkType; name: string; inverse: LinkType }[] = [
   { id: 'blocks', name: tk('blocks'), inverse: 'blocked_by' },
@@ -54,6 +55,8 @@ export function newIssueDraft(board: Board, me: AppUser, over: Partial<IssueDraf
     components: [],
     fixVersionId: null,
     build: '',
+    cover: '',
+    releaseDate: null,
     epicId: null,
     storyPoints: null,
     estimate: '',
@@ -68,6 +71,8 @@ export function newIssueDraft(board: Board, me: AppUser, over: Partial<IssueDraf
 /** Build a template's sample issues (numbered 1..N, linked to their epics). */
 export function buildSampleIssues(setup: BoardSetup, samples: SampleIssue[], user: AppUser): Issue[] {
   const now = Date.now();
+  // Boards with covers get made-up posters for their samples (no pictures from other sites).
+  const withCovers = hasField(setup, 'cover');
   const byTitle = new Map<string, string>();
   const issues: Issue[] = samples.map((s, idx) => {
     const id = uid(16);
@@ -88,6 +93,8 @@ export function buildSampleIssues(setup: BoardSetup, samples: SampleIssue[], use
       components: s.components ?? [],
       fixVersionId: s.version ?? null,
       build: s.build ?? '',
+      cover: withCovers && it ? generateCover(s.title, it.name, it.color) : '',
+      releaseDate: s.released ?? (s.releaseInDays !== undefined ? addDays(todayISO(), s.releaseInDays) : null),
       epicId: null,
       storyPoints: s.storyPoints ?? null,
       estimate: s.estimate ?? '',
@@ -139,6 +146,8 @@ export function linkValue(type: LinkType, key: string): string {
 export function renderHistoryValue(field: string, value: string): string {
   if (!value) return field === 'assigneeId' ? t('Unassigned') : '—';
   if (field === 'priority') return priorityName(value);
+  // A cover is kept in history as "upload" or as its link, never as the picture itself.
+  if (field === 'cover') return value === 'upload' ? t('uploaded image') : t('image from {host}', { host: coverHost(value) || '?' });
   const m = /^link:(\w+) (.+)$/.exec(value);
   if (m) return `${linkName(m[1])} ${m[2]}`;
   return value;
@@ -166,6 +175,8 @@ export function diffIssue(board: Board, before: Issue, patch: Partial<Issue>, al
     components: (v: string[]) => list(v),
     fixVersionId: (v: string | null) => version(v),
     build: (v: string) => v,
+    cover: (v: string) => (coverKind(v) === 'upload' ? 'upload' : v),
+    releaseDate: (v: string | null) => v ?? '',
     epicId: (v: string | null) => epic(v),
     storyPoints: (v: number | null) => (v === null ? '' : String(v)),
     estimate: (v: string) => v,
@@ -283,7 +294,7 @@ export function applyFilters(board: Board, issues: Issue[], f: Filters, me: AppU
   });
 }
 
-export type SortKey = 'key' | 'title' | 'status' | 'priority' | 'assignee' | 'version' | 'build' | 'points' | 'due' | 'updated' | 'type';
+export type SortKey = 'key' | 'title' | 'status' | 'priority' | 'assignee' | 'version' | 'build' | 'release' | 'points' | 'due' | 'updated' | 'type';
 
 export function sortIssues(board: Board, issues: Issue[], key: SortKey, dir: 1 | -1): Issue[] {
   const colIdx = new Map(board.columns.map((c, i) => [c.id, i]));
@@ -306,6 +317,9 @@ export function sortIssues(board: Board, issues: Issue[], key: SortKey, dir: 1 |
       case 'build':
         // Numbers compare as numbers ("0.10" after "0.9"); issues without a build go last.
         return i.build ? i.build.toLowerCase().replace(/\d+/g, (d) => d.padStart(12, '0')) : '￿';
+      case 'release':
+        // Issues without a release date go last.
+        return i.releaseDate ?? '9999';
       case 'points':
         return i.storyPoints ?? -1;
       case 'due':

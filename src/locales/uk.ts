@@ -146,6 +146,38 @@ export const UK: Record<string, string> = {
   'Shortcuts:': 'Гарячі клавіші:',
   'create issue': 'створити задачу',
 
+  // --- Covers (media boards) ---------------------------------------------
+  Cover: 'Обкладинка',
+  'Movies, series and games: covers, release dates, ratings': 'Фільми, серіали та ігри: обкладинки, дати виходу, оцінки',
+  'Cover: drop or paste an image here': 'Обкладинка: перетягніть або вставте сюди зображення',
+  'Drop or paste an image here': 'Перетягніть або вставте сюди зображення',
+  'Drop an image file or an image from another page.': 'Перетягніть файл зображення або картинку з іншої сторінки.',
+  'Paste an https:// link to an image.': 'Вставте посилання https:// на зображення.',
+  'The image could not be loaded': 'Не вдалося завантажити зображення',
+  'Preparing the image…': 'Готуємо зображення…',
+  'Image link': 'Посилання на зображення',
+  'By link': 'За посиланням',
+  Replace: 'Замінити',
+  Upload: 'Завантажити',
+  'This file is not an image.': 'Цей файл не є зображенням.',
+  'This image format is not supported. Try a JPEG, PNG or WebP file.': 'Цей формат зображення не підтримується. Спробуйте JPEG, PNG або WebP.',
+  'The image is too large even after shrinking it.': 'Зображення завелике навіть після стиснення.',
+  'uploaded image': 'завантажене зображення',
+  'image from {host}': 'зображення з {host}',
+  'Showing {shown} of {total}': 'Показано {shown} з {total}',
+
+  // --- Calendar -------------------------------------------------------------
+  Calendar: 'Календар',
+  List: 'Список',
+  View: 'Вигляд',
+  'Previous month': 'Попередній місяць',
+  'Next month': 'Наступний місяць',
+  'Go to month': 'Перейти до місяця',
+  'not set for {n}': 'не вказано для {n}',
+  'Create an issue for {date}': 'Створити задачу на {date}',
+  'Nothing comes out this month.': 'Цього місяця нічого не виходить.',
+  'Nothing is due this month.': 'Цього місяця немає термінів.',
+
   // --- Filters ------------------------------------------------------------
   'Search issues': 'Пошук задач',
   'Clear search': 'Очистити пошук',

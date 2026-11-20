@@ -274,6 +274,7 @@ describe('boards', () => {
     const db = as(BOARD_ADMIN);
     await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: { details: 'About', fixVersionId: 'Month', assigneeId: 'Who does it' } }));
     await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: { build: 'Found in build' } }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: { cover: 'Poster', releaseDate: 'Out on' } }));
     await assertSucceeds(updateDoc(doc(db, 'boards/b1'), { fieldNames: {} }));
     await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { title: 'Name' } }));
     await assertFails(updateDoc(doc(db, 'boards/b1'), { fieldNames: { epicId: 'x'.repeat(41) } }));
@@ -330,6 +331,32 @@ describe('issues', () => {
     await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { title: 'No build yet', updatedAt: 2 }));
     await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { build: '0.4.2 (1234)', updatedAt: 3 }));
     await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { build: '', updatedAt: 4 }));
+  });
+
+  test('covers: none, an https link or an uploaded picture of limited size', async () => {
+    const db = as(EDITOR);
+    const upload = (chars: number) => 'data:image/webp;base64,' + 'A'.repeat(chars);
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { title: 'No cover yet', updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'https://example.com/poster.jpg?w=500', updatedAt: 3 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: upload(150_000), updatedAt: 4 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==', updatedAt: 5 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: '', updatedAt: 6 }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'http://example.com/poster.jpg' }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'javascript:alert(1)' }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'https://example.com/a poster.jpg' }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'https://example.com/' + 'x'.repeat(2048) }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'data:image/svg+xml;base64,PHN2Zz4=' }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 'data:image/png;base64,<svg>' }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: upload(200_000) }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { cover: 7 }));
+  });
+
+  test('release dates: none or YYYY-MM-DD', async () => {
+    const db = as(EDITOR);
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { releaseDate: '2026-12-01', updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(db, 'boards/b1/issues/i1'), { releaseDate: null, updatedAt: 3 }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { releaseDate: 'next spring' }));
+    await assertFails(updateDoc(doc(db, 'boards/b1/issues/i1'), { releaseDate: 20261201 }));
   });
 
   test('editors update issues, but not the number, creator or creation time', async () => {

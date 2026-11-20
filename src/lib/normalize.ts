@@ -53,8 +53,42 @@ const LINK_TYPES: readonly LinkType[] = ['blocks', 'blocked_by', 'relates', 'dup
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 /** Renamable issue fields and the longest name (see lib/fields.ts; keep in sync with validFieldNames() in firestore.rules). */
-export const FIELD_NAME_KEYS: readonly FieldKey[] = ['details', 'assigneeId', 'reporterId', 'priority', 'type', 'labels', 'components', 'fixVersionId', 'build', 'epicId', 'storyPoints', 'estimate', 'dueDate'];
+export const FIELD_NAME_KEYS: readonly FieldKey[] = [
+  'details',
+  'cover',
+  'assigneeId',
+  'reporterId',
+  'priority',
+  'type',
+  'releaseDate',
+  'labels',
+  'components',
+  'fixVersionId',
+  'build',
+  'epicId',
+  'storyPoints',
+  'estimate',
+  'dueDate',
+];
 export const MAX_FIELD_NAME = 40;
+
+/**
+ * An issue's cover: '' (none), an https link (loaded straight from its site) or an image uploaded
+ * into the issue as a data: URL (WebP, JPEG or PNG). Keep the limits and patterns in sync with
+ * validCover() in firestore.rules.
+ */
+export const MAX_COVER_URL = 2048;
+export const MAX_COVER_DATA = 200_000;
+// Printable ASCII only: that is what a parsed URL's href is made of.
+const COVER_URL = /^https:\/\/[!-~]+$/;
+const COVER_DATA = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+
+export function isCover(v: string): boolean {
+  return v === '' || (v.length <= MAX_COVER_URL && COVER_URL.test(v)) || (v.length <= MAX_COVER_DATA && COVER_DATA.test(v));
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const dateOrNull = (v: unknown): string | null => (typeof v === 'string' && ISO_DATE.test(v) ? v : null);
 
 /** A color that is safe to put into CSS: only #rrggbb is accepted. */
 export function safeColor(v: unknown, def = '#626F86'): string {
@@ -172,6 +206,8 @@ export function normalizeIssue(raw: unknown, id: string): Issue {
     components: strList(o.components),
     fixVersionId: strOrNull(o.fixVersionId),
     build: str(o.build),
+    cover: typeof o.cover === 'string' && isCover(o.cover) ? o.cover : '',
+    releaseDate: dateOrNull(o.releaseDate),
     epicId: strOrNull(o.epicId),
     storyPoints: numOrNull(o.storyPoints),
     estimate: str(o.estimate),

@@ -51,6 +51,7 @@ export function LoginPage({ store }: { store: Store }) {
         <ul className="login-features">
           <li>🎮 {t('Game dev template: features, bugs, art, audio, levels, milestones')}</li>
           <li>🏠 {t('Home template: chores, shopping, repairs, finances, health')}</li>
+          <li>🍿 {t('Movies, series and games: covers, release dates, ratings')}</li>
           <li>👥 {t('Members by GitHub username and 5 access levels')}</li>
         </ul>
       </div>

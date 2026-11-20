@@ -1,7 +1,7 @@
 import { memo, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Issue } from '../types';
 import { locale, t, tk } from '../i18n';
-import { fieldName } from '../lib/fields';
+import { fieldName, pointsAreRating } from '../lib/fields';
 import { PERIODS, computeStats, dailyCompletions, niceTicks, periodStart, shiftPeriod, type Bucket, type Period, type ProgressIssue } from '../lib/progress';
 import { cls, isDone, monthName, timeAgo } from '../lib/utils';
 import { useBoard } from './board-context';
@@ -119,7 +119,8 @@ export const ProgressView = memo(function ProgressView() {
   const stats = useMemo(() => computeStats(items, period, start, Date.now()), [items, period, start]);
   const prev = useMemo(() => computeStats(items, period, shiftPeriod(period, start, -1), Date.now()), [items, period, start]);
   const heat = useMemo(() => (period === 'year' ? dailyCompletions(items, start) : null), [items, period, start]);
-  const usesPoints = issues.some((i) => i.storyPoints !== null);
+  // Ratings (media boards) are not added up.
+  const usesPoints = !pointsAreRating(board) && issues.some((i) => i.storyPoints !== null);
 
   const setPeriod = (p: Period) => {
     // Stay around the time being looked at: the present, or the start of the period on screen.

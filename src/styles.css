@@ -1728,6 +1728,356 @@ textarea.input {
   background: var(--warn-bg);
   color: var(--warn-text) !important;
 }
+/* Media boards: a release that is still ahead, and a rating. */
+.release-upcoming {
+  background: var(--progress-bg);
+  color: var(--progress-text) !important;
+}
+.card-rating {
+  color: var(--text-subtle);
+  font-weight: 600;
+}
+.card-rating svg {
+  color: #d9a400;
+  fill: currentColor;
+}
+
+/* ==========================================================================
+   Covers (media boards): the whole picture on a blurred copy of itself
+   ========================================================================== */
+.cover {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-sunken);
+  flex: none;
+}
+.cover-backdrop {
+  position: absolute;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(18px) saturate(1.4);
+  opacity: 0.75;
+}
+.cover-img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.card-cover {
+  height: 150px;
+  border-radius: var(--radius);
+}
+.cover-thumb {
+  width: 28px;
+  height: 40px;
+  border-radius: 3px;
+}
+.cover-thumb .cover-backdrop {
+  display: none;
+}
+.cover-thumb .cover-img {
+  object-fit: cover;
+}
+.cell-with-cover {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cover-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cover-zone {
+  border-radius: var(--radius-lg);
+  outline-offset: 2px;
+}
+.cover-zone:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.cover-zone.is-over {
+  outline: 2px dashed var(--primary);
+}
+.cover-zone.is-busy {
+  opacity: 0.6;
+}
+.cover-large {
+  height: 260px;
+  border-radius: var(--radius-lg);
+}
+.cover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 110px;
+  padding: 12px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-subtlest);
+  font-size: 13px;
+  text-align: center;
+}
+.cover-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cover-link-row {
+  display: flex;
+  gap: 6px;
+}
+.cover-link-row .input {
+  flex: 1;
+  min-width: 0;
+}
+.cover-error {
+  color: var(--danger-text);
+}
+/* ==========================================================================
+   Calendar view
+   ========================================================================== */
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 4px 0 12px;
+}
+.cal-title {
+  margin: 0 8px 0 4px;
+  min-width: 150px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.cal-pick {
+  position: relative;
+  display: inline-flex;
+}
+.cal-pick input {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.cal-field {
+  margin-left: auto;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.cal-weekday {
+  padding: 6px 8px;
+  background: var(--bg-sunken);
+  color: var(--text-subtlest);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: var(--caps);
+  letter-spacing: var(--caps-spacing);
+}
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  min-height: 108px;
+  padding: 4px 4px 6px;
+  background: var(--surface);
+}
+.cal-day.is-weekend {
+  background: color-mix(in srgb, var(--surface) 97%, var(--text));
+}
+.cal-day.is-outside {
+  background: var(--bg-sunken);
+}
+.cal-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+}
+.cal-day-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+.cal-day.is-outside .cal-day-num {
+  color: var(--text-subtlest);
+  font-weight: 400;
+}
+.cal-day.is-today .cal-day-num {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+.cal-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-subtlest);
+  cursor: pointer;
+  opacity: 0;
+}
+.cal-day:hover .cal-add,
+.cal-add:focus-visible {
+  opacity: 1;
+}
+.cal-add:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+@media (hover: none) {
+  .cal-add {
+    display: none;
+  }
+}
+.cal-item {
+  --type: var(--border-strong);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  min-height: 22px;
+  padding: 2px 6px 2px 4px;
+  border: 0;
+  border-left: 3px solid var(--type);
+  border-radius: var(--radius-tag);
+  background: color-mix(in srgb, var(--type) 14%, var(--surface));
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.cal-item:hover {
+  background: color-mix(in srgb, var(--type) 26%, var(--surface));
+}
+.cal-item.has-cover {
+  padding: 2px 6px 2px 2px;
+}
+.cal-item .cover-thumb {
+  width: 20px;
+  height: 28px;
+  border-radius: 2px;
+}
+/* Up to two lines: cells are narrow. */
+.cal-item-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.cal-item.is-done .cal-item-title,
+.cal-row.is-done .cal-row-title {
+  text-decoration: line-through;
+  color: var(--text-subtlest);
+}
+.cal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+.cal-list-day {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cal-list-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cal-today-tag {
+  padding: 0 6px;
+  border-radius: var(--radius-tag);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: 11px;
+  line-height: 18px;
+}
+.cal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cal-row:hover {
+  background: color-mix(in srgb, var(--surface-raised) 92%, var(--text));
+}
+.cal-row-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.cal-row-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-empty {
+  padding: 32px 0;
+  text-align: center;
+}
+
+/* The create dialog of media boards: the cover next to the description, like a poster. */
+.create-with-cover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 16px;
+  align-items: start;
+}
+.create-with-cover .cover-large {
+  height: 220px;
+}
+.create-with-cover .cover-empty {
+  min-height: 150px;
+}
 td.due-overdue,
 td.due-soon {
   background: none;
@@ -3181,6 +3531,42 @@ textarea.inline-input.issue-title {
   }
   .form-grid {
     grid-template-columns: 1fr;
+  }
+  .create-with-cover {
+    grid-template-columns: 1fr;
+  }
+  .cal-title {
+    min-width: 0;
+  }
+  .cal-field {
+    margin-left: 0;
+    width: 100%;
+  }
+  .cal-weekday {
+    padding: 4px 2px;
+    text-align: center;
+    font-size: 11px;
+  }
+  .cal-day {
+    min-height: 64px;
+    padding: 2px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+  .cal-day-head {
+    width: 100%;
+    justify-content: center;
+  }
+  .cal-item,
+  .cal-item.has-cover {
+    width: auto;
+    padding: 1px;
+    border-left: 0;
+    background: none;
+  }
+  .cal-item-title {
+    display: none;
   }
   .template-grid {
     grid-template-columns: 1fr;

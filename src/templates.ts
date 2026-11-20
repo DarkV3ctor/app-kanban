@@ -19,6 +19,8 @@ export interface SampleIssue {
   components?: string[];
   version?: string; // version id ('$m0', '$m1'… = generated months)
   build?: string;
+  released?: string; // release date, YYYY-MM-DD
+  releaseInDays?: number; // release date counted from today
   epic?: string; // title of an epic from the same list
   storyPoints?: number;
   estimate?: string;
@@ -43,6 +45,8 @@ export interface TemplateContent<C extends string, T extends string, V extends s
   versions: Record<V, { name: string; description: string }>;
   /** Names of the issue fields that suit this kind of board (the rest keep the generic names). */
   fields?: FieldNames;
+  /** Examples shown in empty fields, where the generic ones would not fit. */
+  hints?: Partial<Record<FieldKey, string>>;
   samples: SampleIssue[];
 }
 
@@ -51,6 +55,7 @@ export interface TemplateTexts {
   home: TemplateContent<'ideas' | 'planned' | 'week' | 'doing' | 'waiting' | 'done', 'goal' | 'chore' | 'shopping' | 'repair' | 'finance' | 'health' | 'event' | 'learn'> & { monthDescription: string };
   software: TemplateContent<'todo' | 'progress' | 'review' | 'done', 'epic' | 'story' | 'task' | 'bug', 'v1' | 'v1_1'>;
   blank: TemplateContent<'todo' | 'progress' | 'done', 'epic' | 'task' | 'bug'>;
+  media: TemplateContent<'soon' | 'wishlist' | 'next' | 'progress' | 'done' | 'dropped', 'franchise' | 'movie' | 'series' | 'game'> & { monthDescription: string };
 }
 
 export interface BoardTemplate {
@@ -64,6 +69,10 @@ export interface BoardTemplate {
   fields: FieldNames;
   /** Fields that only boards of this kind have (see OPTIONAL_FIELDS in lib/fields.ts). */
   extraFields?: FieldKey[];
+  /** Examples for empty fields (see fieldHint()). */
+  hints?: Partial<Record<FieldKey, string>>;
+  /** Story points are a rating here, not an amount of work (see pointsAreRating()). */
+  pointsAreRating?: boolean;
   build: () => { draft: BoardSetup; samples: SampleIssue[] };
 }
 
@@ -162,6 +171,12 @@ function monthVersions(description: string): Version[] {
   return res;
 }
 
+/** Samples refer to the generated months as '$m0', '$m1', '$m2'. */
+function withMonthIds(samples: SampleIssue[], versions: Version[]): SampleIssue[] {
+  const ids: Record<string, string> = { $m0: versions[0].id, $m1: versions[1].id, $m2: versions[2].id };
+  return samples.map((s) => (s.version && ids[s.version] ? { ...s, version: ids[s.version] } : s));
+}
+
 const home: BoardTemplate = {
   id: 'home',
   name: TEXT.home.name,
@@ -173,7 +188,6 @@ const home: BoardTemplate = {
   build: () => {
     const x = TEXT.home;
     const versions = monthVersions(x.monthDescription);
-    const monthIds: Record<string, string> = { $m0: versions[0].id, $m1: versions[1].id, $m2: versions[2].id };
     return {
       draft: {
         template: 'home',
@@ -202,7 +216,7 @@ const home: BoardTemplate = {
         versions,
         fieldNames: {},
       },
-      samples: x.samples.map((s) => (s.version && monthIds[s.version] ? { ...s, version: monthIds[s.version] } : s)),
+      samples: withMonthIds(x.samples, versions),
     };
   },
 };
@@ -245,6 +259,54 @@ const software: BoardTemplate = {
 };
 
 // ---------------------------------------------------------------------------
+// Movies, series and games
+// ---------------------------------------------------------------------------
+
+const media: BoardTemplate = {
+  id: 'media',
+  name: TEXT.media.name,
+  description: TEXT.media.description,
+  fields: TEXT.media.fields ?? {},
+  hints: TEXT.media.hints,
+  extraFields: ['cover', 'releaseDate'],
+  pointsAreRating: true,
+  icon: '🍿',
+  color: '#AE4787',
+  defaultKey: 'MEDIA',
+  build: () => {
+    const x = TEXT.media;
+    const versions = monthVersions(x.monthDescription);
+    return {
+      draft: {
+        template: 'media',
+        icon: '🍿',
+        color: '#AE4787',
+        // The wishlist comes first: new items go into the first column.
+        columns: [
+          col('wishlist', x.columns.wishlist, 'todo'),
+          col('soon', x.columns.soon, 'todo'),
+          col('next', x.columns.next, 'todo'),
+          col('progress', x.columns.progress, 'progress', 3),
+          col('done', x.columns.done, 'done'),
+          col('dropped', x.columns.dropped, 'done'),
+        ],
+        issueTypes: [
+          type(x.types.franchise, 'franchise', 'star', '#904EE2', true),
+          type(x.types.movie, 'movie', 'film', '#E2483D'),
+          type(x.types.series, 'series', 'tv', '#1D7AFC'),
+          type(x.types.game, 'game', 'gamepad', '#22A06B'),
+        ],
+        labels: x.labels,
+        components: x.components,
+        versions,
+        fieldNames: {},
+      },
+      samples: withMonthIds(x.samples, versions),
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Blank
 // ---------------------------------------------------------------------------
 
@@ -275,7 +337,7 @@ const blank: BoardTemplate = {
   },
 };
 
-export const TEMPLATES: BoardTemplate[] = [gameDev, home, software, blank];
+export const TEMPLATES: BoardTemplate[] = [gameDev, home, software, media, blank];
 
 export function newColumnId(): string {
   return 'c-' + uid(6);

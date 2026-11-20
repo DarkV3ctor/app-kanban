@@ -3,12 +3,13 @@ import type { Comment, FieldKey, HistoryEntry, Issue, LinkType } from '../types'
 import { useApp, useDiscardGuard } from '../app-context';
 import { t } from '../i18n';
 import { LINK_TYPES, epicOf, fieldLabel, inverseLink, isEpic, linkName, linkValue, renderHistoryValue } from '../lib/issues';
-import { MAX_BUILD, fieldName, hasField } from '../lib/fields';
+import { MAX_BUILD, fieldHint, fieldName, hasField } from '../lib/fields';
 import { columnCategory, formatDateTime, rankBetween, timeAgo, uid, cls, isDone } from '../lib/utils';
 import { BoardContext, useBoard } from './board-context';
 import { Icon, TypeIcon } from './Icons';
 import { ActionMenu, Avatar, InlineText, Modal, ProgressBar, Select, memberOf } from './ui';
 import { MarkdownEditor, MarkdownView, toggleMarkdownTask } from './markdown';
+import { CoverEditor } from './Cover';
 import { AssigneePicker, ComponentsPicker, EpicPicker, LabelsPicker, PriorityPicker, StatusBadge, StatusPicker, TypePicker, VersionPicker } from './IssueFields';
 
 /** Keep in sync with validIssue() in firestore.rules. */
@@ -169,6 +170,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
               <Activity issue={issue} />
             </div>
             <aside className="issue-side">
+              {hasField(board, 'cover') && <CoverEditor value={issue.cover} onChange={(cover) => set({ cover })} disabled={!canEdit} />}
               <div className="issue-status-row">
                 <StatusPicker board={board} value={issue.status} onChange={(s) => set({ status: s })} disabled={!canEdit} />
                 {isDone(board, issue) && (
@@ -192,6 +194,11 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
                   {/* An epic is not part of another epic (as when an epic is created). */}
                   <TypePicker board={board} value={issue.type} onChange={(v) => set(isEpic(board, { type: v }) ? { type: v, epicId: null } : { type: v })} disabled={!canEdit} />
                 </Detail>
+                {hasField(board, 'releaseDate') && (
+                  <Detail label={f('releaseDate')}>
+                    <DateInput value={issue.releaseDate} onSave={(v) => set({ releaseDate: v })} disabled={!canEdit} />
+                  </Detail>
+                )}
                 <Detail label={f('labels')}>
                   <LabelsPicker board={board} issues={issues} value={issue.labels} onChange={(l) => set({ labels: l })} disabled={!canEdit} />
                 </Detail>
@@ -212,10 +219,10 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
                   </Detail>
                 )}
                 <Detail label={f('storyPoints')}>
-                  <NumberInput value={issue.storyPoints} onSave={(v) => set({ storyPoints: v })} disabled={!canEdit} />
+                  <NumberInput value={issue.storyPoints} onSave={(v) => set({ storyPoints: v })} disabled={!canEdit} placeholder={fieldHint(board, 'storyPoints', '')} />
                 </Detail>
                 <Detail label={f('estimate')}>
-                  <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder={t('e.g. 3d 4h')} />
+                  <TextInput value={issue.estimate} onSave={(v) => set({ estimate: v })} disabled={!canEdit} placeholder={fieldHint(board, 'estimate', t('e.g. 3d 4h'))} />
                 </Detail>
                 <Detail label={f('dueDate')}>
                   <DateInput value={issue.dueDate} onSave={(v) => set({ dueDate: v })} disabled={!canEdit} />
@@ -243,7 +250,7 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
-function NumberInput({ value, onSave, disabled }: { value: number | null; onSave: (v: number | null) => void; disabled?: boolean }) {
+function NumberInput({ value, onSave, disabled, placeholder }: { value: number | null; onSave: (v: number | null) => void; disabled?: boolean; placeholder?: string }) {
   const [v, setV] = useState(value === null ? '' : String(value));
   useEffect(() => setV(value === null ? '' : String(value)), [value]);
   const commit = () => {
@@ -260,7 +267,7 @@ function NumberInput({ value, onSave, disabled }: { value: number | null; onSave
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       disabled={disabled}
-      placeholder="—"
+      placeholder={placeholder || '—'}
     />
   );
 }

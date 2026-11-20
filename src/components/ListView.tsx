@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import type { Board, FieldKey } from '../types';
 import { useApp } from '../app-context';
-import { fieldName, genericFieldName, hasField } from '../lib/fields';
+import { fieldName, genericFieldName, hasField, pointsAreRating } from '../lib/fields';
 import { t, tk } from '../i18n';
 import { applyFilters, epicOf, sortIssues, type SortKey } from '../lib/issues';
 import { downloadFile, dueState, formatDate, isDone, priorityName, timeAgo, cls } from '../lib/utils';
@@ -10,6 +10,7 @@ import { FilterBar } from './FilterBar';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
 import { Avatar, EmptyState, memberOf } from './ui';
 import { StatusBadge } from './IssueFields';
+import { CoverImage } from './Cover';
 
 /** `field`: the column shows that field, under the board's name for it (short columns keep their abbreviation until renamed). */
 const COLS: { key: SortKey; label: string; field?: FieldKey; className?: string }[] = [
@@ -21,6 +22,7 @@ const COLS: { key: SortKey; label: string; field?: FieldKey; className?: string 
   { key: 'priority', label: tk('Priority'), field: 'priority' },
   { key: 'version', label: tk('Version'), field: 'fixVersionId' },
   { key: 'build', label: tk('Build'), field: 'build' },
+  { key: 'release', label: tk('Release date'), field: 'releaseDate' },
   { key: 'points', label: tk('SP'), field: 'storyPoints', className: 'col-num' },
   { key: 'due', label: tk('Due'), field: 'dueDate' },
   { key: 'updated', label: tk('Updated') },
@@ -33,7 +35,23 @@ function colLabel(board: Board, c: (typeof COLS)[number]): string {
   return name === genericFieldName(c.field) ? t(c.label) : name;
 }
 
-const CSV_HEAD = [tk('Key'), tk('Type'), tk('Summary'), tk('Status'), tk('Assignee'), tk('Priority'), tk('Labels'), tk('Version'), tk('Build'), tk('Epic'), tk('SP'), tk('Due'), tk('Created'), tk('Updated')];
+const CSV_HEAD = [
+  tk('Key'),
+  tk('Type'),
+  tk('Summary'),
+  tk('Status'),
+  tk('Assignee'),
+  tk('Priority'),
+  tk('Labels'),
+  tk('Version'),
+  tk('Build'),
+  tk('Release date'),
+  tk('Epic'),
+  tk('SP'),
+  tk('Due'),
+  tk('Created'),
+  tk('Updated'),
+];
 
 // Memoized: re-renders only when the board context changes, not on every BoardPage render.
 export const ListView = memo(function ListView() {
@@ -43,8 +61,10 @@ export const ListView = memo(function ListView() {
 
   const rows = useMemo(() => sortIssues(board, applyFilters(board, issues, filters, user), sort.key, sort.dir), [board, issues, filters, user, sort]);
   const points = rows.reduce((s, i) => s + (i.storyPoints ?? 0), 0);
-  // The build column (table and CSV) only on boards that have the field (game dev).
+  // The build and release columns (table and CSV) only on boards that have the field (game dev, media).
   const withBuild = hasField(board, 'build');
+  const withRelease = hasField(board, 'releaseDate');
+  const withCover = hasField(board, 'cover');
   const cols = COLS.filter((c) => !c.field || hasField(board, c.field));
 
   const exportCsv = () => {
@@ -54,7 +74,7 @@ export const ListView = memo(function ListView() {
       const cell = /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s) ? `'${s}` : s;
       return `"${cell.replace(/"/g, '""')}"`;
     };
-    const head =CSV_HEAD.filter((h) => withBuild || h !== 'Build');
+    const head = CSV_HEAD.filter((h) => (withBuild || h !== 'Build') && (withRelease || h !== 'Release date'));
     const lines = rows.map((i) => {
       const epic = epicOf(board, byId, i);
       return [
@@ -67,6 +87,7 @@ export const ListView = memo(function ListView() {
         i.labels.join(' '),
         board.versions.find((v) => v.id === i.fixVersionId)?.name ?? '',
         ...(withBuild ? [i.build] : []),
+        ...(withRelease ? [i.releaseDate ?? ''] : []),
         epic ? `${board.key}-${epic.number}` : '',
         i.storyPoints ?? '',
         i.dueDate ?? '',
@@ -96,7 +117,11 @@ export const ListView = memo(function ListView() {
         </div>
       </div>
       <FilterBar showHideDone />
-      <div className="muted small list-summary">{t('Showing {shown} of {total} · story points: {points}', { shown: rows.length, total: issues.length, points })}</div>
+      <div className="muted small list-summary">
+        {pointsAreRating(board)
+          ? t('Showing {shown} of {total}', { shown: rows.length, total: issues.length })
+          : t('Showing {shown} of {total} · story points: {points}', { shown: rows.length, total: issues.length, points })}
+      </div>
       {rows.length === 0 ? (
         <EmptyState icon="search" title={t('No issues found')}>
           <p className="muted">{t('Change the filters or create a new issue.')}</p>
@@ -131,8 +156,13 @@ export const ListView = memo(function ListView() {
                       {board.key}-{i.number}
                     </td>
                     <td className="col-title">
-                      <div className="cell-title">{i.title}</div>
-                      {epic && <div className="muted small">{t('Epic: {name}', { name: epic.title })}</div>}
+                      <div className={cls(withCover && i.cover && 'cell-with-cover')}>
+                        {withCover && i.cover && <CoverImage src={i.cover} className="cover-thumb" />}
+                        <div>
+                          <div className="cell-title">{i.title}</div>
+                          {epic && <div className="muted small">{t('Epic: {name}', { name: epic.title })}</div>}
+                        </div>
+                      </div>
                     </td>
                     <td>
                       <StatusBadge board={board} status={i.status} />
@@ -150,6 +180,7 @@ export const ListView = memo(function ListView() {
                     </td>
                     <td>{board.versions.find((v) => v.id === i.fixVersionId)?.name ?? <span className="muted">—</span>}</td>
                     {withBuild && <td>{i.build || <span className="muted">—</span>}</td>}
+                    {withRelease && <td>{i.releaseDate ? formatDate(i.releaseDate) : <span className="muted">—</span>}</td>}
                     <td className="col-num">{i.storyPoints ?? ''}</td>
                     <td className={cls(due && `due-${due}`)}>{formatDate(i.dueDate)}</td>
                     <td className="muted small">{timeAgo(i.updatedAt)}</td>

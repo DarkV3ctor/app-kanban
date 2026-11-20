@@ -56,7 +56,22 @@ export interface Version {
  * The keys match the Issue properties (and the field keys of history entries). Some fields exist only
  * on some kinds of boards (see OPTIONAL_FIELDS in lib/fields.ts).
  */
-export type FieldKey = 'details' | 'assigneeId' | 'reporterId' | 'priority' | 'type' | 'labels' | 'components' | 'fixVersionId' | 'build' | 'epicId' | 'storyPoints' | 'estimate' | 'dueDate';
+export type FieldKey =
+  | 'details'
+  | 'cover'
+  | 'assigneeId'
+  | 'reporterId'
+  | 'priority'
+  | 'type'
+  | 'releaseDate'
+  | 'labels'
+  | 'components'
+  | 'fixVersionId'
+  | 'build'
+  | 'epicId'
+  | 'storyPoints'
+  | 'estimate'
+  | 'dueDate';
 
 /** Custom field names of a board (only the renamed ones; the rest use the template's names). */
 export type FieldNames = Partial<Record<FieldKey, string>>;
@@ -112,6 +127,10 @@ export interface Issue {
   fixVersionId: string | null;
   /** Game build the issue was found in or is checked on, as typed (game dev boards). */
   build: string;
+  /** Cover picture (media boards): an https link, an uploaded image as a data: URL, or ''. See lib/cover.ts. */
+  cover: string;
+  /** When the movie, series or game comes out (media boards), YYYY-MM-DD. */
+  releaseDate: string | null;
   epicId: string | null;
   storyPoints: number | null;
   estimate: string;
