@@ -1,7 +1,7 @@
 import { memo, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Issue } from '../types';
 import { locale, t, tk } from '../i18n';
-import { fieldName, pointsAreRating } from '../lib/fields';
+import { fieldName, nobodyLabel, pointsAreRating } from '../lib/fields';
 import { PERIODS, computeStats, dailyCompletions, niceTicks, periodStart, shiftPeriod, type Bucket, type Period, type ProgressIssue } from '../lib/progress';
 import { cls, isDone, monthName, timeAgo } from '../lib/utils';
 import { useBoard } from './board-context';
@@ -153,7 +153,7 @@ export const ProgressView = memo(function ProgressView() {
   });
   const assigneeRows = stats.byAssignee.map(([id, n]) => {
     const info = memberOf(board, id || null);
-    return { key: id || 'none', name: info?.name ?? t('Unassigned'), icon: <Avatar info={info} size={18} />, value: n, color: DONE };
+    return { key: id || 'none', name: info?.name ?? nobodyLabel(board), icon: <Avatar info={info} size={18} title={info ? undefined : nobodyLabel(board)} />, value: n, color: DONE };
   });
 
   return (

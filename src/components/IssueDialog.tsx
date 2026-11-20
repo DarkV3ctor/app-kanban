@@ -188,7 +188,7 @@ export function IssueDialog({ issue, onClose }: { issue: Issue; onClose: () => v
                   <AssigneePicker board={board} value={issue.reporterId} onChange={(v) => v && set({ reporterId: v })} disabled={!canEdit} placeholder="—" />
                 </Detail>
                 <Detail label={f('priority')}>
-                  <PriorityPicker value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
+                  <PriorityPicker board={board} value={issue.priority} onChange={(p) => set({ priority: p })} disabled={!canEdit} />
                 </Detail>
                 <Detail label={f('type')}>
                   {/* An epic is not part of another epic (as when an epic is created). */}
@@ -825,12 +825,12 @@ function History({ issue }: { issue: Issue }) {
                     <span className="muted">{t('changed')}</span>
                   ) : c.field === 'links' ? (
                     // Link entries have only one side: added (to) or removed (from).
-                    c.to ? <span className="history-to">{renderHistoryValue(c.field, c.to)}</span> : <span className="history-from">{renderHistoryValue(c.field, c.from)}</span>
+                    c.to ? <span className="history-to">{renderHistoryValue(board, c.field, c.to)}</span> : <span className="history-from">{renderHistoryValue(board, c.field, c.from)}</span>
                   ) : (
                     <>
-                      <span className="history-from">{renderHistoryValue(c.field, c.from)}</span>
+                      <span className="history-from">{renderHistoryValue(board, c.field, c.from)}</span>
                       <span className="muted">→</span>
-                      <span className="history-to">{renderHistoryValue(c.field, c.to)}</span>
+                      <span className="history-to">{renderHistoryValue(board, c.field, c.to)}</span>
                     </>
                   )}
                 </div>

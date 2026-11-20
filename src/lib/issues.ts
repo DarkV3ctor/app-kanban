@@ -1,9 +1,9 @@
 import type { AppUser, Board, BoardDraft, BoardSetup, Column, HistoryChange, Issue, IssueDraft, LinkType, Priority } from '../types';
 import type { SampleIssue } from '../templates';
 import { t, tk } from '../i18n';
-import { PRIORITY_ORDER, addDays, columnCategory, priorityName, sanitizeKey, todayISO, uid } from './utils';
+import { PRIORITY_ORDER, addDays, columnCategory, sanitizeKey, todayISO, uid } from './utils';
 import { normalizeBoardSetup, normalizeIssue } from './normalize';
-import { MAX_BUILD, fieldName, hasField, isFieldKey } from './fields';
+import { MAX_BUILD, fieldName, hasField, isFieldKey, nobodyLabel, priorityLabel } from './fields';
 import { coverHost, coverKind, generateCover } from './cover';
 
 export const LINK_TYPES: { id: LinkType; name: string; inverse: LinkType }[] = [
@@ -143,9 +143,9 @@ export function linkValue(type: LinkType, key: string): string {
   return `link:${type} ${key}`;
 }
 
-export function renderHistoryValue(field: string, value: string): string {
-  if (!value) return field === 'assigneeId' ? t('Unassigned') : '—';
-  if (field === 'priority') return priorityName(value);
+export function renderHistoryValue(board: Pick<Board, 'template'>, field: string, value: string): string {
+  if (!value) return field === 'assigneeId' ? nobodyLabel(board) : '—';
+  if (field === 'priority') return priorityLabel(board, value);
   // A cover is kept in history as "upload" or as its link, never as the picture itself.
   if (field === 'cover') return value === 'upload' ? t('uploaded image') : t('image from {host}', { host: coverHost(value) || '?' });
   const m = /^link:(\w+) (.+)$/.exec(value);

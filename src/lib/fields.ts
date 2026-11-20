@@ -1,7 +1,8 @@
-import type { Board, FieldKey } from '../types';
+import type { Board, FieldKey, Priority } from '../types';
 import { t, tk } from '../i18n';
 import { TEMPLATES } from '../templates';
 import { FIELD_NAME_KEYS } from './normalize';
+import { priorityName } from './utils';
 
 /**
  * Field names. Every kind of board names the issue fields its own way ("Milestone" in game dev,
@@ -54,6 +55,21 @@ export function hasField(board: Pick<Board, 'template'>, key: FieldKey): boolean
  */
 export function pointsAreRating(board: Pick<Board, 'template'>): boolean {
   return !!templateOf(board)?.pointsAreRating;
+}
+
+/** A priority level as this board calls it ("Can't wait" for an interest on media boards). */
+export function priorityLabel(board: Pick<Board, 'template'>, p: Priority | string): string {
+  return templateOf(board)?.values?.priority?.[p as Priority] ?? priorityName(p);
+}
+
+/** An empty assignee as this board calls it ("Nobody yet" on media boards). */
+export function nobodyLabel(board: Pick<Board, 'template'>): string {
+  return templateOf(board)?.values?.nobody ?? t('Unassigned');
+}
+
+/** The button that makes you the assignee ("For me" on media boards). */
+export function assignToMeLabel(board: Pick<Board, 'template'>): string {
+  return templateOf(board)?.values?.me ?? t('Assign to me');
 }
 
 /** The example shown in an empty field: the template's own one, else the given generic one. */

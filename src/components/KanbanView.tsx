@@ -3,8 +3,8 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-p
 import type { Issue, Priority } from '../types';
 import { useApp } from '../app-context';
 import { applyFilters, epicOf, isEpic, newIssueDraft } from '../lib/issues';
-import { PRIORITIES, cls, priorityName, rankBetween } from '../lib/utils';
-import { fieldName } from '../lib/fields';
+import { PRIORITIES, cls, rankBetween } from '../lib/utils';
+import { fieldName, nobodyLabel, priorityLabel } from '../lib/fields';
 import { t } from '../i18n';
 import { newColumnId } from '../templates';
 import { useBoard } from './board-context';
@@ -66,14 +66,17 @@ export const KanbanView = memo(function KanbanView() {
     }
     const res: Lane[] = [];
     if (groupBy === 'priority') {
-      for (const p of PRIORITIES) res.push({ key: p.id, title: priorityName(p.id), icon: <PriorityIcon priority={p.id} />, issues: map.get(p.id) ?? [] });
+      for (const p of PRIORITIES) {
+        const name = priorityLabel(board, p.id);
+        res.push({ key: p.id, title: name, icon: <PriorityIcon priority={p.id} name={name} />, issues: map.get(p.id) ?? [] });
+      }
       return res.filter((l) => l.issues.length > 0);
     }
     if (groupBy === 'assignee') {
       const ids = [...map.keys()].filter((k) => k !== 'none');
       ids.sort((a, b) => (a === user.ghId ? -1 : b === user.ghId ? 1 : (board.memberInfo[a]?.login ?? a).localeCompare(board.memberInfo[b]?.login ?? b)));
       for (const id of ids) res.push({ key: id, title: memberOf(board, id)!.name, icon: <Avatar info={memberOf(board, id)} size={20} />, issues: map.get(id)! });
-      res.push({ key: 'none', title: t('Unassigned'), icon: <Avatar info={null} size={20} />, issues: map.get('none') ?? [] });
+      res.push({ key: 'none', title: nobodyLabel(board), icon: <Avatar info={null} size={20} title={nobodyLabel(board)} />, issues: map.get('none') ?? [] });
       return res;
     }
     const epics = issues.filter((i) => isEpic(board, i)).sort((a, b) => a.rank - b.rank);

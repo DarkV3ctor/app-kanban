@@ -332,6 +332,11 @@ export const UK_TEMPLATES: TemplateTexts = {
       dueDate: 'Доступно до',
     },
     hints: { storyPoints: '1–10', estimate: 'напр. 2 год 10 хв, 3 сезони, 40 год' },
+    values: {
+      priority: { highest: 'Не можу дочекатися', high: 'Дуже хочу', medium: 'Цікаво', low: 'Можливо', lowest: 'Колись' },
+      nobody: 'Поки ніхто',
+      me: 'Для мене',
+    },
     samples: [
       {
         title: 'Всесвіт «Відьмака»',

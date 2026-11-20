@@ -47,7 +47,19 @@ export interface TemplateContent<C extends string, T extends string, V extends s
   fields?: FieldNames;
   /** Examples shown in empty fields, where the generic ones would not fit. */
   hints?: Partial<Record<FieldKey, string>>;
+  /** Names of field values that suit this kind of board (see FieldValues). */
+  values?: FieldValues;
   samples: SampleIssue[];
+}
+
+/** A template's own names for field values (the rest keep the generic ones). */
+export interface FieldValues {
+  /** The priority levels ("Can't wait" … "Someday" for an interest). */
+  priority?: Partial<Record<Priority, string>>;
+  /** An empty assignee ("Nobody yet" instead of "Unassigned"). */
+  nobody?: string;
+  /** The button that makes you the assignee ("For me" instead of "Assign to me"). */
+  me?: string;
 }
 
 export interface TemplateTexts {
@@ -71,6 +83,8 @@ export interface BoardTemplate {
   extraFields?: FieldKey[];
   /** Examples for empty fields (see fieldHint()). */
   hints?: Partial<Record<FieldKey, string>>;
+  /** Names of field values (see priorityLabel(), nobodyLabel(), assignToMeLabel()). */
+  values?: FieldValues;
   /** Story points are a rating here, not an amount of work (see pointsAreRating()). */
   pointsAreRating?: boolean;
   build: () => { draft: BoardSetup; samples: SampleIssue[] };
@@ -268,6 +282,7 @@ const media: BoardTemplate = {
   description: TEXT.media.description,
   fields: TEXT.media.fields ?? {},
   hints: TEXT.media.hints,
+  values: TEXT.media.values,
   extraFields: ['cover', 'releaseDate'],
   pointsAreRating: true,
   icon: '🍿',

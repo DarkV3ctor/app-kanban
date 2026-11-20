@@ -1,10 +1,10 @@
 import { memo, useMemo, useState } from 'react';
 import type { Board, FieldKey } from '../types';
 import { useApp } from '../app-context';
-import { fieldName, genericFieldName, hasField, pointsAreRating } from '../lib/fields';
+import { fieldName, genericFieldName, hasField, pointsAreRating, priorityLabel } from '../lib/fields';
 import { t, tk } from '../i18n';
 import { applyFilters, epicOf, sortIssues, type SortKey } from '../lib/issues';
-import { downloadFile, dueState, formatDate, isDone, priorityName, timeAgo, cls } from '../lib/utils';
+import { downloadFile, dueState, formatDate, isDone, timeAgo, cls } from '../lib/utils';
 import { useBoard } from './board-context';
 import { FilterBar } from './FilterBar';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
@@ -83,7 +83,7 @@ export const ListView = memo(function ListView() {
         i.title,
         board.columns.find((c) => c.id === i.status)?.name ?? i.status,
         i.assigneeId ? board.memberInfo[i.assigneeId]?.login ?? '' : '',
-        priorityName(i.priority),
+        priorityLabel(board, i.priority),
         i.labels.join(' '),
         board.versions.find((v) => v.id === i.fixVersionId)?.name ?? '',
         ...(withBuild ? [i.build] : []),
@@ -175,7 +175,7 @@ export const ListView = memo(function ListView() {
                     </td>
                     <td>
                       <span className="cell-person">
-                        <PriorityIcon priority={i.priority} />
+                        <PriorityIcon priority={i.priority} name={priorityLabel(board, i.priority)} />
                       </span>
                     </td>
                     <td>{board.versions.find((v) => v.id === i.fixVersionId)?.name ?? <span className="muted">—</span>}</td>

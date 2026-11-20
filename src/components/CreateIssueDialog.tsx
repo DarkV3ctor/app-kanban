@@ -139,7 +139,7 @@ export function CreateIssueDialog({ defaults, onClose }: { defaults: Partial<Iss
           <AssigneePicker board={board} value={d.assigneeId} onChange={(v) => set({ assigneeId: v })} meId={user.ghId} />
         </Field>
         <Field label={fieldName(board, 'priority')}>
-          <PriorityPicker value={d.priority} onChange={(p) => set({ priority: p })} />
+          <PriorityPicker board={board} value={d.priority} onChange={(p) => set({ priority: p })} />
         </Field>
         {hasField(board, 'releaseDate') && (
           <Field label={fieldName(board, 'releaseDate')}>

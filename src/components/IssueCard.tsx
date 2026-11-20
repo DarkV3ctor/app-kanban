@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { Board, Issue } from '../types';
 import { dueState, formatDate, hashColor, isDone, cls, todayISO } from '../lib/utils';
-import { fieldName, hasField, pointsAreRating } from '../lib/fields';
+import { fieldName, hasField, nobodyLabel, pointsAreRating, priorityLabel } from '../lib/fields';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
 import { t } from '../i18n';
 import { Avatar, LabelChip, memberOf } from './ui';
@@ -101,8 +101,8 @@ export const IssueCard = memo(function IssueCard({ board, issue, epic, onOpen, d
                 {issue.storyPoints}
               </span>
             ))}
-          <PriorityIcon priority={issue.priority} />
-          <Avatar info={assignee} size={24} />
+          <PriorityIcon priority={issue.priority} name={priorityLabel(board, issue.priority)} />
+          <Avatar info={assignee} size={24} title={assignee ? undefined : nobodyLabel(board)} />
         </span>
       </div>
     </div>

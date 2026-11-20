@@ -331,6 +331,11 @@ export const EN_TEMPLATES: TemplateTexts = {
       dueDate: 'Available until',
     },
     hints: { storyPoints: '1–10', estimate: 'e.g. 2 h 10 min, 3 seasons, 40 h' },
+    values: {
+      priority: { highest: "Can't wait", high: 'Really want', medium: 'Interested', low: 'Maybe', lowest: 'Someday' },
+      nobody: 'Nobody yet',
+      me: 'For me',
+    },
     samples: [
       {
         title: 'The Witcher universe',

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Board, Issue, Priority } from '../types';
-import { PRIORITIES, priorityName, roleRank } from '../lib/utils';
+import { PRIORITIES, roleRank } from '../lib/utils';
+import { assignToMeLabel, nobodyLabel, priorityLabel } from '../lib/fields';
 import { t } from '../i18n';
 import { isEpic } from '../lib/issues';
 import { Icon, PriorityIcon, TypeIcon } from './Icons';
@@ -11,7 +12,7 @@ interface Common {
   disabled?: boolean;
 }
 
-export function AssigneePicker({ board, value, onChange, disabled, meId, placeholder = t('Unassigned') }: Common & { value: string | null; onChange: (v: string | null) => void; meId?: string; placeholder?: string }) {
+export function AssigneePicker({ board, value, onChange, disabled, meId, placeholder = nobodyLabel(board) }: Common & { value: string | null; onChange: (v: string | null) => void; meId?: string; placeholder?: string }) {
   const options = useMemo(() => {
     const ids = board.memberIds.filter((id) => roleRank(board, id) >= 1);
     if (value && !ids.includes(value)) ids.push(value);
@@ -27,7 +28,7 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
         value={value}
         onChange={(v) => onChange((v as string) ?? null)}
         clearable
-        clearLabel={t('Unassigned')}
+        clearLabel={nobodyLabel(board)}
         disabled={disabled}
         searchable
         renderValue={(sel) =>
@@ -38,7 +39,7 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
             </span>
           ) : (
             <span className="select-value-item">
-              <Avatar info={null} size={22} />
+              <Avatar info={null} size={22} title={nobodyLabel(board)} />
               <span className="select-placeholder">{placeholder}</span>
             </span>
           )
@@ -46,7 +47,7 @@ export function AssigneePicker({ board, value, onChange, disabled, meId, placeho
       />
       {meId && !disabled && value !== meId && board.memberIds.includes(meId) && (
         <button type="button" className="btn btn-link btn-sm" onClick={() => onChange(meId)}>
-          {t('Assign to me')}
+          {assignToMeLabel(board)}
         </button>
       )}
     </div>
@@ -64,10 +65,13 @@ export function TypePicker({ board, value, onChange, disabled, excludeEpic }: Co
   );
 }
 
-export function PriorityPicker({ value, onChange, disabled }: { value: Priority; onChange: (v: Priority) => void; disabled?: boolean }) {
+export function PriorityPicker({ board, value, onChange, disabled }: Common & { value: Priority; onChange: (v: Priority) => void }) {
   return (
     <Select
-      options={PRIORITIES.map((p) => ({ value: p.id, label: priorityName(p.id), icon: <PriorityIcon priority={p.id} /> }))}
+      options={PRIORITIES.map((p) => {
+        const name = priorityLabel(board, p.id);
+        return { value: p.id, label: name, icon: <PriorityIcon priority={p.id} name={name} /> };
+      })}
       value={value}
       onChange={(v) => v && onChange(v as Priority)}
       disabled={disabled}

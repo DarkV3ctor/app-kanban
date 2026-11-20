@@ -320,7 +320,8 @@ export function TypeIcon({ type, size = 16, title }: { type: IssueType | undefin
 // Priorities
 // ---------------------------------------------------------------------------
 
-export function PriorityIcon({ priority, size = 16 }: { priority: Priority; size?: number }) {
+/** `name`: the level as the board calls it (see priorityLabel()); the generic name by default. */
+export function PriorityIcon({ priority, size = 16, name }: { priority: Priority; size?: number; name?: string }) {
   const p = PRIORITIES.find((x) => x.id === priority) ?? PRIORITIES[2];
   const s = { stroke: p.color, strokeWidth: 2, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
   let d: ReactNode;
@@ -342,8 +343,8 @@ export function PriorityIcon({ priority, size = 16 }: { priority: Priority; size
       break;
   }
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" aria-label={priorityName(p.id)} role="img">
-      <title>{priorityName(p.id)}</title>
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-label={name ?? priorityName(p.id)} role="img">
+      <title>{name ?? priorityName(p.id)}</title>
       {d}
     </svg>
   );

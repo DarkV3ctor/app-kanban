@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { useApp } from '../app-context';
 import { EMPTY_FILTERS, filtersActive, isEpic, type Filters } from '../lib/issues';
-import { PRIORITIES, cls, priorityName } from '../lib/utils';
-import { fieldName } from '../lib/fields';
+import { PRIORITIES, cls } from '../lib/utils';
+import { fieldName, nobodyLabel, priorityLabel } from '../lib/fields';
 import { t } from '../i18n';
 import type { Priority } from '../types';
 import { useBoard } from './board-context';
@@ -61,8 +61,8 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
             <Avatar info={memberOf(board, id)} size={30} />
           </button>
         ))}
-        <button className={cls('filter-avatar', filters.assignees.includes('none') && 'is-active')} onClick={() => toggleAssignee('none')} title={t('Unassigned')}>
-          <Avatar info={null} size={30} title={t('Unassigned')} />
+        <button className={cls('filter-avatar', filters.assignees.includes('none') && 'is-active')} onClick={() => toggleAssignee('none')} title={nobodyLabel(board)}>
+          <Avatar info={null} size={30} title={nobodyLabel(board)} />
         </button>
       </div>
       <FilterSelect label={fieldName(board, 'type')} value={filters.types} onChange={(v) => set('types', v)} options={board.issueTypes.map((t) => ({ value: t.id, label: t.name, icon: <TypeIcon type={t} /> }))} />
@@ -70,7 +70,10 @@ export function FilterBar({ extra, showHideDone }: { extra?: ReactNode; showHide
         label={fieldName(board, 'priority')}
         value={filters.priorities}
         onChange={(v) => set('priorities', v as Priority[])}
-        options={PRIORITIES.map((p) => ({ value: p.id, label: priorityName(p.id), icon: <PriorityIcon priority={p.id} /> }))}
+        options={PRIORITIES.map((p) => {
+          const name = priorityLabel(board, p.id);
+          return { value: p.id, label: name, icon: <PriorityIcon priority={p.id} name={name} /> };
+        })}
       />
       {board.labels.length > 0 && <FilterSelect label={fieldName(board, 'labels')} value={filters.labels} onChange={(v) => set('labels', v)} options={board.labels.map((l) => ({ value: l, label: l }))} />}
       {board.components.length > 0 && (
