@@ -4,6 +4,7 @@ import { useApp, useDiscardGuard } from '../app-context';
 import { navigate } from '../router';
 import { t, tk } from '../i18n';
 import { EMPTY_FILTERS } from '../lib/issues';
+import { viewName } from '../templates';
 import { columnCategory, formatDate, todayISO, uid, cls } from '../lib/utils';
 import { useBoard } from './board-context';
 import { Icon, TypeIcon } from './Icons';
@@ -60,7 +61,7 @@ export function ReleasesView() {
   return (
     <div className="releases-view">
       <div className="view-head">
-        <h1>{t('Releases')}</h1>
+        <h1>{viewName(board.template, 'releases') ?? t('Releases')}</h1>
         <div className="view-actions">
           <label className="check-row">
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> {t('Show archived')}

@@ -4,6 +4,7 @@ import { useApp } from '../app-context';
 import { navigate, setQueryParam, type Route } from '../router';
 import { permsFor, roleName, cls } from '../lib/utils';
 import { t, tk } from '../i18n';
+import { boardViews, viewName, type ViewId } from '../templates';
 import { EMPTY_FILTERS, diffIssue, statusSideEffects, type Filters } from '../lib/issues';
 import { BoardContext, type BoardCtx } from './board-context';
 import { EmptyState, ErrorBoundary, ErrorPanel, Modal, Spinner } from './ui';
@@ -19,7 +20,7 @@ import { IssueDialog } from './IssueDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 import { SidebarResizer, isNarrow, useSidebarPrefs } from './SidebarResizer';
 
-const VIEWS = [
+const VIEWS: { id: ViewId; name: string; icon: string }[] = [
   { id: 'board', name: tk('Board'), icon: 'board' },
   { id: 'list', name: tk('Issue list'), icon: 'list' },
   { id: 'calendar', name: tk('Calendar'), icon: 'calendar' },
@@ -236,7 +237,11 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
     );
   }
 
-  const current = VIEWS.find((v) => v.id === view) ?? VIEWS[0];
+  // Only the views the board's template needs (a link to another one opens the board).
+  const allowed = boardViews(board.template);
+  const views = VIEWS.filter((v) => allowed.includes(v.id));
+  const current = views.find((v) => v.id === view) ?? views[0];
+  const label = (v: (typeof VIEWS)[number]) => viewName(board.template, v.id) ?? t(v.name);
   const myRole = board.ownerId === user.ghId ? 'owner' : board.members[user.ghId];
 
   return (
@@ -262,7 +267,7 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
             </button>
           </div>
           <nav className="sidebar-nav">
-            {VIEWS.map((v) => (
+            {views.map((v) => (
               <a
                 key={v.id}
                 href={`#/b/${board.id}${v.id === 'board' ? '' : '/' + v.id}`}
@@ -270,7 +275,7 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
                 onClick={() => setSidebarOpen(false)}
               >
                 <Icon name={v.icon} size={18} />
-                <span>{t(v.name)}</span>
+                <span>{label(v)}</span>
               </a>
             ))}
           </nav>
@@ -296,7 +301,7 @@ export function BoardPage({ boardId, view, route }: { boardId: string; view: str
             <span>/</span>
             <a href={`#/b/${board.id}`}>{board.name}</a>
             <span>/</span>
-            <span>{t(current.name)}</span>
+            <span>{label(current)}</span>
           </div>
           {issues === null ? (
             <Spinner label={t('Loading issues…')} />

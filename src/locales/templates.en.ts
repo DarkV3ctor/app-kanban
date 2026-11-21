@@ -119,6 +119,7 @@ export const EN_TEMPLATES: TemplateTexts = {
       fixVersionId: 'Milestone',
       dueDate: 'Deadline',
     },
+    viewNames: { releases: 'Milestones' },
     samples: [
       {
         title: 'Core gameplay loop',
@@ -212,6 +213,7 @@ export const EN_TEMPLATES: TemplateTexts = {
       estimate: 'Time needed',
       dueDate: 'By when',
     },
+    viewNames: { releases: 'Months' },
     samples: [
       { title: 'Get ready for the holidays', type: 'goal', status: 'planned', priority: 'medium', version: '$m1' },
       {
@@ -336,6 +338,7 @@ export const EN_TEMPLATES: TemplateTexts = {
       nobody: 'Nobody yet',
       me: 'For me',
     },
+    viewNames: { releases: 'Monthly plan' },
     samples: [
       {
         title: 'The Witcher universe',

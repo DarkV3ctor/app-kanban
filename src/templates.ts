@@ -9,6 +9,10 @@ import { UK_TEMPLATES } from './locales/templates.uk';
  * all user-visible text comes from src/locales/templates.<lang>.ts.
  */
 
+/** The views of a board (its menu items and URL segments). */
+export type ViewId = 'board' | 'list' | 'calendar' | 'progress' | 'releases' | 'members' | 'settings';
+export const VIEW_IDS: readonly ViewId[] = ['board', 'list', 'calendar', 'progress', 'releases', 'members', 'settings'];
+
 export interface SampleIssue {
   title: string;
   type: string; // issue type id
@@ -49,6 +53,8 @@ export interface TemplateContent<C extends string, T extends string, V extends s
   hints?: Partial<Record<FieldKey, string>>;
   /** Names of field values that suit this kind of board (see FieldValues). */
   values?: FieldValues;
+  /** Menu names of views that suit this kind of board ("Milestones" for the releases of game dev). */
+  viewNames?: Partial<Record<ViewId, string>>;
   samples: SampleIssue[];
 }
 
@@ -85,6 +91,10 @@ export interface BoardTemplate {
   hints?: Partial<Record<FieldKey, string>>;
   /** Names of field values (see priorityLabel(), nobodyLabel(), assignToMeLabel()). */
   values?: FieldValues;
+  /** The views in the board menu, in VIEW_IDS order; all of them when omitted (see boardViews()). */
+  views?: readonly ViewId[];
+  /** Menu names of views (see viewName()). */
+  viewNames?: Partial<Record<ViewId, string>>;
   /** Story points are a rating here, not an amount of work (see pointsAreRating()). */
   pointsAreRating?: boolean;
   build: () => { draft: BoardSetup; samples: SampleIssue[] };
@@ -116,6 +126,9 @@ const gameDev: BoardTemplate = {
   description: TEXT.gamedev.description,
   fields: TEXT.gamedev.fields ?? {},
   extraFields: ['build'],
+  // Planned by milestones (the releases view), not by dates on a calendar.
+  views: ['board', 'list', 'progress', 'releases', 'members', 'settings'],
+  viewNames: TEXT.gamedev.viewNames,
   icon: '🎮',
   color: '#6E5DC6',
   defaultKey: 'GAME',
@@ -196,6 +209,8 @@ const home: BoardTemplate = {
   name: TEXT.home.name,
   description: TEXT.home.description,
   fields: TEXT.home.fields ?? {},
+  // Everything: the calendar shows what is due when, the releases view holds the months.
+  viewNames: TEXT.home.viewNames,
   icon: '🏠',
   color: '#22A06B',
   defaultKey: 'HOME',
@@ -244,6 +259,8 @@ const software: BoardTemplate = {
   name: TEXT.software.name,
   description: TEXT.software.description,
   fields: TEXT.software.fields ?? {},
+  // Planned by releases, not by dates on a calendar.
+  views: ['board', 'list', 'progress', 'releases', 'members', 'settings'],
   icon: '💻',
   color: '#1D7AFC',
   defaultKey: 'DEV',
@@ -283,6 +300,8 @@ const media: BoardTemplate = {
   fields: TEXT.media.fields ?? {},
   hints: TEXT.media.hints,
   values: TEXT.media.values,
+  // The calendar shows release dates; the releases view holds the months of the "Plan for" field.
+  viewNames: TEXT.media.viewNames,
   extraFields: ['cover', 'releaseDate'],
   pointsAreRating: true,
   icon: '🍿',
@@ -353,6 +372,16 @@ const blank: BoardTemplate = {
 };
 
 export const TEMPLATES: BoardTemplate[] = [gameDev, home, software, media, blank];
+
+/** The views in the menu of a board made from this template (all of them for unknown templates). */
+export function boardViews(template: string): readonly ViewId[] {
+  return TEMPLATES.find((x) => x.id === template)?.views ?? VIEW_IDS;
+}
+
+/** A view's own menu name on boards of this template, if it has one (in the viewer's language). */
+export function viewName(template: string, view: ViewId): string | undefined {
+  return TEMPLATES.find((x) => x.id === template)?.viewNames?.[view];
+}
 
 export function newColumnId(): string {
   return 'c-' + uid(6);

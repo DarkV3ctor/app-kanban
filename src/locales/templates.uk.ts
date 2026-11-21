@@ -119,6 +119,7 @@ export const UK_TEMPLATES: TemplateTexts = {
       fixVersionId: 'Віха',
       dueDate: 'Дедлайн',
     },
+    viewNames: { releases: 'Віхи' },
     samples: [
       {
         title: 'Основний ігровий цикл',
@@ -212,6 +213,7 @@ export const UK_TEMPLATES: TemplateTexts = {
       estimate: 'Скільки часу',
       dueDate: 'До коли',
     },
+    viewNames: { releases: 'Місяці' },
     samples: [
       { title: 'Підготуватися до свят', type: 'goal', status: 'planned', priority: 'medium', version: '$m1' },
       {
@@ -337,6 +339,7 @@ export const UK_TEMPLATES: TemplateTexts = {
       nobody: 'Поки ніхто',
       me: 'Для мене',
     },
+    viewNames: { releases: 'План на місяці' },
     samples: [
       {
         title: 'Всесвіт «Відьмака»',
